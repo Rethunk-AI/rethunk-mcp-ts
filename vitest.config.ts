@@ -1,0 +1,48 @@
+import { defineConfig } from 'vitest/config';
+import tsconfigPaths from 'vite-tsconfig-paths';
+
+export default defineConfig({
+  plugins: [tsconfigPaths()],
+  // Inline zod to fix Vite SSR transform issues with Zod 4
+  ssr: {
+    noExternal: ['zod'],
+  },
+  test: {
+    globals: true,
+    environment: 'node',
+    setupFiles: ['./tests/setup.ts'],
+    // Run tests in parallel with proper isolation to prevent mock pollution
+    pool: 'forks',
+    maxWorkers: 4,
+    isolate: true,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      include: ['src/**/*.ts'],
+      exclude: [
+        'src/**/*.d.ts',
+        'src/**/index.ts',
+        '!src/index.ts',
+        '!src/config/index.ts',
+        '!src/container/index.ts',
+      ],
+      thresholds: {
+        lines: 65,
+        functions: 60,
+        branches: 55,
+        statements: 65,
+      },
+    },
+    fakeTimers: {
+      toFake: [
+        'setTimeout',
+        'clearTimeout',
+        'setInterval',
+        'clearInterval',
+        'setImmediate',
+        'clearImmediate',
+        'Date',
+      ],
+    },
+  },
+});
