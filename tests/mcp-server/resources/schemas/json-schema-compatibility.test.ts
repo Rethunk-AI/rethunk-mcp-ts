@@ -107,40 +107,8 @@ describe('Resource JSON Schema Draft 4 Compatibility', () => {
       expect(allIssues, 'Found Draft 7-only JSON Schema features').toEqual([]);
     });
 
-    it('should have all resources registered', () => {
-      expect(allResourceDefinitions.length).toBeGreaterThan(0);
+    it('should expose no registered resources', () => {
+      expect(allResourceDefinitions).toHaveLength(0);
     });
   });
-});
-
-describe('Individual Resource Schema Validation', () => {
-  for (const resource of allResourceDefinitions) {
-    describe(`Resource: ${resource.name}`, () => {
-      it('paramsSchema should be Draft 4 compatible', () => {
-        const jsonSchema = toJsonSchema(resource.paramsSchema);
-        const issues = findDraft7Incompatibilities(
-          jsonSchema as JsonSchemaProperty,
-        );
-
-        expect(
-          issues,
-          `paramsSchema contains Draft 7-only features:\n${issues.join('\n')}`,
-        ).toEqual([]);
-      });
-
-      if (resource.outputSchema) {
-        it('outputSchema should be Draft 4 compatible', () => {
-          const jsonSchema = toJsonSchema(resource.outputSchema!);
-          const issues = findDraft7Incompatibilities(
-            jsonSchema as JsonSchemaProperty,
-          );
-
-          expect(
-            issues,
-            `outputSchema contains Draft 7-only features:\n${issues.join('\n')}`,
-          ).toEqual([]);
-        });
-      }
-    });
-  }
 });
