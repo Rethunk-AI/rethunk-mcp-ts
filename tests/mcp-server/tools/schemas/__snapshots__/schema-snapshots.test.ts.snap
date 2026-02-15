@@ -1,5 +1,68 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`Tool Schema Snapshots > Tool: check_typescript_project_for_problems > inputSchema JSON output should be stable 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {},
+  "type": "object",
+}
+`;
+
+exports[`Tool Schema Snapshots > Tool: check_typescript_project_for_problems > outputSchema JSON output should be stable 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "checks": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "command": {
+            "type": "string",
+          },
+          "exitCode": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer",
+          },
+          "name": {
+            "type": "string",
+          },
+          "stderr": {
+            "type": "string",
+          },
+          "stdout": {
+            "type": "string",
+          },
+          "success": {
+            "type": "boolean",
+          },
+        },
+        "required": [
+          "name",
+          "command",
+          "exitCode",
+          "success",
+          "stdout",
+          "stderr",
+        ],
+        "type": "object",
+      },
+      "type": "array",
+    },
+    "hasProblems": {
+      "type": "boolean",
+    },
+  },
+  "required": [
+    "hasProblems",
+    "checks",
+  ],
+  "type": "object",
+}
+`;
+
 exports[`Tool Schema Snapshots > Tool: template_async_countdown > inputSchema JSON output should be stable 1`] = `
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
