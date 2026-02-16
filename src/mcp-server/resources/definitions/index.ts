@@ -1,6 +1,6 @@
 /**
- * @fileoverview Barrel file for all resource definitions.
- * Re-exports all resource definitions and provides an array for easy iteration.
+ * @fileoverview Barrel file for resource definitions.
+ * Resource definitions are intentionally not exported in the current configuration.
  * @module src/mcp-server/resources/definitions
  */
 
