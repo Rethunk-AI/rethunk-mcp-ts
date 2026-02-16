@@ -113,12 +113,9 @@ describe('stageSelectedFilesAndCreateAtomicCommitTool', () => {
   });
 
   it('creates atomic commit from mixed whole-file and range specs', async () => {
-    vi.spyOn(commitMessageRefiner, 'refineCommitMessage').mockResolvedValue({
-      isWhyFocused: true,
-      refinedCommitMessage:
-        'fix(commit): prevent partial index state during selective staging',
-      feedback: 'why-focused',
-    });
+    vi.spyOn(commitMessageRefiner, 'refineCommitMessage').mockResolvedValue(
+      'fix(commit): prevent partial index state during selective staging',
+    );
 
     const diff = [
       'diff --git a/src/ranged.ts b/src/ranged.ts',
@@ -196,12 +193,10 @@ describe('stageSelectedFilesAndCreateAtomicCommitTool', () => {
     expect(gitSpy).toHaveBeenCalled();
   });
 
-  it('fails validation when LLM marks summary as not why-focused', async () => {
-    vi.spyOn(commitMessageRefiner, 'refineCommitMessage').mockResolvedValue({
-      isWhyFocused: false,
-      refinedCommitMessage: 'chore(commit): update files',
-      feedback: 'Summary explains what changed, not why.',
-    });
+  it('formats commit message using grammar constraint', async () => {
+    vi.spyOn(commitMessageRefiner, 'refineCommitMessage').mockResolvedValue(
+      'fix: convert free-form summary into conventional format',
+    );
 
     vi.spyOn(gitRunner, 'run')
       .mockResolvedValueOnce({
@@ -216,12 +211,17 @@ describe('stageSelectedFilesAndCreateAtomicCommitTool', () => {
       })
       .mockResolvedValueOnce({
         exitCode: 0,
-        stdout: '',
+        stdout: 'src/a.ts\n',
         stderr: '',
       })
       .mockResolvedValueOnce({
         exitCode: 0,
-        stdout: 'src/a.ts\n',
+        stdout: '[main abc123] msg\n',
+        stderr: '',
+      })
+      .mockResolvedValueOnce({
+        exitCode: 0,
+        stdout: 'abc123',
         stderr: '',
       });
 
@@ -229,18 +229,19 @@ describe('stageSelectedFilesAndCreateAtomicCommitTool', () => {
     const input = stageSelectedFilesAndCreateAtomicCommitTool.inputSchema.parse(
       {
         fileSpecs: ['src/a.ts'],
-        commitSummary: 'updated a.ts and tests',
+        commitSummary:
+          'just some rambling description of what was done to multiple files',
       },
     );
 
-    await expect(
-      stageSelectedFilesAndCreateAtomicCommitTool.logic(
-        input,
-        context,
-        mockSdkContext,
-      ),
-    ).rejects.toMatchObject({
-      code: JsonRpcErrorCode.ValidationError,
-    });
+    const result = await stageSelectedFilesAndCreateAtomicCommitTool.logic(
+      input,
+      context,
+      mockSdkContext,
+    );
+
+    expect(result.commitMessage).toBe(
+      'fix: convert free-form summary into conventional format',
+    );
   });
 });

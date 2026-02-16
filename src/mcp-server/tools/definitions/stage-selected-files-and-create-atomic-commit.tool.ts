@@ -605,85 +605,94 @@ export function buildCachedPatchForRanges(
   return `${patchLines.join('\n')}\n`;
 }
 
-const CommitRefinerSchema = z.object({
-  isWhyFocused: z
-    .boolean()
-    .describe(
-      'Whether the commit summary is WHY-focused (motivation) vs WHAT-focused (file list).',
-    ),
-  refinedCommitMessage: z
-    .string()
-    .min(1)
-    .describe('Refined commit message in conventional-commit format.'),
-  feedback: z
-    .string()
-    .optional()
-    .default('')
-    .describe('Feedback or explanation for the refinement.'),
-});
-
 export const commitMessageRefiner = {
   refineCommitMessage: async (
     commitSummary: string,
-  ): Promise<{
-    isWhyFocused: boolean;
-    refinedCommitMessage: string;
-    feedback: string;
-  }> => {
+    appContext?: RequestContext,
+  ): Promise<string> => {
     const apiKey = config.openaiApiKey;
     if (!apiKey) {
       throw new McpError(
         JsonRpcErrorCode.ConfigurationError,
-        'OPENAI_API_KEY is required for commit summary validation and refinement.',
+        'OPENAI_API_KEY is required for commit summary refinement.',
       );
     }
 
     const openai = createOpenAI({ apiKey });
 
+    if (appContext) {
+      logger.debug('Formatting commit message via LLM', {
+        ...appContext,
+        originalSummary: commitSummary,
+        model: 'gpt-5-nano',
+      });
+    }
+
     const result = await generateText({
+      maxOutputTokens: 2048,
+      maxRetries: 1,
       model: openai('gpt-5-nano'),
-      prompt: [
-        'Review commit summary: WHY-focused (motivation) or WHAT-focused (file list)?',
-        'If WHY-focused, format as conventional commit: feat/fix/refactor/perf/test/docs/chore(scope): summary',
-        `Summary: ${commitSummary}`,
-      ].join('\n\n'),
-      temperature: 0,
+      prompt: `Transform this into a WHY-focused conventional commit message (format: type(scope): description). Return ONLY the formatted message with no other text:
+
+"${commitSummary}"`,
       providerOptions: {
         openai: {
-          parallel_tool_calls: false,  // Force one step at a time
-          reasoning_effort: 'minimal',
-          reasoning_summary: 'auto',   // View the thought process
+          reasoningEffort: 'medium',
           verbosity: 'low',
-        }
-      }
+        },
+      },
     });
 
-    // Parse the text response as JSON using the schema
-    let object: z.infer<typeof CommitRefinerSchema>;
-    try {
-      const parsed = JSON.parse(result.text) as unknown;
-      object = CommitRefinerSchema.parse(parsed);
-    } catch (error) {
-      throw new McpError(
-        JsonRpcErrorCode.ValidationError,
-        'Failed to parse LLM response as structured JSON.',
-        { text: result.text, error: String(error) },
-      );
+    if (appContext) {
+      logger.debug('LLM response received', {
+        ...appContext,
+        textLength: result.text.length,
+        toolCallCount: result.toolCalls?.length ?? 0,
+      });
     }
 
-    if (!CONVENTIONAL_COMMIT_PATTERN.test(object.refinedCommitMessage)) {
-      throw new McpError(
-        JsonRpcErrorCode.ValidationError,
-        'LLM refined commit message is not in conventional-commit format.',
-        { refinedCommitMessage: object.refinedCommitMessage },
-      );
+    const formattedCommitMessage = result.text.trim();
+
+    if (!formattedCommitMessage) {
+      const errorMsg = `LLM failed to produce output for commit message formatting. Expected conventional commit format, got empty response. Input: "${commitSummary}"`;
+      if (appContext) {
+        logger.warning(errorMsg, {
+          ...appContext,
+          llmText: result.text,
+          llmTextLength: result.text.length,
+        });
+      }
+      throw new McpError(JsonRpcErrorCode.ValidationError, errorMsg, {
+        originalSummary: commitSummary,
+        llmText: result.text,
+        llmTextLength: result.text.length,
+      });
     }
 
-    return {
-      isWhyFocused: object.isWhyFocused,
-      refinedCommitMessage: object.refinedCommitMessage,
-      feedback: object.feedback,
-    };
+    if (!CONVENTIONAL_COMMIT_PATTERN.test(formattedCommitMessage)) {
+      const errorMsg = `LLM output does not match conventional commit format. Got: "${formattedCommitMessage}"`;
+      if (appContext) {
+        logger.warning(errorMsg, {
+          ...appContext,
+          formattedMessage: formattedCommitMessage,
+          pattern: CONVENTIONAL_COMMIT_PATTERN.toString(),
+        });
+      }
+      throw new McpError(JsonRpcErrorCode.ValidationError, errorMsg, {
+        originalSummary: commitSummary,
+        formattedMessage: formattedCommitMessage,
+        pattern: CONVENTIONAL_COMMIT_PATTERN.toString(),
+      });
+    }
+
+    if (appContext) {
+      logger.debug('Commit message formatted successfully', {
+        ...appContext,
+        formattedMessage: formattedCommitMessage,
+      });
+    }
+
+    return formattedCommitMessage;
   },
 };
 
@@ -722,7 +731,7 @@ export const gitRunner = {
       if (
         sdkContext?.signal &&
         typeof (sdkContext.signal as EventTarget).addEventListener ===
-        'function'
+          'function'
       ) {
         const onAbort = () => {
           try {
@@ -855,26 +864,10 @@ async function stageRangeSpecs(
   }
 }
 
-async function stageAndCommitSelectedSpecsLogic(
-  input: z.infer<typeof InputSchema>,
-  appContext: RequestContext,
+async function validateRepository(
   sdkContext: SdkContext,
-): Promise<AtomicCommitResponse> {
-  logger.info(
-    'Staging selected file specs and creating atomic commit.',
-    appContext,
-  );
-
-  // Detect husky presence and log when checks will be skipped
-  if (input.skipChecksIfHuskyPresent && detectHuskyPresent(process.cwd())) {
-    logger.info(
-      'Husky pre-commit hooks detected. Skipping integrated quality checks to avoid duplicate runs.',
-      appContext,
-    );
-  }
-
-  const parsedSpecs = input.fileSpecs.map((spec) => parseFileSpec(spec));
-
+  appContext: RequestContext,
+): Promise<void> {
   const repoCheckResult = await gitRunner.run(
     'git',
     ['rev-parse', '--show-toplevel'],
@@ -888,36 +881,49 @@ async function stageAndCommitSelectedSpecsLogic(
       { stderr: repoCheckResult.stderr.trim() },
     );
   }
+}
 
-  if (!input.skipPreStagedCheck) {
-    const stagedCheckResult = await gitRunner.run(
-      'git',
-      ['diff', '--cached', '--name-only'],
-      sdkContext,
-      appContext,
-    );
-    if (stagedCheckResult.exitCode !== 0) {
-      throw new McpError(
-        JsonRpcErrorCode.InternalError,
-        `Failed to inspect pre-staged changes: ${stagedCheckResult.stderr.trim()}`,
-      );
-    }
-
-    if (stagedCheckResult.stdout.trim()) {
-      throw new McpError(
-        JsonRpcErrorCode.ValidationError,
-        'Pre-staged changes detected. Clear staged changes first or set skipPreStagedCheck=true.',
-        {
-          stagedFiles: stagedCheckResult.stdout
-            .split('\n')
-            .map((line) => line.trim())
-            .filter(Boolean),
-        },
-      );
-    }
+async function validateNoPreStagedChanges(
+  input: z.infer<typeof InputSchema>,
+  sdkContext: SdkContext,
+  appContext: RequestContext,
+): Promise<void> {
+  if (input.skipPreStagedCheck) {
+    return;
   }
 
-  const groupedSpecs = groupParsedSpecs(parsedSpecs);
+  const stagedCheckResult = await gitRunner.run(
+    'git',
+    ['diff', '--cached', '--name-only'],
+    sdkContext,
+    appContext,
+  );
+  if (stagedCheckResult.exitCode !== 0) {
+    throw new McpError(
+      JsonRpcErrorCode.InternalError,
+      `Failed to inspect pre-staged changes: ${stagedCheckResult.stderr.trim()}`,
+    );
+  }
+
+  if (stagedCheckResult.stdout.trim()) {
+    throw new McpError(
+      JsonRpcErrorCode.ValidationError,
+      'Pre-staged changes detected. Clear staged changes first or set skipPreStagedCheck=true.',
+      {
+        stagedFiles: stagedCheckResult.stdout
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean),
+      },
+    );
+  }
+}
+
+async function stageAllFiles(
+  groupedSpecs: ReturnType<typeof groupParsedSpecs>,
+  sdkContext: SdkContext,
+  appContext: RequestContext,
+): Promise<void> {
   if (groupedSpecs.wholeFiles.length > 0) {
     const stageWholeResult = await gitRunner.run(
       'git',
@@ -926,6 +932,7 @@ async function stageAndCommitSelectedSpecsLogic(
       appContext,
     );
     if (stageWholeResult.exitCode !== 0) {
+      await unstageAllFiles(sdkContext, appContext);
       throw new McpError(
         JsonRpcErrorCode.ValidationError,
         `Failed to stage whole file specs: ${stageWholeResult.stderr.trim()}`,
@@ -934,8 +941,22 @@ async function stageAndCommitSelectedSpecsLogic(
     }
   }
 
-  await stageRangeSpecs(groupedSpecs.rangeSpecsByFile, sdkContext, appContext);
+  try {
+    await stageRangeSpecs(
+      groupedSpecs.rangeSpecsByFile,
+      sdkContext,
+      appContext,
+    );
+  } catch (error) {
+    await unstageAllFiles(sdkContext, appContext);
+    throw error;
+  }
+}
 
+async function getStagedFiles(
+  sdkContext: SdkContext,
+  appContext: RequestContext,
+): Promise<string[]> {
   const stagedFilesResult = await gitRunner.run(
     'git',
     ['diff', '--cached', '--name-only'],
@@ -949,37 +970,26 @@ async function stageAndCommitSelectedSpecsLogic(
     );
   }
 
-  const stagedFiles = stagedFilesResult.stdout
+  return stagedFilesResult.stdout
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean);
+}
 
-  if (stagedFiles.length === 0) {
-    throw new McpError(
-      JsonRpcErrorCode.ValidationError,
-      'No changes were staged from provided file specs.',
-      { fileSpecs: input.fileSpecs },
-    );
-  }
-
-  const refined = await commitMessageRefiner.refineCommitMessage(
-    input.commitSummary,
-  );
-  if (!refined.isWhyFocused) {
-    throw new McpError(
-      JsonRpcErrorCode.ValidationError,
-      'Commit summary must explain WHY the changes were made, not WHAT changed.',
-      { feedback: refined.feedback },
-    );
-  }
-
+async function commitStagedChanges(
+  refinedCommitMessage: string,
+  sdkContext: SdkContext,
+  appContext: RequestContext,
+  stagedFiles: string[],
+): Promise<string> {
   const commitResult = await gitRunner.run(
     'git',
-    ['commit', '-m', refined.refinedCommitMessage],
+    ['commit', '-m', refinedCommitMessage],
     sdkContext,
     appContext,
   );
   if (commitResult.exitCode !== 0) {
+    await unstageAllFiles(sdkContext, appContext);
     throw new McpError(
       JsonRpcErrorCode.InternalError,
       `Failed to create git commit: ${commitResult.stderr.trim()}`,
@@ -1000,9 +1010,78 @@ async function stageAndCommitSelectedSpecsLogic(
     );
   }
 
+  return hashResult.stdout.trim();
+}
+
+async function unstageAllFiles(
+  sdkContext: SdkContext,
+  appContext: RequestContext,
+): Promise<void> {
+  const resetResult = await gitRunner.run(
+    'git',
+    ['reset'],
+    sdkContext,
+    appContext,
+  );
+  if (resetResult.exitCode !== 0) {
+    logger.warning('Failed to unstage files during error cleanup', {
+      ...appContext,
+      stderr: resetResult.stderr.trim(),
+    });
+  }
+}
+
+async function stageAndCommitSelectedSpecsLogic(
+  input: z.infer<typeof InputSchema>,
+  appContext: RequestContext,
+  sdkContext: SdkContext,
+): Promise<AtomicCommitResponse> {
+  logger.info(
+    'Staging selected file specs and creating atomic commit.',
+    appContext,
+  );
+
+  // Detect husky presence and log when checks will be skipped
+  if (input.skipChecksIfHuskyPresent && detectHuskyPresent(process.cwd())) {
+    logger.info(
+      'Husky pre-commit hooks detected. Skipping integrated quality checks to avoid duplicate runs.',
+      appContext,
+    );
+  }
+
+  const parsedSpecs = input.fileSpecs.map((spec) => parseFileSpec(spec));
+
+  await validateRepository(sdkContext, appContext);
+  await validateNoPreStagedChanges(input, sdkContext, appContext);
+
+  const groupedSpecs = groupParsedSpecs(parsedSpecs);
+  await stageAllFiles(groupedSpecs, sdkContext, appContext);
+
+  const stagedFiles = await getStagedFiles(sdkContext, appContext);
+
+  if (stagedFiles.length === 0) {
+    throw new McpError(
+      JsonRpcErrorCode.ValidationError,
+      'No changes were staged from provided file specs.',
+      { fileSpecs: input.fileSpecs },
+    );
+  }
+
+  const refinedCommitMessage = await commitMessageRefiner.refineCommitMessage(
+    input.commitSummary,
+    appContext,
+  );
+
+  const commitHash = await commitStagedChanges(
+    refinedCommitMessage,
+    sdkContext,
+    appContext,
+    stagedFiles,
+  );
+
   return {
-    commitHash: hashResult.stdout.trim(),
-    commitMessage: refined.refinedCommitMessage,
+    commitHash,
+    commitMessage: refinedCommitMessage,
     stagedFiles,
     stagedSpecs: input.fileSpecs,
   };
