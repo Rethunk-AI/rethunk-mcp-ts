@@ -4,15 +4,15 @@
  * @module src/storage/providers/surrealdb/migrations/migrationRunner
  */
 
-import type Surreal from "surrealdb";
-import { ErrorHandler, logger, type RequestContext } from "@/utils/index.js";
+import type Surreal from 'surrealdb';
+import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js';
 import type {
-	Migration,
-	MigrationResult,
-	MigrationHistory,
-	MigrationPlan,
-	MigrationDirection,
-} from "./migrationTypes.js";
+  Migration,
+  MigrationResult,
+  MigrationHistory,
+  MigrationPlan,
+  MigrationDirection,
+} from './migrationTypes.js';
 
 /**
  * Manages schema migrations for SurrealDB.
@@ -39,21 +39,21 @@ import type {
  * ```
  */
 export class MigrationRunner {
-	private readonly historyTable = "migration_history";
+  private readonly historyTable = 'migration_history';
 
-	constructor(private readonly client: Surreal) {}
+  constructor(private readonly client: Surreal) {}
 
-	/**
-	 * Initialize migration history table.
-	 *
-	 * @param context - Request context
-	 */
-	async initialize(context: RequestContext): Promise<void> {
-		return ErrorHandler.tryCatch(
-			async () => {
-				logger.info("[MigrationRunner] Initializing migration system", context);
+  /**
+   * Initialize migration history table.
+   *
+   * @param context - Request context
+   */
+  async initialize(context: RequestContext): Promise<void> {
+    return ErrorHandler.tryCatch(
+      async () => {
+        logger.info('[MigrationRunner] Initializing migration system', context);
 
-				const schema = `
+        const schema = `
           DEFINE TABLE ${this.historyTable} SCHEMAFULL
             PERMISSIONS FOR select, create, update FULL;
 
@@ -80,229 +80,229 @@ export class MigrationRunner {
             UNIQUE;
         `;
 
-				await this.client.query(schema);
+        await this.client.query(schema);
 
-				logger.info("[MigrationRunner] Migration system initialized", context);
-			},
-			{
-				operation: "MigrationRunner.initialize",
-				context,
-			},
-		);
-	}
+        logger.info('[MigrationRunner] Migration system initialized', context);
+      },
+      {
+        operation: 'MigrationRunner.initialize',
+        context,
+      },
+    );
+  }
 
-	/**
-	 * Run migrations in the specified direction.
-	 *
-	 * @param migrations - Migrations to execute
-	 * @param direction - 'up' to apply, 'down' to rollback
-	 * @param context - Request context
-	 * @returns Array of migration results
-	 */
-	async migrate(
-		migrations: Migration[],
-		direction: MigrationDirection,
-		context: RequestContext,
-	): Promise<MigrationResult[]> {
-		return ErrorHandler.tryCatch(
-			async () => {
-				logger.info(
-					`[MigrationRunner] Running ${migrations.length} migrations (${direction})`,
-					context,
-				);
+  /**
+   * Run migrations in the specified direction.
+   *
+   * @param migrations - Migrations to execute
+   * @param direction - 'up' to apply, 'down' to rollback
+   * @param context - Request context
+   * @returns Array of migration results
+   */
+  async migrate(
+    migrations: Migration[],
+    direction: MigrationDirection,
+    context: RequestContext,
+  ): Promise<MigrationResult[]> {
+    return ErrorHandler.tryCatch(
+      async () => {
+        logger.info(
+          `[MigrationRunner] Running ${migrations.length} migrations (${direction})`,
+          context,
+        );
 
-				const results: MigrationResult[] = [];
+        const results: MigrationResult[] = [];
 
-				for (const migration of migrations) {
-					const result = await this.executeMigration(
-						migration,
-						direction,
-						context,
-					);
-					results.push(result);
+        for (const migration of migrations) {
+          const result = await this.executeMigration(
+            migration,
+            direction,
+            context,
+          );
+          results.push(result);
 
-					if (!result.success) {
-						logger.error(
-							`[MigrationRunner] Migration failed: ${migration.id}`,
-							context,
-						);
-						break; // Stop on first failure
-					}
-				}
+          if (!result.success) {
+            logger.error(
+              `[MigrationRunner] Migration failed: ${migration.id}`,
+              context,
+            );
+            break; // Stop on first failure
+          }
+        }
 
-				logger.info(
-					`[MigrationRunner] Completed ${results.filter((r) => r.success).length}/${migrations.length} migrations`,
-					context,
-				);
+        logger.info(
+          `[MigrationRunner] Completed ${results.filter((r) => r.success).length}/${migrations.length} migrations`,
+          context,
+        );
 
-				return results;
-			},
-			{
-				operation: "MigrationRunner.migrate",
-				context,
-				input: { count: migrations.length, direction },
-			},
-		);
-	}
+        return results;
+      },
+      {
+        operation: 'MigrationRunner.migrate',
+        context,
+        input: { count: migrations.length, direction },
+      },
+    );
+  }
 
-	/**
-	 * Get migration history.
-	 *
-	 * @param context - Request context
-	 * @returns Array of migration history records
-	 */
-	async getHistory(context: RequestContext): Promise<MigrationHistory[]> {
-		return ErrorHandler.tryCatch(
-			async () => {
-				const query = `SELECT * FROM ${this.historyTable} ORDER BY applied_at ASC`;
+  /**
+   * Get migration history.
+   *
+   * @param context - Request context
+   * @returns Array of migration history records
+   */
+  async getHistory(context: RequestContext): Promise<MigrationHistory[]> {
+    return ErrorHandler.tryCatch(
+      async () => {
+        const query = `SELECT * FROM ${this.historyTable} ORDER BY applied_at ASC`;
 
-				const result =
-					await this.client.query<[{ result: MigrationHistory[] }]>(query);
+        const result =
+          await this.client.query<[{ result: MigrationHistory[] }]>(query);
 
-				return result[0]?.result ?? [];
-			},
-			{
-				operation: "MigrationRunner.getHistory",
-				context,
-			},
-		);
-	}
+        return result[0]?.result ?? [];
+      },
+      {
+        operation: 'MigrationRunner.getHistory',
+        context,
+      },
+    );
+  }
 
-	/**
-	 * Create a migration plan (determine which migrations to run).
-	 *
-	 * @param migrations - All available migrations
-	 * @param direction - Migration direction
-	 * @param context - Request context
-	 * @returns Migration plan
-	 */
-	async createPlan(
-		migrations: Migration[],
-		direction: MigrationDirection,
-		context: RequestContext,
-	): Promise<MigrationPlan> {
-		const history = await this.getHistory(context);
-		const appliedIds = new Set(
-			history.filter((h) => h.status === "applied").map((h) => h.migration_id),
-		);
+  /**
+   * Create a migration plan (determine which migrations to run).
+   *
+   * @param migrations - All available migrations
+   * @param direction - Migration direction
+   * @param context - Request context
+   * @returns Migration plan
+   */
+  async createPlan(
+    migrations: Migration[],
+    direction: MigrationDirection,
+    context: RequestContext,
+  ): Promise<MigrationPlan> {
+    const history = await this.getHistory(context);
+    const appliedIds = new Set(
+      history.filter((h) => h.status === 'applied').map((h) => h.migration_id),
+    );
 
-		let toExecute: Migration[];
+    let toExecute: Migration[];
 
-		if (direction === "up") {
-			// Only run migrations not yet applied
-			toExecute = migrations.filter((m) => !appliedIds.has(m.id));
-		} else {
-			// Rollback applied migrations in reverse order
-			toExecute = migrations.filter((m) => appliedIds.has(m.id)).reverse();
-		}
+    if (direction === 'up') {
+      // Only run migrations not yet applied
+      toExecute = migrations.filter((m) => !appliedIds.has(m.id));
+    } else {
+      // Rollback applied migrations in reverse order
+      toExecute = migrations.filter((m) => appliedIds.has(m.id)).reverse();
+    }
 
-		return {
-			migrations: toExecute,
-			count: toExecute.length,
-			direction,
-		};
-	}
+    return {
+      migrations: toExecute,
+      count: toExecute.length,
+      direction,
+    };
+  }
 
-	/**
-	 * Execute a single migration.
-	 */
-	private async executeMigration(
-		migration: Migration,
-		direction: MigrationDirection,
-		context: RequestContext,
-	): Promise<MigrationResult> {
-		const startTime = Date.now();
+  /**
+   * Execute a single migration.
+   */
+  private async executeMigration(
+    migration: Migration,
+    direction: MigrationDirection,
+    context: RequestContext,
+  ): Promise<MigrationResult> {
+    const startTime = Date.now();
 
-		try {
-			logger.info(
-				`[MigrationRunner] Executing migration: ${migration.id} (${direction})`,
-				context,
-			);
+    try {
+      logger.info(
+        `[MigrationRunner] Executing migration: ${migration.id} (${direction})`,
+        context,
+      );
 
-			const sql = direction === "up" ? migration.up : migration.down;
+      const sql = direction === 'up' ? migration.up : migration.down;
 
-			// Execute within transaction
-			await this.client.query("BEGIN TRANSACTION");
+      // Execute within transaction
+      await this.client.query('BEGIN TRANSACTION');
 
-			try {
-				// Run migration SQL
-				await this.client.query(sql);
+      try {
+        // Run migration SQL
+        await this.client.query(sql);
 
-				// Update history
-				await this.recordMigration(migration, direction, null, context);
+        // Update history
+        await this.recordMigration(migration, direction, null, context);
 
-				await this.client.query("COMMIT TRANSACTION");
+        await this.client.query('COMMIT TRANSACTION');
 
-				const duration = Date.now() - startTime;
+        const duration = Date.now() - startTime;
 
-				logger.info(
-					`[MigrationRunner] Migration succeeded: ${migration.id} (${duration}ms)`,
-					context,
-				);
+        logger.info(
+          `[MigrationRunner] Migration succeeded: ${migration.id} (${duration}ms)`,
+          context,
+        );
 
-				return {
-					id: migration.id,
-					success: true,
-					duration,
-				};
-			} catch (error: unknown) {
-				await this.client.query("CANCEL TRANSACTION");
-				throw error;
-			}
-		} catch (error: unknown) {
-			const duration = Date.now() - startTime;
-			const errorMsg = error instanceof Error ? error.message : String(error);
+        return {
+          id: migration.id,
+          success: true,
+          duration,
+        };
+      } catch (error: unknown) {
+        await this.client.query('CANCEL TRANSACTION');
+        throw error;
+      }
+    } catch (error: unknown) {
+      const duration = Date.now() - startTime;
+      const errorMsg = error instanceof Error ? error.message : String(error);
 
-			logger.error(
-				`[MigrationRunner] Migration failed: ${migration.id} - ${errorMsg}`,
-				context,
-			);
+      logger.error(
+        `[MigrationRunner] Migration failed: ${migration.id} - ${errorMsg}`,
+        context,
+      );
 
-			await this.recordMigration(migration, direction, errorMsg, context);
+      await this.recordMigration(migration, direction, errorMsg, context);
 
-			return {
-				id: migration.id,
-				success: false,
-				error: errorMsg,
-				duration,
-			};
-		}
-	}
+      return {
+        id: migration.id,
+        success: false,
+        error: errorMsg,
+        duration,
+      };
+    }
+  }
 
-	/**
-	 * Record migration in history table.
-	 */
-	private async recordMigration(
-		migration: Migration,
-		direction: MigrationDirection,
-		error: string | null,
-		_context: RequestContext,
-	): Promise<void> {
-		const status = error
-			? "failed"
-			: direction === "up"
-				? "applied"
-				: "rolled_back";
+  /**
+   * Record migration in history table.
+   */
+  private async recordMigration(
+    migration: Migration,
+    direction: MigrationDirection,
+    error: string | null,
+    _context: RequestContext,
+  ): Promise<void> {
+    const status = error
+      ? 'failed'
+      : direction === 'up'
+        ? 'applied'
+        : 'rolled_back';
 
-		const query = `
+    const query = `
       UPDATE ${this.historyTable} SET
         status = $status,
-        ${direction === "up" ? "applied_at" : "rolled_back_at"} = time::now(),
-        ${error ? "error = $error" : ""}
+        ${direction === 'up' ? 'applied_at' : 'rolled_back_at'} = time::now(),
+        ${error ? 'error = $error' : ''}
       WHERE migration_id = $migration_id
       OR CREATE ${this.historyTable} SET
         migration_id = $migration_id,
         name = $name,
         status = $status,
-        ${direction === "up" ? "applied_at" : "rolled_back_at"} = time::now()
-        ${error ? ", error = $error" : ""}
+        ${direction === 'up' ? 'applied_at' : 'rolled_back_at'} = time::now()
+        ${error ? ', error = $error' : ''}
     `;
 
-		await this.client.query(query, {
-			migration_id: migration.id,
-			name: migration.name,
-			status,
-			...(error && { error }),
-		});
-	}
+    await this.client.query(query, {
+      migration_id: migration.id,
+      name: migration.name,
+      status,
+      ...(error && { error }),
+    });
+  }
 }

@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+
 import { describe, expect, it, vi, afterEach } from 'vitest';
 
 import {
