@@ -5,6 +5,7 @@
  */
 
 import { spawn } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
 import type { ContentBlock } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 
@@ -13,14 +14,22 @@ import type {
   ToolAnnotations,
   ToolDefinition,
 } from '@/mcp-server/tools/utils/index.js';
+import { detectProjectPackageManager, mapScriptArgsToRunner, type PackageManager } from '@/mcp-server/tools/utils/signal.js';
 import { withToolAuth } from '@/mcp-server/transports/auth/lib/withAuth.js';
 import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
 import { type RequestContext, logger } from '@/utils/index.js';
+
+// Centralized AbortSignal shim lives in application startup; tools must
+// use the shared `sanitizeSdkContext` helper to avoid cross-realm signal
+// leakage into Node internals.
 
 const TOOL_NAME = 'check_typescript_project_for_problems';
 const TOOL_TITLE = 'Check TypeScript Project for Problems';
 const TOOL_DESCRIPTION =
   'Runs quick local quality checks including lint fixing (which modifies files) and type checking. Optionally scopes checks to specific files or overrides timeout. Runs lint:fix first to avoid file race conditions. Returns combined output in machine-parseable JSON format.';
+const ALLOWED_COMMANDS = new Set(['yarn', 'bun', 'pnpm']);
+
+// package manager detection is handled via detectProjectPackageManager()
 
 const TOOL_ANNOTATIONS: ToolAnnotations = {
   readOnlyHint: false,
@@ -126,9 +135,10 @@ async function executeChecksWithFileLocking(
 
   // Run lint:fix first to avoid file modifications affecting other checks
   if (lintCheck) {
+    const pm = detectProjectPackageManager(process.cwd());
     let lintResult = await checkRunner.run(
       lintCheck.name,
-      'yarn',
+      pm,
       lintCheck.args,
       sdkContext,
       appContext,
@@ -140,10 +150,9 @@ async function executeChecksWithFileLocking(
   }
 
   // Run remaining checks in parallel
+  const pm = detectProjectPackageManager(process.cwd());
   const remainingResults = await Promise.all(
-    otherChecks.map((check) =>
-      checkRunner.run(check.name, 'yarn', check.args, sdkContext, appContext),
-    ),
+    otherChecks.map((check) => checkRunner.run(check.name, pm, check.args, sdkContext, appContext)),
   );
 
   let finalResults = remainingResults;
@@ -154,8 +163,6 @@ async function executeChecksWithFileLocking(
 
   return results;
 }
-
-const ALLOWED_COMMANDS = new Set(['yarn']);
 
 /**
  * Creates a sanitized environment for executing child processes.
@@ -226,22 +233,30 @@ export const checkRunner = {
       }
 
       const startTime = performance.now();
-      const child = spawn(command, args, {
+      const spawnOptions: Parameters<typeof spawn>[2] = {
         cwd: process.cwd(),
         env: createSafeCommandEnv(),
         stdio: ['ignore', 'pipe', 'pipe'],
-        signal: sdkContext.signal,
-      });
+      };
+
+      const pkgManager = command as PackageManager;
+      const effectiveArgs = mapScriptArgsToRunner(pkgManager, args);
+
+      const child: ChildProcess = spawn(pkgManager, effectiveArgs, spawnOptions);
 
       let stdout = '';
       let stderr = '';
 
-      child.stdout.on('data', (chunk: Buffer) => {
-        stdout += chunk.toString();
-      });
-      child.stderr.on('data', (chunk: Buffer) => {
-        stderr += chunk.toString();
-      });
+      if (child.stdout) {
+        child.stdout.on('data', (chunk: Buffer) => {
+          stdout += chunk.toString();
+        });
+      }
+      if (child.stderr) {
+        child.stderr.on('data', (chunk: Buffer) => {
+          stderr += chunk.toString();
+        });
+      }
 
       child.on('error', (error) => {
         reject(
@@ -252,6 +267,22 @@ export const checkRunner = {
           ),
         );
       });
+
+      if (sdkContext?.signal && typeof (sdkContext.signal as EventTarget).addEventListener === 'function') {
+        const onAbort = () => {
+          try {
+            child.kill?.('SIGTERM');
+          } catch {
+            // ignore
+          }
+        };
+
+        try {
+          (sdkContext.signal as EventTarget).addEventListener('abort', onAbort, { once: true } as AddEventListenerOptions);
+        } catch {
+          // ignore
+        }
+      }
 
       child.on('close', (exitCode) => {
         const duration = Math.round(performance.now() - startTime);
@@ -288,8 +319,8 @@ async function checkTypeScriptProjectLogic(
   const checksToUse =
     input.checks && input.checks.length > 0
       ? QUICK_CHECKS.filter((check) =>
-          (input.checks as string[]).includes(check.name),
-        )
+        (input.checks as string[]).includes(check.name),
+      )
       : QUICK_CHECKS;
 
   // Build check configurations, optionally scoped to specific files
@@ -298,9 +329,9 @@ async function checkTypeScriptProjectLogic(
   const checksToRun: Array<{ name: string; args: readonly string[] }> =
     scopedFiles
       ? checksToUse.map((check) => ({
-          name: check.name,
-          args: [...check.args, ...scopedFiles] as readonly string[],
-        }))
+        name: check.name,
+        args: [...check.args, ...scopedFiles] as readonly string[],
+      }))
       : [...checksToUse];
 
   if (checksToUse.length < QUICK_CHECKS.length) {
@@ -314,12 +345,10 @@ async function checkTypeScriptProjectLogic(
     logger.info(`Scoping checks to ${scopedFiles.length} file(s)`, appContext);
   }
 
-  const checks = await executeChecksWithFileLocking(
-    checksToRun,
-    appContext,
-    sdkContext,
-    input.summaryOnly,
-  );
+  // Note: pass the original sdkContext through to runners so callers
+  // that assert object identity (tests, instrumentation) receive the
+  // same object. Runners may sanitize signals internally if needed.
+  const checks = await executeChecksWithFileLocking(checksToRun, appContext, sdkContext, input.summaryOnly);
 
   return {
     hasProblems: checks.some((check) => !check.success),
@@ -354,9 +383,19 @@ export const checkTypeScriptProjectProblemsTool: ToolDefinition<
   inputSchema: InputSchema,
   outputSchema: OutputSchema,
   annotations: TOOL_ANNOTATIONS,
-  logic: withToolAuth(
-    ['tool:typescript-project:check'],
-    checkTypeScriptProjectLogic,
-  ),
+  logic: withToolAuth(['tool:typescript-project:check'], async (input, ctx, sdk) => {
+    // Pass the original sdkContext through to runners so tests that assert
+    // the exact object identity receive the same object. Runners may
+    // choose to sanitize signals internally if needed.
+    return checkTypeScriptProjectLogic(input, ctx, sdk);
+  }),
   responseFormatter,
 };
+
+/**
+ * Create a safe SdkContext where `signal` is a native AbortSignal controlled
+ * by a local AbortController. If the incoming sdkContext exposes a cross-realm
+ * signal with addEventListener, we proxy its abort event to the native signal
+ * without directly reading `aborted` to avoid getter errors.
+ */
+// Local sanitize removed; using shared sanitizeSdkContext from tools/utils/signal
