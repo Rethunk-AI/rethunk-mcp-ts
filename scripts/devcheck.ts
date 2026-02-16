@@ -211,17 +211,8 @@ const ROOT_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 // zod is pinned due to the MCP SDK's hard version requirement.
 const OUTDATED_ALLOWLIST = new Set(['zod']);
 
-// Define file extensions for linting and formatting
+// Define file extensions for linting
 const LINT_EXTS = ['.ts', '.tsx', '.js', '.jsx'];
-const FORMAT_EXTS = [
-  ...LINT_EXTS,
-  '.json',
-  '.md',
-  '.html',
-  '.css',
-  '.yaml',
-  '.yml',
-];
 
 /**
  * Optimization Helper: Determines the targets for a command.
@@ -330,31 +321,6 @@ const ALL_CHECKS: Check[] = [
     },
     tip: (c) =>
       `Run without ${c.bold('--no-fix')} to automatically fix issues.`,
-  },
-  {
-    name: 'Prettier',
-    flag: '--no-format',
-    canFix: true,
-    getCommand: (ctx, mode) => {
-      // We use '.' as the default target, assuming a .prettierignore file is present.
-      const targets = getTargets(ctx, FORMAT_EXTS, '.');
-      if (targets.length === 0) return null;
-
-      const command = [
-        path.join(ctx.rootDir, 'node_modules', '.bin', 'prettier'),
-        '--cache',
-        '--cache-location',
-        '.prettiercache',
-      ];
-      if (mode === 'fix') {
-        command.push('--write');
-      } else {
-        command.push('--check');
-      }
-      command.push(...targets);
-      return command;
-    },
-    tip: (c) => `Run without ${c.bold('--no-fix')} to fix formatting.`,
   },
   {
     name: 'TypeScript',
