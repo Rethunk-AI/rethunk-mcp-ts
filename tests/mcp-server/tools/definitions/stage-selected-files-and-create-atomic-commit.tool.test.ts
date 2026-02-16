@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { buildCachedPatchForRanges } from '../../../../src/utils/git/index.js';
 import {
-  buildCachedPatchForRanges,
   commitMessageRefiner,
   gitRunner,
   parseFileSpec,

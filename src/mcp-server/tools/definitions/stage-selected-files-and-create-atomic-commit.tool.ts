@@ -4,13 +4,12 @@
  * @module src/mcp-server/tools/definitions/stage-selected-files-and-create-atomic-commit
  */
 
-import { existsSync, readFileSync } from 'node:fs';
-import { spawn } from 'node:child_process';
 import { createOpenAI } from '@ai-sdk/openai';
-import type { ContentBlock } from '@modelcontextprotocol/sdk/types.js';
+import { existsSync, readFileSync } from 'node:fs';
 import { generateText } from 'ai';
+import { spawn } from 'node:child_process';
 import { z } from 'zod';
-
+import type { ContentBlock } from '@modelcontextprotocol/sdk/types.js';
 import { config } from '@/config/index.js';
 import type {
   SdkContext,
@@ -21,8 +20,10 @@ import { sanitizeSdkContext } from '@/mcp-server/tools/utils/signal.js';
 import { withToolAuth } from '@/mcp-server/transports/auth/lib/withAuth.js';
 import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
 import { type RequestContext, logger } from '@/utils/index.js';
-
-// Centralized AbortSignal shim is applied at startup; use `sanitizeSdkContext`.
+import {
+  buildCachedPatchForRanges,
+  type LineRange,
+} from '@/utils/git/index.js';
 
 const TOOL_NAME = 'stage_selected_specs_and_create_atomic_commit';
 const TOOL_TITLE = 'Stage Selected Specs and Create Atomic Commit';
@@ -102,23 +103,10 @@ type ParsedRangeFileSpec = {
 
 type ParsedFileSpec = ParsedWholeFileSpec | ParsedRangeFileSpec;
 
-type LineRange = {
-  startLine: number;
-  endLine: number;
-};
-
 type GitCommandResult = {
   exitCode: number;
   stdout: string;
   stderr: string;
-};
-
-type DiffBlock = {
-  oldStart: number;
-  newStart: number;
-  deletedLines: string[];
-  addedLines: string[];
-  patchLines: string[];
 };
 
 const RANGE_SPEC_PATTERN =
@@ -283,7 +271,7 @@ function groupParsedSpecs(parsedSpecs: ParsedFileSpec[]): {
   const rangeSpecsByFile = new Map<string, LineRange[]>();
 
   for (const spec of parsedSpecs) {
-    if (spec.kind === 'whole') {
+    if (spec.kind === "whole") {
       wholeFiles.add(spec.filePath);
       rangeSpecsByFile.delete(spec.filePath);
       continue;
@@ -309,300 +297,6 @@ function groupParsedSpecs(parsedSpecs: ParsedFileSpec[]): {
     wholeFiles: [...wholeFiles],
     rangeSpecsByFile,
   };
-}
-
-function parseHunkHeader(header: string): {
-  oldStart: number;
-  oldCount: number;
-  newStart: number;
-  newCount: number;
-} {
-  const match = /^@@\s+-(\d+)(?:,(\d+))?\s+\+(\d+)(?:,(\d+))?\s+@@/u.exec(
-    header,
-  );
-  if (!match) {
-    throw new McpError(
-      JsonRpcErrorCode.ValidationError,
-      `Invalid git hunk header: ${header}`,
-      { header },
-    );
-  }
-
-  const oldStartRaw = match[1];
-  const newStartRaw = match[3];
-  if (!oldStartRaw || !newStartRaw) {
-    throw new McpError(
-      JsonRpcErrorCode.ValidationError,
-      `Invalid git hunk header: ${header}`,
-      { header },
-    );
-  }
-
-  const oldStart = Number.parseInt(oldStartRaw, 10);
-  const oldCount = Number.parseInt(match[2] ?? '1', 10);
-  const newStart = Number.parseInt(newStartRaw, 10);
-  const newCount = Number.parseInt(match[4] ?? '1', 10);
-
-  return {
-    oldStart,
-    oldCount,
-    newStart,
-    newCount,
-  };
-}
-
-function getLine(lines: string[], index: number, filePath: string): string {
-  const value = lines[index];
-  if (value === undefined) {
-    throw new McpError(
-      JsonRpcErrorCode.ValidationError,
-      `Unexpected end of diff while processing ${filePath}.`,
-      { index, filePath },
-    );
-  }
-  return value;
-}
-
-function collectPrefixedLines(
-  lines: string[],
-  startIndex: number,
-  prefix: '-' | '+',
-  filePath: string,
-): { collected: string[]; nextIndex: number } {
-  const collected: string[] = [];
-  let index = startIndex;
-
-  while (index < lines.length) {
-    const line = getLine(lines, index, filePath);
-    if (!line.startsWith(prefix)) {
-      break;
-    }
-    collected.push(line);
-    index += 1;
-  }
-
-  return { collected, nextIndex: index };
-}
-
-function parseDiffBlocks(
-  hunkHeader: string,
-  hunkLines: string[],
-  filePath: string,
-): DiffBlock[] {
-  const parsedHeader = parseHunkHeader(hunkHeader);
-  let oldLine = parsedHeader.oldStart;
-  let newLine = parsedHeader.newStart;
-  const blocks: DiffBlock[] = [];
-  let lineIndex = 0;
-
-  while (lineIndex < hunkLines.length) {
-    const currentLine = getLine(hunkLines, lineIndex, filePath);
-
-    if (!currentLine) {
-      lineIndex += 1;
-      continue;
-    }
-
-    if (currentLine.startsWith('\\')) {
-      const previousBlock = blocks.at(-1);
-      if (previousBlock) {
-        previousBlock.patchLines.push(currentLine);
-      }
-      lineIndex += 1;
-      continue;
-    }
-
-    if (!currentLine.startsWith('-') && !currentLine.startsWith('+')) {
-      throw new McpError(
-        JsonRpcErrorCode.ValidationError,
-        `Unsupported diff line while staging range for ${filePath}.`,
-        { filePath, line: currentLine },
-      );
-    }
-
-    const blockStartOld = oldLine;
-    const blockStartNew = newLine;
-    const deletedResult = collectPrefixedLines(
-      hunkLines,
-      lineIndex,
-      '-',
-      filePath,
-    );
-    const deletedLines = deletedResult.collected;
-    lineIndex = deletedResult.nextIndex;
-    oldLine += deletedLines.length;
-
-    const addedResult = collectPrefixedLines(
-      hunkLines,
-      lineIndex,
-      '+',
-      filePath,
-    );
-    const addedLines = addedResult.collected;
-    lineIndex = addedResult.nextIndex;
-    newLine += addedLines.length;
-
-    const patchLines = [...deletedLines, ...addedLines];
-
-    if (deletedLines.length === 0 && addedLines.length === 0) {
-      throw new McpError(
-        JsonRpcErrorCode.ValidationError,
-        `Failed to parse diff block while staging range for ${filePath}.`,
-        { filePath, hunkHeader },
-      );
-    }
-
-    blocks.push({
-      oldStart: blockStartOld,
-      newStart: blockStartNew,
-      deletedLines,
-      addedLines,
-      patchLines,
-    });
-  }
-
-  return blocks;
-}
-
-type DiffHunk = {
-  header: string;
-  lines: string[];
-};
-
-function collectDiffHunks(diffLines: string[], filePath: string): DiffHunk[] {
-  const hunks: DiffHunk[] = [];
-  let index = 0;
-
-  while (index < diffLines.length) {
-    const line = getLine(diffLines, index, filePath);
-    if (!line.startsWith('@@')) {
-      index += 1;
-      continue;
-    }
-
-    const header = line;
-    index += 1;
-    const hunkLines: string[] = [];
-
-    while (index < diffLines.length) {
-      const hunkLine = getLine(diffLines, index, filePath);
-      if (hunkLine.startsWith('@@')) {
-        break;
-      }
-      hunkLines.push(hunkLine);
-      index += 1;
-    }
-
-    hunks.push({ header, lines: hunkLines });
-  }
-
-  return hunks;
-}
-
-function ensureBlockFullyContained(
-  block: DiffBlock,
-  ranges: LineRange[],
-  filePath: string,
-): void {
-  if (blockIsContainedByAnyRange(block, ranges)) {
-    return;
-  }
-
-  throw new McpError(
-    JsonRpcErrorCode.ValidationError,
-    `Range selection partially overlaps a diff block in ${filePath}. Expand the requested range to include full changed block(s).`,
-    {
-      filePath,
-      ranges,
-      blockStart: block.newStart,
-      blockEnd:
-        block.addedLines.length > 0
-          ? block.newStart + block.addedLines.length - 1
-          : block.newStart,
-    },
-  );
-}
-
-function blockIntersectsRange(block: DiffBlock, ranges: LineRange[]): boolean {
-  const affectedStart = block.newStart;
-  const affectedEnd =
-    block.addedLines.length > 0
-      ? block.newStart + block.addedLines.length - 1
-      : block.newStart;
-
-  return ranges.some(
-    (range) => range.startLine <= affectedEnd && range.endLine >= affectedStart,
-  );
-}
-
-function blockIsContainedByAnyRange(
-  block: DiffBlock,
-  ranges: LineRange[],
-): boolean {
-  const affectedStart = block.newStart;
-  const affectedEnd =
-    block.addedLines.length > 0
-      ? block.newStart + block.addedLines.length - 1
-      : block.newStart;
-
-  return ranges.some(
-    (range) => range.startLine <= affectedStart && range.endLine >= affectedEnd,
-  );
-}
-
-export function buildCachedPatchForRanges(
-  filePath: string,
-  unifiedDiff: string,
-  ranges: LineRange[],
-): string {
-  if (!unifiedDiff.trim()) {
-    throw new McpError(
-      JsonRpcErrorCode.ValidationError,
-      `No unstaged changes found for range staging in ${filePath}.`,
-      { filePath, ranges },
-    );
-  }
-
-  const diffLines = unifiedDiff.split(/\r?\n/u);
-  const selectedBlocks: DiffBlock[] = [];
-
-  const hunks = collectDiffHunks(diffLines, filePath);
-  for (const hunk of hunks) {
-    const blocks = parseDiffBlocks(hunk.header, hunk.lines, filePath);
-    for (const block of blocks) {
-      if (!blockIntersectsRange(block, ranges)) {
-        continue;
-      }
-
-      ensureBlockFullyContained(block, ranges, filePath);
-      selectedBlocks.push(block);
-    }
-  }
-
-  if (selectedBlocks.length === 0) {
-    throw new McpError(
-      JsonRpcErrorCode.ValidationError,
-      `Requested ranges do not overlap changed lines in ${filePath}.`,
-      { filePath, ranges },
-    );
-  }
-
-  const patchLines = [
-    `diff --git a/${filePath} b/${filePath}`,
-    `--- a/${filePath}`,
-    `+++ b/${filePath}`,
-  ];
-
-  for (const block of selectedBlocks) {
-    const oldCount = block.deletedLines.length;
-    const newCount = block.addedLines.length;
-    patchLines.push(
-      `@@ -${block.oldStart},${oldCount} +${block.newStart},${newCount} @@`,
-      ...block.patchLines,
-    );
-  }
-
-  return `${patchLines.join('\n')}\n`;
 }
 
 export const commitMessageRefiner = {
@@ -731,7 +425,7 @@ export const gitRunner = {
       if (
         sdkContext?.signal &&
         typeof (sdkContext.signal as EventTarget).addEventListener ===
-          'function'
+        'function'
       ) {
         const onAbort = () => {
           try {
