@@ -1,5 +1,106 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`Tool Schema Snapshots > Tool: check_typescript_project_for_problems > inputSchema JSON output should be stable 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "checks": {
+      "description": "Specific checks to run. If not provided, runs all checks: lint:fix (which modifies files), typecheck, and typecheck:scripts.",
+      "items": {
+        "enum": [
+          "lint:fix",
+          "typecheck",
+          "typecheck:scripts",
+        ],
+        "type": "string",
+      },
+      "type": "array",
+    },
+    "files": {
+      "description": "Specific files to check. If provided, scopes the linting and type checking to these files only.",
+      "items": {
+        "description": "File path to check",
+        "type": "string",
+      },
+      "type": "array",
+    },
+    "summaryOnly": {
+      "description": "If true, returns only exit codes and success status per check, omitting stdout/stderr. Useful for reducing output verbosity.",
+      "type": "boolean",
+    },
+    "timeout": {
+      "description": "Override timeout in milliseconds. Defaults to SDK context timeout. Use this for longer operations like running comprehensive tests.",
+      "maximum": 9007199254740991,
+      "minimum": 1,
+      "type": "integer",
+    },
+  },
+  "type": "object",
+}
+`;
+
+exports[`Tool Schema Snapshots > Tool: check_typescript_project_for_problems > outputSchema JSON output should be stable 1`] = `
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "checks": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "command": {
+            "type": "string",
+          },
+          "duration": {
+            "description": "Execution time in milliseconds",
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer",
+          },
+          "exitCode": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer",
+          },
+          "name": {
+            "type": "string",
+          },
+          "stderr": {
+            "type": "string",
+          },
+          "stdout": {
+            "type": "string",
+          },
+          "success": {
+            "type": "boolean",
+          },
+        },
+        "required": [
+          "name",
+          "command",
+          "exitCode",
+          "success",
+          "stdout",
+          "stderr",
+          "duration",
+        ],
+        "type": "object",
+      },
+      "type": "array",
+    },
+    "hasProblems": {
+      "type": "boolean",
+    },
+  },
+  "required": [
+    "hasProblems",
+    "checks",
+  ],
+  "type": "object",
+}
+`;
+
 exports[`Tool Schema Snapshots > Tool: stage_selected_specs_and_create_atomic_commit > inputSchema JSON output should be stable 1`] = `
 {
   "$schema": "http://json-schema.org/draft-07/schema#",

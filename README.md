@@ -1,7 +1,7 @@
 <div align="center">
   <h1>mcp-ts-template</h1>
   <p><b>Production-grade TypeScript template for building Model Context Protocol (MCP) servers. Ships with declarative tools/resources, robust error handling, DI, easy auth, optional OpenTelemetry, and first-class support for both local and edge (Cloudflare Workers) runtimes.</b>
-  <div>7 Tools • 2 Resources • 1 Prompt</div>
+  <div>2 Tools • 0 Resources • 1 Prompt</div>
   </p>
 </div>
 
@@ -70,38 +70,31 @@ This template follows a modular, domain-driven architecture with clear separatio
 
 ## 🛠️ Included Capabilities
 
-This template includes working examples to get you started.
+This server exposes a single, production-ready tool for atomic git operations.
 
 ### Tools
 
-| Tool                                | Description                                                              |
-| :---------------------------------- | :----------------------------------------------------------------------- |
-| **`template_echo_message`**         | Echoes a message back with optional formatting and repetition.           |
-| **`template_cat_fact`**             | Fetches a random cat fact from an external API.                          |
-| **`template_madlibs_elicitation`**  | Demonstrates elicitation by asking for words to complete a story.        |
-| **`template_code_review_sampling`** | Uses the LLM service to perform a simulated code review.                 |
-| **`template_image_test`**           | Returns a test image as a base64-encoded data URI.                       |
-| **`template_async_countdown`**      | Demonstrates MCP Tasks API with an async countdown timer (experimental). |
-| **`template_data_explorer`**        | Generates sample sales data with an interactive explorer UI (MCP Apps).  |
-
-### Resources
-
-| Resource               | URI                                    | Description                                                 |
-| :--------------------- | :------------------------------------- | :---------------------------------------------------------- |
-| **`echo`**             | `echo://{message}`                     | A simple resource that echoes back a message.               |
-| **`data-explorer-ui`** | `ui://template-data-explorer/app.html` | Interactive HTML app for the data explorer tool (MCP Apps). |
-
-### Prompts
-
-| Prompt            | Description                                                      |
-| :---------------- | :--------------------------------------------------------------- |
-| **`code-review`** | A structured prompt for guiding an LLM to perform a code review. |
+| Tool                                                | Description                                                                                                                                                                                                     |
+| :-------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`check_typescript_project_for_problems`**         | Runs quick local quality checks including lint fixing and type checking. Returns combined output in machine-parseable JSON format.                                                                              |
+| **`stage_selected_specs_and_create_atomic_commit`** | Stages specified files or line ranges and creates one atomic commit with GPT-5 Nano-validated conventional messages. Uses Vercel AI SDK to enforce why-focused commit reasoning. No push—only stage and commit. |
 
 ## 🚀 Getting Started
 
-### MCP Client Settings/Configuration
+### Prerequisites
 
-Add the following to your MCP Client configuration file (e.g., `cline_mcp_settings.json`).
+- [Bun v1.2.21](https://bun.sh/) or higher.
+- An OpenAI API key (required for the commit message validation feature). Get one [here](https://platform.openai.com/account/api-keys).
+
+### Installation & Configuration by IDE
+
+Choose your IDE and follow the corresponding setup steps.
+
+#### **VSCode + Cline Extension**
+
+1. Install the [Cline extension](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev) in VSCode.
+2. Open your VSCode settings and locate the Cline configuration file (usually at `~/.config/Code/User/globalStorage/saoudrizwan.claude-dev/cline_mcp_settings.json`).
+3. Add the following MCP server configuration:
 
 ```json
 {
@@ -113,62 +106,148 @@ Add the following to your MCP Client configuration file (e.g., `cline_mcp_settin
       "env": {
         "MCP_TRANSPORT_TYPE": "stdio",
         "MCP_LOG_LEVEL": "info",
-        "STORAGE_PROVIDER_TYPE": "filesystem",
-        "STORAGE_FILESYSTEM_PATH": "/path/to/your/storage"
+        "OPENAI_API_KEY": "sk-..."
       }
     }
   }
 }
 ```
 
-### Prerequisites
+#### **Cursor IDE + MCP Integration**
 
-- [Bun v1.2.21](https://bun.sh/) or higher.
+1. Open Cursor and navigate to **Settings → MCP**.
+2. Click **Add Server** and add the following configuration:
 
-### Installation
+```json
+{
+  "name": "mcp-ts-template",
+  "type": "stdio",
+  "command": "bunx",
+  "args": ["mcp-ts-template@latest"],
+  "env": {
+    "MCP_TRANSPORT_TYPE": "stdio",
+    "MCP_LOG_LEVEL": "info",
+    "OPENAI_API_KEY": "sk-..."
+  }
+}
+```
 
-1.  **Clone the repository:**
+1. Save and restart Cursor to enable the tool.
+
+#### **Claude Desktop**
+
+1. Locate your Claude Desktop configuration file:
+   - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+   - **Linux**: `~/.config/Claude/claude_desktop_config.json`
+
+2. Add the following MCP server configuration:
+
+```json
+{
+  "mcpServers": {
+    "mcp-ts-template": {
+      "command": "bunx",
+      "args": ["mcp-ts-template@latest"],
+      "env": {
+        "MCP_TRANSPORT_TYPE": "stdio",
+        "MCP_LOG_LEVEL": "info",
+        "OPENAI_API_KEY": "sk-..."
+      }
+    }
+  }
+}
+```
+
+1. Restart Claude Desktop to activate the integration.
+
+#### **Local Development (Direct Execution)**
+
+For development or testing without an IDE integration:
+
+```sh
+# Clone the repository
+git clone https://github.com/cyanheads/mcp-ts-template.git
+cd mcp-ts-template
+
+# Install dependencies
+bun install
+
+# Set environment variables
+export MCP_TRANSPORT_TYPE=stdio
+export MCP_LOG_LEVEL=info
+export OPENAI_API_KEY="sk-your-key-here"
+
+# Run the server
+bun start:stdio
+```
+
+### Environment Configuration Reference
+
+All MCP server instances require these key variables:
+
+| Variable             | Description                                                | Required | Example           |
+| :------------------- | :--------------------------------------------------------- | :------- | :---------------- |
+| `OPENAI_API_KEY`     | OpenAI API key for commit message validation (GPT-5 Nano). | ✅ Yes   | `sk-proj-...`     |
+| `MCP_TRANSPORT_TYPE` | Transport protocol for MCP communication.                  | No       | `stdio` (default) |
+| `MCP_LOG_LEVEL`      | Logging verbosity (`debug`, `info`, `warn`, `error`).      | No       | `info`            |
+
+**Important**: Never commit your `.env` file or API keys to version control. Use environment variables or secure secret management tools instead.
+
+### Installation (Local Development)
+
+1. **Clone the repository:**
 
 ```sh
 git clone https://github.com/cyanheads/mcp-ts-template.git
 ```
 
-2.  **Navigate into the directory:**
+1. **Navigate into the directory:**
 
 ```sh
 cd mcp-ts-template
 ```
 
-3.  **Install dependencies:**
+1. **Install dependencies:**
 
 ```sh
 bun install
 ```
 
+1. **Create a `.env` file and add your OpenAI key:**
+
+```sh
+cp .env.example .env  # If available, or create a new file
+echo "OPENAI_API_KEY=sk-your-key-here" >> .env
+```
+
 ## ⚙️ Configuration
 
-All configuration is centralized and validated at startup in `src/config/index.ts`. Key environment variables in your `.env` file include:
+All configuration is centralized and validated at startup in `src/config/index.ts`. Key environment variables include:
 
-| Variable                    | Description                                                                                                             | Default     |
-| :-------------------------- | :---------------------------------------------------------------------------------------------------------------------- | :---------- |
-| `MCP_TRANSPORT_TYPE`        | The transport to use: `stdio` or `http`.                                                                                | `http`      |
-| `MCP_HTTP_PORT`             | The port for the HTTP server.                                                                                           | `3010`      |
-| `MCP_HTTP_HOST`             | The hostname for the HTTP server.                                                                                       | `127.0.0.1` |
-| `MCP_AUTH_MODE`             | Authentication mode: `none`, `jwt`, or `oauth`.                                                                         | `none`      |
-| `MCP_AUTH_SECRET_KEY`       | **Required for `jwt` auth mode.** A 32+ character secret.                                                               | `(none)`    |
-| `OAUTH_ISSUER_URL`          | **Required for `oauth` auth mode.** URL of the OIDC provider.                                                           | `(none)`    |
-| `STORAGE_PROVIDER_TYPE`     | Storage backend: `in-memory`, `filesystem`, `supabase`, `surrealdb`, `cloudflare-d1`, `cloudflare-kv`, `cloudflare-r2`. | `in-memory` |
-| `STORAGE_FILESYSTEM_PATH`   | **Required for `filesystem` storage.** Path to the storage directory.                                                   | `(none)`    |
-| `SUPABASE_URL`              | **Required for `supabase` storage.** Your Supabase project URL.                                                         | `(none)`    |
-| `SUPABASE_SERVICE_ROLE_KEY` | **Required for `supabase` storage.** Your Supabase service role key.                                                    | `(none)`    |
-| `SURREALDB_URL`             | **Required for `surrealdb` storage.** SurrealDB endpoint (e.g., `wss://cloud.surrealdb.com/rpc`).                       | `(none)`    |
-| `SURREALDB_NAMESPACE`       | **Required for `surrealdb` storage.** SurrealDB namespace.                                                              | `(none)`    |
-| `SURREALDB_DATABASE`        | **Required for `surrealdb` storage.** SurrealDB database name.                                                          | `(none)`    |
-| `SURREALDB_USERNAME`        | **Optional for `surrealdb` storage.** Database username for authentication.                                             | `(none)`    |
-| `SURREALDB_PASSWORD`        | **Optional for `surrealdb` storage.** Database password for authentication.                                             | `(none)`    |
-| `OTEL_ENABLED`              | Set to `true` to enable OpenTelemetry.                                                                                  | `false`     |
-| `LOG_LEVEL`                 | The minimum level for logging (`debug`, `info`, `warn`, `error`).                                                       | `info`      |
-| `OPENROUTER_API_KEY`        | API key for OpenRouter LLM service.                                                                                     | `(none)`    |
+### Core Configuration
+
+| Variable                    | Description                                                                                                               | Default     | Required |
+| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------ | :---------- | :------- |
+| `OPENAI_API_KEY`            | OpenAI API key for commit message validation (GPT-5 Nano). Get from [here](https://platform.openai.com/account/api-keys). | `(none)`    | ✅ Yes   |
+| `MCP_TRANSPORT_TYPE`        | The transport to use: `stdio` or `http`.                                                                                  | `http`      | No       |
+| `MCP_HTTP_PORT`             | The port for the HTTP server.                                                                                             | `3010`      | No       |
+| `MCP_HTTP_HOST`             | The hostname for the HTTP server.                                                                                         | `127.0.0.1` | No       |
+| `MCP_AUTH_MODE`             | Authentication mode: `none`, `jwt`, or `oauth`.                                                                           | `none`      | No       |
+| `MCP_AUTH_SECRET_KEY`       | **Required for `jwt` auth mode.** A 32+ character secret.                                                                 | `(none)`    | No       |
+| `OAUTH_ISSUER_URL`          | **Required for `oauth` auth mode.** URL of the OIDC provider.                                                             | `(none)`    | No       |
+| `STORAGE_PROVIDER_TYPE`     | Storage backend: `in-memory`, `filesystem`, `supabase`, `surrealdb`, `cloudflare-d1`, `cloudflare-kv`, `cloudflare-r2`.   | `in-memory` | No       |
+| `STORAGE_FILESYSTEM_PATH`   | **Required for `filesystem` storage.** Path to the storage directory.                                                     | `(none)`    | No       |
+| `SUPABASE_URL`              | **Required for `supabase` storage.** Your Supabase project URL.                                                           | `(none)`    | No       |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Required for `supabase` storage.** Your Supabase service role key.                                                      | `(none)`    | No       |
+| `SURREALDB_URL`             | **Required for `surrealdb` storage.** SurrealDB endpoint (e.g., `wss://cloud.surrealdb.com/rpc`).                         | `(none)`    | No       |
+| `SURREALDB_NAMESPACE`       | **Required for `surrealdb` storage.** SurrealDB namespace.                                                                | `(none)`    | No       |
+| `SURREALDB_DATABASE`        | **Required for `surrealdb` storage.** SurrealDB database name.                                                            | `(none)`    | No       |
+| `SURREALDB_USERNAME`        | **Optional for `surrealdb` storage.** Database username for authentication.                                               | `(none)`    | No       |
+| `SURREALDB_PASSWORD`        | **Optional for `surrealdb` storage.** Database password for authentication.                                               | `(none)`    | No       |
+| `OTEL_ENABLED`              | Set to `true` to enable OpenTelemetry.                                                                                    | `false`     | No       |
+| `LOG_LEVEL`                 | The minimum level for logging (`debug`, `info`, `warn`, `error`).                                                         | `info`      | No       |
+| `OPENROUTER_API_KEY`        | API key for OpenRouter LLM service.                                                                                       | `(none)`    | No       |
 
 ### Authentication & Authorization
 
@@ -209,6 +288,7 @@ All configuration is centralized and validated at startup in `src/config/index.t
   ```
 
 - **Run checks and tests**:
+
   ```sh
   bun devcheck # Lints, formats, type-checks, and more
   bun run test # Runs the test suite (Do not use 'bun test' directly as it may not work correctly)
@@ -216,19 +296,19 @@ All configuration is centralized and validated at startup in `src/config/index.t
 
 ### Cloudflare Workers
 
-1.  **Build the Worker bundle**:
+1. **Build the Worker bundle**:
 
 ```sh
 bun build:worker
 ```
 
-2.  **Run locally with Wrangler**:
+1. **Run locally with Wrangler**:
 
 ```sh
 bun deploy:dev
 ```
 
-3.  **Deploy to Cloudflare**:
+1. **Deploy to Cloudflare**:
 
 ```sh
 bun deploy:prod

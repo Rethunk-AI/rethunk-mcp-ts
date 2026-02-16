@@ -6,6 +6,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { allToolDefinitions } from '@/mcp-server/tools/definitions/index.js';
+import { checkTypeScriptProjectProblemsTool } from '@/mcp-server/tools/definitions/check-typescript-project-problems.tool.js';
 import { stageSelectedFilesAndCreateAtomicCommitTool } from '@/mcp-server/tools/definitions/stage-selected-files-and-create-atomic-commit.tool.js';
 
 describe('Tool Definitions Barrel Export', () => {
@@ -14,13 +15,13 @@ describe('Tool Definitions Barrel Export', () => {
     expect(allToolDefinitions.length).toBeGreaterThan(0);
   });
 
-  it('should expose only the stage-and-commit tool', () => {
-    expect(allToolDefinitions).toHaveLength(1);
-    expect(allToolDefinitions[0]).toBe(
-      stageSelectedFilesAndCreateAtomicCommitTool,
+  it('should expose the TypeScript checking and stage-and-commit tools', () => {
+    expect(allToolDefinitions).toHaveLength(2);
+    expect(allToolDefinitions).toContain(
+      checkTypeScriptProjectProblemsTool,
     );
-    expect(allToolDefinitions[0]?.name).toBe(
-      'stage_selected_specs_and_create_atomic_commit',
+    expect(allToolDefinitions).toContain(
+      stageSelectedFilesAndCreateAtomicCommitTool,
     );
   });
 
