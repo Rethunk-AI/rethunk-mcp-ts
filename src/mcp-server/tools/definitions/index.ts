@@ -10,6 +10,4 @@ import { checkTypeScriptProjectProblemsTool } from './check-typescript-project-p
 /**
  * An array containing all tool definitions for easy iteration and registration.
  */
-export const allToolDefinitions = [
-  checkTypeScriptProjectProblemsTool,
-];
+export const allToolDefinitions = [checkTypeScriptProjectProblemsTool];
