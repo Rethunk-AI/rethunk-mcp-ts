@@ -5,6 +5,18 @@ exports[`Tool Schema Snapshots > Tool: check_typescript_project_for_problems > i
   "$schema": "http://json-schema.org/draft-07/schema#",
   "additionalProperties": false,
   "properties": {
+    "checks": {
+      "description": "Specific checks to run. If not provided, runs all checks: lint:fix (which modifies files), typecheck, and typecheck:scripts.",
+      "items": {
+        "enum": [
+          "lint:fix",
+          "typecheck",
+          "typecheck:scripts",
+        ],
+        "type": "string",
+      },
+      "type": "array",
+    },
     "files": {
       "description": "Specific files to check. If provided, scopes the linting and type checking to these files only.",
       "items": {
@@ -12,6 +24,10 @@ exports[`Tool Schema Snapshots > Tool: check_typescript_project_for_problems > i
         "type": "string",
       },
       "type": "array",
+    },
+    "summaryOnly": {
+      "description": "If true, returns only exit codes and success status per check, omitting stdout/stderr. Useful for reducing output verbosity.",
+      "type": "boolean",
     },
     "timeout": {
       "description": "Override timeout in milliseconds. Defaults to SDK context timeout. Use this for longer operations like running comprehensive tests.",
@@ -35,6 +51,12 @@ exports[`Tool Schema Snapshots > Tool: check_typescript_project_for_problems > o
         "properties": {
           "command": {
             "type": "string",
+          },
+          "duration": {
+            "description": "Execution time in milliseconds",
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer",
           },
           "exitCode": {
             "maximum": 9007199254740991,
@@ -61,6 +83,7 @@ exports[`Tool Schema Snapshots > Tool: check_typescript_project_for_problems > o
           "success",
           "stdout",
           "stderr",
+          "duration",
         ],
         "type": "object",
       },

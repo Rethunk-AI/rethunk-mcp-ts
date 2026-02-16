@@ -42,6 +42,18 @@ const InputSchema = z.object({
     .describe(
       'Override timeout in milliseconds. Defaults to SDK context timeout. Use this for longer operations like running comprehensive tests.',
     ),
+  checks: z
+    .array(z.enum(['lint:fix', 'typecheck', 'typecheck:scripts']))
+    .optional()
+    .describe(
+      'Specific checks to run. If not provided, runs all checks: lint:fix (which modifies files), typecheck, and typecheck:scripts.',
+    ),
+  summaryOnly: z
+    .boolean()
+    .optional()
+    .describe(
+      'If true, returns only exit codes and success status per check, omitting stdout/stderr. Useful for reducing output verbosity.',
+    ),
 });
 
 const CheckResultSchema = z.object({
@@ -51,6 +63,7 @@ const CheckResultSchema = z.object({
   success: z.boolean(),
   stdout: z.string(),
   stderr: z.string(),
+  duration: z.number().int().min(0).describe('Execution time in milliseconds'),
 });
 
 const OutputSchema = z.object({
@@ -76,17 +89,34 @@ const QUICK_CHECKS = [
 ] as const;
 
 /**
+ * Strips stdout and stderr from a check result, keeping only metadata and duration.
+ * @param result - The full check result.
+ * @returns Check result with empty stdout/stderr for summary mode.
+ */
+function stripOutputFields(
+  result: z.infer<typeof CheckResultSchema>,
+): z.infer<typeof CheckResultSchema> {
+  return {
+    ...result,
+    stdout: '',
+    stderr: '',
+  };
+}
+
+/**
  * Runs lint:fix sequentially before other checks to avoid file race conditions,
  * then runs remaining checks in parallel.
  * @param checks - Array of check definitions to execute.
  * @param appContext - Application context for logging.
  * @param sdkContext - SDK context containing abort signal.
+ * @param summaryOnly - If true, omit stdout/stderr from results.
  * @returns Array of check results with lint:fix executed first.
  */
 async function executeChecksWithFileLocking(
   checks: ReadonlyArray<{ name: string; args: readonly string[] }>,
   appContext: RequestContext,
   sdkContext: SdkContext,
+  summaryOnly?: boolean,
 ): Promise<Array<z.infer<typeof CheckResultSchema>>> {
   const results: Array<z.infer<typeof CheckResultSchema>> = [];
 
@@ -96,13 +126,16 @@ async function executeChecksWithFileLocking(
 
   // Run lint:fix first to avoid file modifications affecting other checks
   if (lintCheck) {
-    const lintResult = await checkRunner.run(
+    let lintResult = await checkRunner.run(
       lintCheck.name,
       'yarn',
       lintCheck.args,
       sdkContext,
       appContext,
     );
+    if (summaryOnly) {
+      lintResult = stripOutputFields(lintResult);
+    }
     results.push(lintResult);
   }
 
@@ -112,7 +145,12 @@ async function executeChecksWithFileLocking(
       checkRunner.run(check.name, 'yarn', check.args, sdkContext, appContext),
     ),
   );
-  results.push(...remainingResults);
+
+  let finalResults = remainingResults;
+  if (summaryOnly) {
+    finalResults = remainingResults.map((result) => stripOutputFields(result));
+  }
+  results.push(...finalResults);
 
   return results;
 }
@@ -154,17 +192,19 @@ function createSafeCommandEnv(): Record<string, string> {
 /**
  * Utility object for running validation checks via spawned child processes.
  * Handles command validation, process execution, and output capture for TypeScript project checks.
+ * Measures execution time and returns duration metrics.
  */
 export const checkRunner = {
   /**
    * Executes a check command (e.g., yarn lint:fix, yarn typecheck) and captures output.
    * Uses the SDK context's abort signal for cancellation (respects framework timeout settings).
+   * Measures execution time in milliseconds.
    * @param checkName - Human-readable name of the check (e.g., "lint:fix").
    * @param command - The command to execute (must be in ALLOWED_COMMANDS).
    * @param args - Arguments to pass to the command.
    * @param sdkContext - SDK context containing abort signal for cancellation.
    * @param appContext - Application context for logging and request tracking.
-   * @returns Promise resolving to the check result with exit code, success status, and captured output.
+   * @returns Promise resolving to the check result with exit code, success status, duration, and captured output.
    */
   run: (
     checkName: string,
@@ -185,6 +225,7 @@ export const checkRunner = {
         return;
       }
 
+      const startTime = performance.now();
       const child = spawn(command, args, {
         cwd: process.cwd(),
         env: createSafeCommandEnv(),
@@ -213,6 +254,7 @@ export const checkRunner = {
       });
 
       child.on('close', (exitCode) => {
+        const duration = Math.round(performance.now() - startTime);
         resolve({
           name: checkName,
           command: `${command} ${args.join(' ')}`,
@@ -220,6 +262,7 @@ export const checkRunner = {
           success: exitCode === 0,
           stdout: stdout.trim(),
           stderr: stderr.trim(),
+          duration,
         });
       });
     }),
@@ -228,8 +271,8 @@ export const checkRunner = {
 /**
  * Core logic for executing TypeScript project quality checks.
  * Runs lint:fix first (sequentially) to avoid file modifications, then other checks in parallel.
- * Optionally scopes checks to specific files.
- * @param input - Tool input with optional files and timeout overrides.
+ * Optionally scopes checks to specific files or selects specific checks to run.
+ * @param input - Tool input with optional files, timeout, checks selection, and summaryOnly mode.
  * @param appContext - Application context for logging and request tracking.
  * @param sdkContext - SDK context containing abort signal for cancellation.
  * @returns Promise resolving to combined check results with overall problem status.
@@ -241,16 +284,31 @@ async function checkTypeScriptProjectLogic(
 ): Promise<TypeScriptProjectCheckResponse> {
   logger.info('Running quick TypeScript project checks.', appContext);
 
+  // Determine which checks to run (default to all)
+  const checksToUse =
+    input.checks && input.checks.length > 0
+      ? QUICK_CHECKS.filter((check) =>
+          (input.checks as string[]).includes(check.name),
+        )
+      : QUICK_CHECKS;
+
   // Build check configurations, optionally scoped to specific files
   const scopedFiles =
     input.files && input.files.length > 0 ? input.files : null;
   const checksToRun: Array<{ name: string; args: readonly string[] }> =
     scopedFiles
-      ? QUICK_CHECKS.map((check) => ({
+      ? checksToUse.map((check) => ({
           name: check.name,
           args: [...check.args, ...scopedFiles] as readonly string[],
         }))
-      : [...QUICK_CHECKS];
+      : [...checksToUse];
+
+  if (checksToUse.length < QUICK_CHECKS.length) {
+    logger.info(
+      `Running ${checksToUse.length} of ${QUICK_CHECKS.length} available checks`,
+      appContext,
+    );
+  }
 
   if (scopedFiles) {
     logger.info(`Scoping checks to ${scopedFiles.length} file(s)`, appContext);
@@ -260,6 +318,7 @@ async function checkTypeScriptProjectLogic(
     checksToRun,
     appContext,
     sdkContext,
+    input.summaryOnly,
   );
 
   return {
