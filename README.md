@@ -94,7 +94,10 @@ Choose your IDE and follow the corresponding setup steps.
 
 1. Install the [Cline extension](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev) in VSCode.
 2. Open your VSCode settings and locate the Cline configuration file (usually at `~/.config/Code/User/globalStorage/saoudrizwan.claude-dev/cline_mcp_settings.json`).
-3. Add the following MCP server configuration:
+
+**Option A: Using Published Registry (easiest)**
+
+1. Add the following MCP server configuration:
 
 ```json
 {
@@ -113,10 +116,43 @@ Choose your IDE and follow the corresponding setup steps.
 }
 ```
 
+**Option B: Using Local Clone (for development)**
+
+1. First, clone the repository and build it:
+
+```sh
+git clone https://github.com/Rethunk-Tech/rethunk-mcp-ts.git /path/to/local/rethunk-mcp-ts
+cd /path/to/local/rethunk-mcp-ts
+bun install
+bun rebuild
+```
+
+1. Then add this configuration, replacing `/path/to/local/rethunk-mcp-ts` with your actual path:
+
+```json
+{
+  "mcpServers": {
+    "rethunk-mcp-typescript": {
+      "type": "stdio",
+      "command": "bun",
+      "args": ["--cwd", "/path/to/local/rethunk-mcp-ts", "start:stdio"],
+      "env": {
+        "MCP_TRANSPORT_TYPE": "stdio",
+        "MCP_LOG_LEVEL": "info",
+        "OPENAI_API_KEY": "sk-..."
+      }
+    }
+  }
+}
+```
+
 #### **Cursor IDE + MCP Integration**
 
 1. Open Cursor and navigate to **Settings → MCP**.
-2. Click **Add Server** and add the following configuration:
+
+**Option A: Using Published Registry (easiest)**
+
+1. Click **Add Server** and add the following configuration:
 
 ```json
 {
@@ -124,6 +160,33 @@ Choose your IDE and follow the corresponding setup steps.
   "type": "stdio",
   "command": "bunx",
   "args": ["rethunk-mcp-typescript@latest"],
+  "env": {
+    "MCP_TRANSPORT_TYPE": "stdio",
+    "MCP_LOG_LEVEL": "info",
+    "OPENAI_API_KEY": "sk-..."
+  }
+}
+```
+
+**Option B: Using Local Clone (for development)**
+
+1. First, clone the repository and build it:
+
+```sh
+git clone https://github.com/Rethunk-Tech/rethunk-mcp-ts.git /path/to/local/rethunk-mcp-ts
+cd /path/to/local/rethunk-mcp-ts
+bun install
+bun rebuild
+```
+
+1. Then click **Add Server** and add this configuration, replacing `/path/to/local/rethunk-mcp-ts` with your actual path:
+
+```json
+{
+  "name": "rethunk-mcp-typescript",
+  "type": "stdio",
+  "command": "bun",
+  "args": ["--cwd", "/path/to/local/rethunk-mcp-ts", "start:stdio"],
   "env": {
     "MCP_TRANSPORT_TYPE": "stdio",
     "MCP_LOG_LEVEL": "info",
@@ -141,7 +204,9 @@ Choose your IDE and follow the corresponding setup steps.
    - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
    - **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
-2. Add the following MCP server configuration:
+**Option A: Using Published Registry (easiest)**
+
+1. Add the following MCP server configuration:
 
 ```json
 {
@@ -149,6 +214,35 @@ Choose your IDE and follow the corresponding setup steps.
     "rethunk-mcp-typescript": {
       "command": "bunx",
       "args": ["rethunk-mcp-typescript@latest"],
+      "env": {
+        "MCP_TRANSPORT_TYPE": "stdio",
+        "MCP_LOG_LEVEL": "info",
+        "OPENAI_API_KEY": "sk-..."
+      }
+    }
+  }
+}
+```
+
+**Option B: Using Local Clone (for development)**
+
+1. First, clone the repository and build it:
+
+```sh
+git clone https://github.com/Rethunk-Tech/rethunk-mcp-ts.git /path/to/local/rethunk-mcp-ts
+cd /path/to/local/rethunk-mcp-ts
+bun install
+bun rebuild
+```
+
+1. Then add this configuration, replacing `/path/to/local/rethunk-mcp-ts` with your actual path:
+
+```json
+{
+  "mcpServers": {
+    "rethunk-mcp-typescript": {
+      "command": "bun",
+      "args": ["--cwd", "/path/to/local/rethunk-mcp-ts", "start:stdio"],
       "env": {
         "MCP_TRANSPORT_TYPE": "stdio",
         "MCP_LOG_LEVEL": "info",
@@ -167,11 +261,14 @@ For development or testing without an IDE integration:
 
 ```sh
 # Clone the repository
-git clone https://github.com/cyanheads/mcp-ts-template.git
-cd mcp-ts-template
+git clone https://github.com/Rethunk-Tech/rethunk-mcp-ts.git
+cd rethunk-mcp-ts
 
 # Install dependencies
 bun install
+
+# Build the server
+bun rebuild
 
 # Set environment variables
 export MCP_TRANSPORT_TYPE=stdio
@@ -212,6 +309,12 @@ cd rethunk-mcp-ts
 
 ```sh
 bun install
+```
+
+1. **Build the server:**
+
+```sh
+bun rebuild
 ```
 
 1. **Create a `.env` file and add your OpenAI key:**
