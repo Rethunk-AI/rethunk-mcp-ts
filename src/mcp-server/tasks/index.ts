@@ -7,15 +7,15 @@
  */
 
 // Core types and implementations
-export * from './core/taskTypes.js';
-export { TaskManager } from './core/taskManager.js';
+export * from "./core/taskTypes.js";
+export { TaskManager } from "./core/taskManager.js";
 export {
-  StorageBackedTaskStore,
-  type StorageBackedTaskStoreOptions,
-} from './core/storageBackedTaskStore.js';
+	StorageBackedTaskStore,
+	type StorageBackedTaskStoreOptions,
+} from "./core/storageBackedTaskStore.js";
 
 // Task tool definition utilities
 export {
-  type TaskToolDefinition,
-  isTaskToolDefinition,
-} from './utils/taskToolDefinition.js';
+	type TaskToolDefinition,
+	isTaskToolDefinition,
+} from "./utils/taskToolDefinition.js";

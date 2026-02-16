@@ -5,23 +5,23 @@
  */
 
 export interface RuntimeCapabilities {
-  isNode: boolean;
-  isWorkerLike: boolean;
-  isBrowserLike: boolean;
-  hasProcess: boolean;
-  hasBuffer: boolean;
-  hasTextEncoder: boolean;
-  hasPerformanceNow: boolean;
+	isNode: boolean;
+	isWorkerLike: boolean;
+	isBrowserLike: boolean;
+	hasProcess: boolean;
+	hasBuffer: boolean;
+	hasTextEncoder: boolean;
+	hasPerformanceNow: boolean;
 }
 
 // Best-effort static detection without throwing in restricted envs
 const safeHas = (key: string): boolean => {
-  try {
-    // @ts-expect-error index access on globalThis
-    return typeof globalThis[key] !== 'undefined';
-  } catch {
-    return false;
-  }
+	try {
+		// @ts-expect-error index access on globalThis
+		return typeof globalThis[key] !== "undefined";
+	} catch {
+		return false;
+	}
 };
 
 /**
@@ -29,16 +29,16 @@ const safeHas = (key: string): boolean => {
  * Uses try-catch to handle environments where property access might be restricted.
  */
 const hasNodeVersion = (): boolean => {
-  try {
-    return (
-      typeof process !== 'undefined' &&
-      typeof process.versions === 'object' &&
-      process.versions !== null &&
-      typeof process.versions.node === 'string'
-    );
-  } catch {
-    return false;
-  }
+	try {
+		return (
+			typeof process !== "undefined" &&
+			typeof process.versions === "object" &&
+			process.versions !== null &&
+			typeof process.versions.node === "string"
+		);
+	} catch {
+		return false;
+	}
 };
 
 /**
@@ -46,21 +46,21 @@ const hasNodeVersion = (): boolean => {
  * Uses try-catch to handle environments where property access might be restricted.
  */
 const hasPerformanceNowFunction = (): boolean => {
-  try {
-    return (
-      typeof globalThis.performance === 'object' &&
-      globalThis.performance !== null &&
-      typeof globalThis.performance.now === 'function'
-    );
-  } catch {
-    return false;
-  }
+	try {
+		return (
+			typeof globalThis.performance === "object" &&
+			globalThis.performance !== null &&
+			typeof globalThis.performance.now === "function"
+		);
+	} catch {
+		return false;
+	}
 };
 
 const isNode = hasNodeVersion();
-const hasProcess = typeof process !== 'undefined';
-const hasBuffer = typeof Buffer !== 'undefined';
-const hasTextEncoder = safeHas('TextEncoder');
+const hasProcess = typeof process !== "undefined";
+const hasBuffer = typeof Buffer !== "undefined";
+const hasTextEncoder = safeHas("TextEncoder");
 const hasPerformanceNow = hasPerformanceNowFunction();
 
 /**
@@ -68,23 +68,23 @@ const hasPerformanceNow = hasPerformanceNowFunction();
  * Cloudflare Workers and other worker environments expose this.
  */
 const hasWorkerGlobalScope = (): boolean => {
-  try {
-    return 'WorkerGlobalScope' in globalThis;
-  } catch {
-    return false;
-  }
+	try {
+		return "WorkerGlobalScope" in globalThis;
+	} catch {
+		return false;
+	}
 };
 
 // Cloudflare Workers expose "Web Worker"-like environment (self, caches, fetch, etc.)
 const isWorkerLike = !isNode && hasWorkerGlobalScope();
-const isBrowserLike = !isNode && !isWorkerLike && safeHas('window');
+const isBrowserLike = !isNode && !isWorkerLike && safeHas("window");
 
 export const runtimeCaps: RuntimeCapabilities = {
-  isNode,
-  isWorkerLike,
-  isBrowserLike,
-  hasProcess,
-  hasBuffer,
-  hasTextEncoder,
-  hasPerformanceNow,
+	isNode,
+	isWorkerLike,
+	isBrowserLike,
+	hasProcess,
+	hasBuffer,
+	hasTextEncoder,
+	hasPerformanceNow,
 };

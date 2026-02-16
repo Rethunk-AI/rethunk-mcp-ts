@@ -5,30 +5,30 @@
  * it defaults to `in-memory` to ensure compatibility.
  * @module src/storage/core/storageFactory
  */
-import { container } from 'tsyringe';
+import { container } from "tsyringe";
 import type {
-  R2Bucket,
-  KVNamespace,
-  D1Database,
-} from '@cloudflare/workers-types';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type Surreal from 'surrealdb';
+	R2Bucket,
+	KVNamespace,
+	D1Database,
+} from "@cloudflare/workers-types";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type Surreal from "surrealdb";
 
-import type { AppConfig } from '@/config/index.js';
-import type { Database } from '@/storage/providers/supabase/supabase.types.js';
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
-import type { IStorageProvider } from '@/storage/core/IStorageProvider.js';
-import { FileSystemProvider } from '@/storage/providers/fileSystem/fileSystemProvider.js';
-import { InMemoryProvider } from '@/storage/providers/inMemory/inMemoryProvider.js';
-import { SupabaseProvider } from '@/storage/providers/supabase/supabaseProvider.js';
-import { SurrealKvProvider } from '@/storage/providers/surrealdb/kv/surrealKvProvider.js';
-import { R2Provider } from '@/storage/providers/cloudflare/r2Provider.js';
-import { KvProvider } from '@/storage/providers/cloudflare/kvProvider.js';
-import { D1Provider } from '@/storage/providers/cloudflare/d1Provider.js';
-import { logger, requestContextService } from '@/utils/index.js';
+import type { AppConfig } from "@/config/index.js";
+import type { Database } from "@/storage/providers/supabase/supabase.types.js";
+import { JsonRpcErrorCode, McpError } from "@/types-global/errors.js";
+import type { IStorageProvider } from "@/storage/core/IStorageProvider.js";
+import { FileSystemProvider } from "@/storage/providers/fileSystem/fileSystemProvider.js";
+import { InMemoryProvider } from "@/storage/providers/inMemory/inMemoryProvider.js";
+import { SupabaseProvider } from "@/storage/providers/supabase/supabaseProvider.js";
+import { SurrealKvProvider } from "@/storage/providers/surrealdb/kv/surrealKvProvider.js";
+import { R2Provider } from "@/storage/providers/cloudflare/r2Provider.js";
+import { KvProvider } from "@/storage/providers/cloudflare/kvProvider.js";
+import { D1Provider } from "@/storage/providers/cloudflare/d1Provider.js";
+import { logger, requestContextService } from "@/utils/index.js";
 
 const isServerless =
-  typeof process === 'undefined' || process.env.IS_SERVERLESS === 'true';
+	typeof process === "undefined" || process.env.IS_SERVERLESS === "true";
 
 /**
  * Optional dependencies for storage provider creation.
@@ -36,16 +36,16 @@ const isServerless =
  * and Worker environments where DI container may not be available.
  */
 export interface StorageFactoryDeps {
-  /** Pre-configured Supabase client */
-  readonly supabaseClient?: SupabaseClient<Database>;
-  /** Pre-configured SurrealDB client */
-  readonly surrealdbClient?: Surreal;
-  /** Cloudflare R2 bucket binding */
-  readonly r2Bucket?: R2Bucket;
-  /** Cloudflare KV namespace binding */
-  readonly kvNamespace?: KVNamespace;
-  /** Cloudflare D1 database binding */
-  readonly d1Database?: D1Database;
+	/** Pre-configured Supabase client */
+	readonly supabaseClient?: SupabaseClient<Database>;
+	/** Pre-configured SurrealDB client */
+	readonly surrealdbClient?: Surreal;
+	/** Cloudflare R2 bucket binding */
+	readonly r2Bucket?: R2Bucket;
+	/** Cloudflare KV namespace binding */
+	readonly kvNamespace?: KVNamespace;
+	/** Cloudflare D1 database binding */
+	readonly d1Database?: D1Database;
 }
 
 /**
@@ -53,18 +53,18 @@ export interface StorageFactoryDeps {
  * Throws a ConfigurationError if the binding is not present.
  */
 function getGlobalBinding<T>(
-  key: string,
-  context: ReturnType<typeof requestContextService.createRequestContext>,
+	key: string,
+	context: ReturnType<typeof requestContextService.createRequestContext>,
 ): T {
-  const g = globalThis as Record<string, unknown>;
-  if (!(key in g) || g[key] == null) {
-    throw new McpError(
-      JsonRpcErrorCode.ConfigurationError,
-      `${key} binding not available in globalThis. Ensure wrangler.toml is configured correctly.`,
-      context,
-    );
-  }
-  return g[key] as T;
+	const g = globalThis as Record<string, unknown>;
+	if (!(key in g) || g[key] == null) {
+		throw new McpError(
+			JsonRpcErrorCode.ConfigurationError,
+			`${key} binding not available in globalThis. Ensure wrangler.toml is configured correctly.`,
+			context,
+		);
+	}
+	return g[key] as T;
 }
 
 /**
@@ -104,128 +104,128 @@ function getGlobalBinding<T>(
  * ```
  */
 export function createStorageProvider(
-  config: AppConfig,
-  deps: StorageFactoryDeps = {},
+	config: AppConfig,
+	deps: StorageFactoryDeps = {},
 ): IStorageProvider {
-  const context = requestContextService.createRequestContext({
-    operation: 'createStorageProvider',
-  });
+	const context = requestContextService.createRequestContext({
+		operation: "createStorageProvider",
+	});
 
-  const providerType = config.storage.providerType;
+	const providerType = config.storage.providerType;
 
-  if (
-    isServerless &&
-    ![
-      'in-memory',
-      'surrealdb',
-      'cloudflare-r2',
-      'cloudflare-kv',
-      'cloudflare-d1',
-    ].includes(providerType)
-  ) {
-    logger.warning(
-      `Forcing 'in-memory' storage provider in serverless environment (configured: ${providerType}).`,
-      context,
-    );
-    return new InMemoryProvider();
-  }
+	if (
+		isServerless &&
+		![
+			"in-memory",
+			"surrealdb",
+			"cloudflare-r2",
+			"cloudflare-kv",
+			"cloudflare-d1",
+		].includes(providerType)
+	) {
+		logger.warning(
+			`Forcing 'in-memory' storage provider in serverless environment (configured: ${providerType}).`,
+			context,
+		);
+		return new InMemoryProvider();
+	}
 
-  logger.info(`Creating storage provider of type: ${providerType}`, context);
+	logger.info(`Creating storage provider of type: ${providerType}`, context);
 
-  switch (providerType) {
-    case 'in-memory':
-      return new InMemoryProvider();
-    case 'filesystem':
-      if (!config.storage.filesystemPath) {
-        throw new McpError(
-          JsonRpcErrorCode.ConfigurationError,
-          'STORAGE_FILESYSTEM_PATH must be set for the filesystem storage provider.',
-          context,
-        );
-      }
-      return new FileSystemProvider(config.storage.filesystemPath);
-    case 'supabase':
-      if (!config.supabase?.url || !config.supabase?.serviceRoleKey) {
-        throw new McpError(
-          JsonRpcErrorCode.ConfigurationError,
-          'SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set for the supabase storage provider.',
-          context,
-        );
-      }
-      if (deps.supabaseClient) {
-        return new SupabaseProvider(deps.supabaseClient);
-      }
-      // Fallback to DI container (backward-compatible)
-      return container.resolve(SupabaseProvider);
-    case 'surrealdb':
-      if (
-        !config.surrealdb?.url ||
-        !config.surrealdb?.namespace ||
-        !config.surrealdb?.database
-      ) {
-        throw new McpError(
-          JsonRpcErrorCode.ConfigurationError,
-          'SURREALDB_URL, SURREALDB_NAMESPACE, and SURREALDB_DATABASE must be set for the surrealdb storage provider.',
-          context,
-        );
-      }
-      if (deps.surrealdbClient) {
-        return new SurrealKvProvider(
-          deps.surrealdbClient,
-          config.surrealdb.tableName,
-        );
-      }
-      // Fallback to DI container
-      return container.resolve(SurrealKvProvider);
-    case 'cloudflare-r2':
-      if (isServerless) {
-        if (deps.r2Bucket) {
-          return new R2Provider(deps.r2Bucket);
-        }
-        const r2Binding = getGlobalBinding<R2Bucket>('R2_BUCKET', context);
-        return new R2Provider(r2Binding);
-      }
-      throw new McpError(
-        JsonRpcErrorCode.ConfigurationError,
-        'Cloudflare R2 storage is only available in a Cloudflare Worker environment.',
-        context,
-      );
-    case 'cloudflare-kv':
-      if (isServerless) {
-        if (deps.kvNamespace) {
-          return new KvProvider(deps.kvNamespace);
-        }
-        const kvBinding = getGlobalBinding<KVNamespace>(
-          'KV_NAMESPACE',
-          context,
-        );
-        return new KvProvider(kvBinding);
-      }
-      throw new McpError(
-        JsonRpcErrorCode.ConfigurationError,
-        'Cloudflare KV storage is only available in a Cloudflare Worker environment.',
-        context,
-      );
-    case 'cloudflare-d1':
-      if (isServerless) {
-        if (deps.d1Database) {
-          return new D1Provider(deps.d1Database);
-        }
-        const d1Binding = getGlobalBinding<D1Database>('DB', context);
-        return new D1Provider(d1Binding);
-      }
-      throw new McpError(
-        JsonRpcErrorCode.ConfigurationError,
-        'Cloudflare D1 storage is only available in a Cloudflare Worker environment.',
-        context,
-      );
-    default: {
-      const exhaustiveCheck: never = providerType;
-      throw new McpError(
-        JsonRpcErrorCode.ConfigurationError,
-        `Unhandled storage provider type: ${String(exhaustiveCheck)}`,
-        context,
-      );
-    }
-  }
+	switch (providerType) {
+		case "in-memory":
+			return new InMemoryProvider();
+		case "filesystem":
+			if (!config.storage.filesystemPath) {
+				throw new McpError(
+					JsonRpcErrorCode.ConfigurationError,
+					"STORAGE_FILESYSTEM_PATH must be set for the filesystem storage provider.",
+					context,
+				);
+			}
+			return new FileSystemProvider(config.storage.filesystemPath);
+		case "supabase":
+			if (!config.supabase?.url || !config.supabase?.serviceRoleKey) {
+				throw new McpError(
+					JsonRpcErrorCode.ConfigurationError,
+					"SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set for the supabase storage provider.",
+					context,
+				);
+			}
+			if (deps.supabaseClient) {
+				return new SupabaseProvider(deps.supabaseClient);
+			}
+			// Fallback to DI container (backward-compatible)
+			return container.resolve(SupabaseProvider);
+		case "surrealdb":
+			if (
+				!config.surrealdb?.url ||
+				!config.surrealdb?.namespace ||
+				!config.surrealdb?.database
+			) {
+				throw new McpError(
+					JsonRpcErrorCode.ConfigurationError,
+					"SURREALDB_URL, SURREALDB_NAMESPACE, and SURREALDB_DATABASE must be set for the surrealdb storage provider.",
+					context,
+				);
+			}
+			if (deps.surrealdbClient) {
+				return new SurrealKvProvider(
+					deps.surrealdbClient,
+					config.surrealdb.tableName,
+				);
+			}
+			// Fallback to DI container
+			return container.resolve(SurrealKvProvider);
+		case "cloudflare-r2":
+			if (isServerless) {
+				if (deps.r2Bucket) {
+					return new R2Provider(deps.r2Bucket);
+				}
+				const r2Binding = getGlobalBinding<R2Bucket>("R2_BUCKET", context);
+				return new R2Provider(r2Binding);
+			}
+			throw new McpError(
+				JsonRpcErrorCode.ConfigurationError,
+				"Cloudflare R2 storage is only available in a Cloudflare Worker environment.",
+				context,
+			);
+		case "cloudflare-kv":
+			if (isServerless) {
+				if (deps.kvNamespace) {
+					return new KvProvider(deps.kvNamespace);
+				}
+				const kvBinding = getGlobalBinding<KVNamespace>(
+					"KV_NAMESPACE",
+					context,
+				);
+				return new KvProvider(kvBinding);
+			}
+			throw new McpError(
+				JsonRpcErrorCode.ConfigurationError,
+				"Cloudflare KV storage is only available in a Cloudflare Worker environment.",
+				context,
+			);
+		case "cloudflare-d1":
+			if (isServerless) {
+				if (deps.d1Database) {
+					return new D1Provider(deps.d1Database);
+				}
+				const d1Binding = getGlobalBinding<D1Database>("DB", context);
+				return new D1Provider(d1Binding);
+			}
+			throw new McpError(
+				JsonRpcErrorCode.ConfigurationError,
+				"Cloudflare D1 storage is only available in a Cloudflare Worker environment.",
+				context,
+			);
+		default: {
+			const exhaustiveCheck: never = providerType;
+			throw new McpError(
+				JsonRpcErrorCode.ConfigurationError,
+				`Unhandled storage provider type: ${String(exhaustiveCheck)}`,
+				context,
+			);
+		}
+	}
 }
