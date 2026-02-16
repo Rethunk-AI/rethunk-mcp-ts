@@ -37,20 +37,20 @@ The provider's design is guided by the **Single Responsibility Principle** and *
 2. **Schema Initialization**: Before first use, apply the base database schema located in `schemas/surrealdb/surrealdb-schema.surql`.
 3. **Client Instantiation**: The `SurrealDbClient` and `SurrealKvProvider` are automatically registered in the DI container. Inject `IStorageProvider` (or the client directly) into your services as needed.
 
-    ```ts
-    // In a service class
-    constructor(
-      @inject(Storage) private readonly storage: IStorageProvider,
-      @inject(SurrealdbClient) private readonly dbClient: Surreal
-    ) {}
-    ```
+   ```ts
+   // In a service class
+   constructor(
+     @inject(Storage) private readonly storage: IStorageProvider,
+     @inject(SurrealdbClient) private readonly dbClient: Surreal
+   ) {}
+   ```
 
 4. **Using Advanced Features**: Access specialized managers directly from the client instance.
 
-    ```ts
-    // Example: Create a graph edge
-    await this.dbClient.graph().createEdge(from, 'manages', to, { context });
+   ```ts
+   // Example: Create a graph edge
+   await this.dbClient.graph().createEdge(from, 'manages', to, { context });
 
-    // Example: Define a table event
-    await this.dbClient.events().defineEvent({ ... }, context);
-    ```
+   // Example: Define a table event
+   await this.dbClient.events().defineEvent({ ... }, context);
+   ```

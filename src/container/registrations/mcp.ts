@@ -4,50 +4,50 @@
  * the tools and resources themselves, and the factory for creating the MCP server instance.
  * @module src/container/registrations/mcp
  */
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { container } from "tsyringe";
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { container } from 'tsyringe';
 
 import {
-	CreateMcpServerInstance,
-	TaskManagerToken,
-	TransportManagerToken,
-} from "@/container/tokens.js";
+  CreateMcpServerInstance,
+  TaskManagerToken,
+  TransportManagerToken,
+} from '@/container/tokens.js';
 import {
-	ResourceRegistry,
-	registerResources,
-} from "@/mcp-server/resources/resource-registration.js";
-import { createMcpServerInstance } from "@/mcp-server/server.js";
+  ResourceRegistry,
+  registerResources,
+} from '@/mcp-server/resources/resource-registration.js';
+import { createMcpServerInstance } from '@/mcp-server/server.js';
 import {
-	ToolRegistry,
-	registerTools,
-} from "@/mcp-server/tools/tool-registration.js";
-import { TaskManager } from "@/mcp-server/tasks/index.js";
-import { TransportManager } from "@/mcp-server/transports/manager.js";
-import { logger } from "@/utils/index.js";
+  ToolRegistry,
+  registerTools,
+} from '@/mcp-server/tools/tool-registration.js';
+import { TaskManager } from '@/mcp-server/tasks/index.js';
+import { TransportManager } from '@/mcp-server/transports/manager.js';
+import { logger } from '@/utils/index.js';
 
 /**
  * Registers MCP-related services and factories with the tsyringe container.
  */
 export const registerMcpServices = () => {
-	// --- Register Registries ---
-	container.registerSingleton(ToolRegistry);
-	container.registerSingleton(ResourceRegistry);
+  // --- Register Registries ---
+  container.registerSingleton(ToolRegistry);
+  container.registerSingleton(ResourceRegistry);
 
-	// --- Register Task Manager (experimental) ---
-	container.registerSingleton(TaskManagerToken, TaskManager);
+  // --- Register Task Manager (experimental) ---
+  container.registerSingleton(TaskManagerToken, TaskManager);
 
-	// --- Register Tools & Resources (via modular functions) ---
-	registerTools(container);
-	registerResources(container);
+  // --- Register Tools & Resources (via modular functions) ---
+  registerTools(container);
+  registerResources(container);
 
-	// --- Register Factories ---
-	// Register the server factory function. It will be resolved by the transport layer.
-	container.register<() => Promise<McpServer>>(CreateMcpServerInstance, {
-		useValue: createMcpServerInstance,
-	});
+  // --- Register Factories ---
+  // Register the server factory function. It will be resolved by the transport layer.
+  container.register<() => Promise<McpServer>>(CreateMcpServerInstance, {
+    useValue: createMcpServerInstance,
+  });
 
-	// Register TransportManager
-	container.registerSingleton(TransportManagerToken, TransportManager);
+  // Register TransportManager
+  container.registerSingleton(TransportManagerToken, TransportManager);
 
-	logger.info("MCP services and factories registered with the DI container.");
+  logger.info('MCP services and factories registered with the DI container.');
 };
