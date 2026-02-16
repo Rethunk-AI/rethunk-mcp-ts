@@ -1,15 +1,15 @@
 {
-  "name": "mcp-ts-template",
+  "name": "rethunk-mcp-typescript",
   "version": "2.8.1",
-  "mcpName": "io.github.cyanheads/mcp-ts-template",
-  "description": "The definitive, production-grade template for building powerful and scalable Model Context Protocol (MCP) servers with TypeScript, featuring built-in observability (OpenTelemetry), declarative tooling, robust error handling, and a modular, DI-driven architecture.",
+  "mcpName": "com.rethunk/rethunk-mcp-typescript",
+  "description": "Rethunk MCP for TypeScript: A production-grade MCP server implementation featuring powerful code inspection tools, atomic git commits with intelligent message validation, and a robust foundation for building scalable Model Context Protocol servers.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
   "bin": {
-    "mcp-ts-template": "dist/index.js"
+    "rethunk-mcp-typescript": "dist/index.js"
   },
   "exports": {
     ".": {
@@ -22,12 +22,12 @@
   "sideEffects": false,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cyanheads/mcp-ts-template.git"
+    "url": "git+https://github.com/Rethunk-Tech/rethunk-mcp-ts.git"
   },
   "bugs": {
-    "url": "https://github.com/cyanheads/mcp-ts-template/issues"
+    "url": "https://github.com/Rethunk-Tech/rethunk-mcp-ts/issues"
   },
-  "homepage": "https://github.com/cyanheads/mcp-ts-template#readme",
+  "homepage": "https://rethunk.ai/",
   "scripts": {
     "build": "bun build ./src/index.ts --outdir ./dist --target node --external pino --external pino-pretty",
     "build:worker": "bun build ./src/worker.ts --outdir ./dist --target bun --no-external",
@@ -52,7 +52,7 @@
     "fetch-spec": "bun run scripts/fetch-openapi-spec.ts",
     "format": "bunx prettier --write \"**/*.{ts,js,json,md,html,css}\"",
     "prepare": "bunx husky",
-    "inspector": "bunx mcp-inspector --config mcp.json --server mcp-ts-template",
+    "inspector": "bunx mcp-inspector --config mcp.json --server rethunk-mcp-typescript",
     "test": "bunx vitest run",
     "test:coverage": "bunx vitest run --coverage",
     "coverage:update": "bun run scripts/update-coverage.ts",
@@ -129,16 +129,12 @@
     "typescript",
     "zod"
   ],
-  "author": "cyanheads <casey@caseyjhand.com> (https://github.com/cyanheads/mcp-ts-template#readme)",
+  "author": "Damon Blais <damon@rethunk.ai> (@AlbinoGeek) for Rethunk.Tech, LLC",
   "license": "Apache-2.0",
   "funding": [
     {
-      "type": "github",
-      "url": "https://github.com/sponsors/cyanheads"
-    },
-    {
-      "type": "buy_me_a_coffee",
-      "url": "https://www.buymeacoffee.com/cyanheads"
+      "type": "other",
+      "url": "https://rethunk.ai/"
     }
   ],
   "packageManager": "bun@1.2.21",

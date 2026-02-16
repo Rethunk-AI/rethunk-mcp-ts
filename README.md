@@ -1,6 +1,6 @@
 <div align="center">
-  <h1>mcp-ts-template</h1>
-  <p><b>Production-grade TypeScript template for building Model Context Protocol (MCP) servers. Ships with declarative tools/resources, robust error handling, DI, easy auth, optional OpenTelemetry, and first-class support for both local and edge (Cloudflare Workers) runtimes.</b>
+  <h1>Rethunk MCP for TypeScript</h1>
+  <p><b>A production-grade Model Context Protocol (MCP) server by Rethunk.Tech featuring TypeScript code inspection, atomic git commits with intelligent message validation, and robust support for building scalable MCP applications.</b>
   <div>2 Tools • 0 Resources • 1 Prompt</div>
   </p>
 </div>
@@ -99,10 +99,10 @@ Choose your IDE and follow the corresponding setup steps.
 ```json
 {
   "mcpServers": {
-    "mcp-ts-template": {
+    "rethunk-mcp-typescript": {
       "type": "stdio",
       "command": "bunx",
-      "args": ["mcp-ts-template@latest"],
+      "args": ["rethunk-mcp-typescript@latest"],
       "env": {
         "MCP_TRANSPORT_TYPE": "stdio",
         "MCP_LOG_LEVEL": "info",
@@ -120,10 +120,10 @@ Choose your IDE and follow the corresponding setup steps.
 
 ```json
 {
-  "name": "mcp-ts-template",
+  "name": "rethunk-mcp-typescript",
   "type": "stdio",
   "command": "bunx",
-  "args": ["mcp-ts-template@latest"],
+  "args": ["rethunk-mcp-typescript@latest"],
   "env": {
     "MCP_TRANSPORT_TYPE": "stdio",
     "MCP_LOG_LEVEL": "info",
@@ -146,9 +146,9 @@ Choose your IDE and follow the corresponding setup steps.
 ```json
 {
   "mcpServers": {
-    "mcp-ts-template": {
+    "rethunk-mcp-typescript": {
       "command": "bunx",
-      "args": ["mcp-ts-template@latest"],
+      "args": ["rethunk-mcp-typescript@latest"],
       "env": {
         "MCP_TRANSPORT_TYPE": "stdio",
         "MCP_LOG_LEVEL": "info",
@@ -199,13 +199,13 @@ All MCP server instances require these key variables:
 1. **Clone the repository:**
 
 ```sh
-git clone https://github.com/cyanheads/mcp-ts-template.git
+git clone https://github.com/Rethunk-Tech/rethunk-mcp-ts.git
 ```
 
 1. **Navigate into the directory:**
 
 ```sh
-cd mcp-ts-template
+cd rethunk-mcp-ts
 ```
 
 1. **Install dependencies:**
@@ -409,7 +409,7 @@ This project is licensed under the Apache 2.0 License. See the [LICENSE](./LICEN
 
 <div align="center">
   <p>
-    <a href="https://github.com/sponsors/cyanheads">Sponsor this project</a> •
-    <a href="https://www.buymeacoffee.com/cyanheads">Buy me a coffee</a>
+    <a href="https://rethunk.ai/">Visit Rethunk.Tech</a> •
+    <a href="https://github.com/Rethunk-Tech/rethunk-mcp-ts/issues">Report an Issue</a>
   </p>
 </div>

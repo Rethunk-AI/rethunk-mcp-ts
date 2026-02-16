@@ -1,9 +1,9 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.cyanheads/mcp-ts-template",
-  "description": "A production-grade TypeScript template for scalable MCP servers with built-in observability.",
+  "name": "com.rethunk/rethunk-mcp-typescript",
+  "description": "Rethunk MCP for TypeScript: Production-grade MCP server with code inspection and atomic git commits.",
   "repository": {
-    "url": "https://github.com/cyanheads/mcp-ts-template",
+    "url": "https://github.com/Rethunk-Tech/rethunk-mcp-ts",
     "source": "github"
   },
   "version": "2.8.1",
@@ -11,7 +11,7 @@
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
-      "identifier": "mcp-ts-template",
+      "identifier": "rethunk-mcp-typescript",
       "runtimeHint": "bun",
       "version": "2.8.1",
       "packageArguments": [
@@ -40,7 +40,7 @@
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
-      "identifier": "mcp-ts-template",
+      "identifier": "rethunk-mcp-typescript",
       "runtimeHint": "bun",
       "version": "2.8.1",
       "packageArguments": [
