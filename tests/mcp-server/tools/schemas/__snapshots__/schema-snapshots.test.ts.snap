@@ -4,7 +4,22 @@ exports[`Tool Schema Snapshots > Tool: check_typescript_project_for_problems > i
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "additionalProperties": false,
-  "properties": {},
+  "properties": {
+    "files": {
+      "description": "Specific files to check. If provided, scopes the linting and type checking to these files only.",
+      "items": {
+        "description": "File path to check",
+        "type": "string",
+      },
+      "type": "array",
+    },
+    "timeout": {
+      "description": "Override timeout in milliseconds. Defaults to SDK context timeout. Use this for longer operations like running comprehensive tests.",
+      "maximum": 9007199254740991,
+      "minimum": 1,
+      "type": "integer",
+    },
+  },
   "type": "object",
 }
 `;

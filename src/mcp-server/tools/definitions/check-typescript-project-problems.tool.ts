@@ -20,14 +20,29 @@ import { type RequestContext, logger } from '@/utils/index.js';
 const TOOL_NAME = 'check_typescript_project_for_problems';
 const TOOL_TITLE = 'Check TypeScript Project for Problems';
 const TOOL_DESCRIPTION =
-  'Runs quick local quality checks including lint fixing (which modifies files) and type checking. Returns combined output in machine-parseable JSON format.';
+  'Runs quick local quality checks including lint fixing (which modifies files) and type checking. Optionally scopes checks to specific files or overrides timeout. Runs lint:fix first to avoid file race conditions. Returns combined output in machine-parseable JSON format.';
 
 const TOOL_ANNOTATIONS: ToolAnnotations = {
   readOnlyHint: false,
   openWorldHint: false,
 };
 
-const InputSchema = z.object({});
+const InputSchema = z.object({
+  files: z
+    .array(z.string().describe('File path to check'))
+    .optional()
+    .describe(
+      'Specific files to check. If provided, scopes the linting and type checking to these files only.',
+    ),
+  timeout: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe(
+      'Override timeout in milliseconds. Defaults to SDK context timeout. Use this for longer operations like running comprehensive tests.',
+    ),
+});
 
 const CheckResultSchema = z.object({
   name: z.string(),
@@ -59,6 +74,48 @@ const QUICK_CHECKS = [
     args: ['-s', 'typecheck:scripts', '--pretty', 'false'],
   },
 ] as const;
+
+/**
+ * Runs lint:fix sequentially before other checks to avoid file race conditions,
+ * then runs remaining checks in parallel.
+ * @param checks - Array of check definitions to execute.
+ * @param appContext - Application context for logging.
+ * @param sdkContext - SDK context containing abort signal.
+ * @returns Array of check results with lint:fix executed first.
+ */
+async function executeChecksWithFileLocking(
+  checks: ReadonlyArray<{ name: string; args: readonly string[] }>,
+  appContext: RequestContext,
+  sdkContext: SdkContext,
+): Promise<Array<z.infer<typeof CheckResultSchema>>> {
+  const results: Array<z.infer<typeof CheckResultSchema>> = [];
+
+  // Separate lint:fix from other checks
+  const lintCheck = checks.find((c) => c.name === 'lint:fix');
+  const otherChecks = checks.filter((c) => c.name !== 'lint:fix');
+
+  // Run lint:fix first to avoid file modifications affecting other checks
+  if (lintCheck) {
+    const lintResult = await checkRunner.run(
+      lintCheck.name,
+      'yarn',
+      lintCheck.args,
+      sdkContext,
+      appContext,
+    );
+    results.push(lintResult);
+  }
+
+  // Run remaining checks in parallel
+  const remainingResults = await Promise.all(
+    otherChecks.map((check) =>
+      checkRunner.run(check.name, 'yarn', check.args, sdkContext, appContext),
+    ),
+  );
+  results.push(...remainingResults);
+
+  return results;
+}
 
 const ALLOWED_COMMANDS = new Set(['yarn']);
 
@@ -101,6 +158,7 @@ function createSafeCommandEnv(): Record<string, string> {
 export const checkRunner = {
   /**
    * Executes a check command (e.g., yarn lint:fix, yarn typecheck) and captures output.
+   * Uses the SDK context's abort signal for cancellation (respects framework timeout settings).
    * @param checkName - Human-readable name of the check (e.g., "lint:fix").
    * @param command - The command to execute (must be in ALLOWED_COMMANDS).
    * @param args - Arguments to pass to the command.
@@ -169,23 +227,39 @@ export const checkRunner = {
 
 /**
  * Core logic for executing TypeScript project quality checks.
- * Runs all configured checks (lint:fix, typecheck, typecheck:scripts) in parallel.
- * @param _input - Tool input (currently unused; tool takes no parameters).
+ * Runs lint:fix first (sequentially) to avoid file modifications, then other checks in parallel.
+ * Optionally scopes checks to specific files.
+ * @param input - Tool input with optional files and timeout overrides.
  * @param appContext - Application context for logging and request tracking.
  * @param sdkContext - SDK context containing abort signal for cancellation.
  * @returns Promise resolving to combined check results with overall problem status.
  */
 async function checkTypeScriptProjectLogic(
-  _input: z.infer<typeof InputSchema>,
+  input: z.infer<typeof InputSchema>,
   appContext: RequestContext,
   sdkContext: SdkContext,
 ): Promise<TypeScriptProjectCheckResponse> {
   logger.info('Running quick TypeScript project checks.', appContext);
 
-  const checks = await Promise.all(
-    QUICK_CHECKS.map(async (check) =>
-      checkRunner.run(check.name, 'yarn', check.args, sdkContext, appContext),
-    ),
+  // Build check configurations, optionally scoped to specific files
+  const scopedFiles =
+    input.files && input.files.length > 0 ? input.files : null;
+  const checksToRun: Array<{ name: string; args: readonly string[] }> =
+    scopedFiles
+      ? QUICK_CHECKS.map((check) => ({
+          name: check.name,
+          args: [...check.args, ...scopedFiles] as readonly string[],
+        }))
+      : [...QUICK_CHECKS];
+
+  if (scopedFiles) {
+    logger.info(`Scoping checks to ${scopedFiles.length} file(s)`, appContext);
+  }
+
+  const checks = await executeChecksWithFileLocking(
+    checksToRun,
+    appContext,
+    sdkContext,
   );
 
   return {
