@@ -2,7 +2,7 @@
  * @fileoverview Defines custom types for the Hono HTTP transport layer.
  * @module src/mcp-server/transports/http/httpTypes
  */
-import type { IncomingMessage, ServerResponse } from 'http';
+import type { IncomingMessage, ServerResponse } from "http";
 
 /**
  * Extends Hono's Bindings to include the raw Node.js request and response objects.
@@ -12,8 +12,8 @@ import type { IncomingMessage, ServerResponse } from 'http';
  * As per `@hono/node-server`, the response object is available on `c.env.outgoing`.
  */
 export type HonoNodeBindings = {
-  incoming: IncomingMessage;
-  outgoing: ServerResponse;
+	incoming: IncomingMessage;
+	outgoing: ServerResponse;
 };
 
 /**
@@ -21,5 +21,5 @@ export type HonoNodeBindings = {
  * Used for passing strongly-typed data between middleware.
  */
 export type HonoVariables = {
-  mcpSessionId?: string;
+	mcpSessionId?: string;
 };

@@ -15,16 +15,16 @@
  * @module src/mcp-server/resources/definitions/data-explorer-ui.app-resource
  * @see {@link ../../tools/definitions/template-data-explorer.app-tool.ts} linked tool
  */
-import { RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server';
-import { z } from 'zod';
+import { RESOURCE_MIME_TYPE } from "@modelcontextprotocol/ext-apps/server";
+import { z } from "zod";
 
-import { type RequestContext, logger } from '@/utils/index.js';
-import { withResourceAuth } from '@/mcp-server/transports/auth/lib/withAuth.js';
-import type { ResourceDefinition } from '@/mcp-server/resources/utils/resourceDefinition.js';
+import { type RequestContext, logger } from "@/utils/index.js";
+import { withResourceAuth } from "@/mcp-server/transports/auth/lib/withAuth.js";
+import type { ResourceDefinition } from "@/mcp-server/resources/utils/resourceDefinition.js";
 
 const ParamsSchema = z
-  .object({})
-  .describe('No parameters. Returns the static HTML app.');
+	.object({})
+	.describe("No parameters. Returns the static HTML app.");
 
 // ─── HTML Application ─────────────────────────────────────────────────────────
 
@@ -291,44 +291,44 @@ const APP_HTML = `<!DOCTYPE html>
 // ─── Logic ────────────────────────────────────────────────────────────────────
 
 function dataExplorerUiLogic(
-  uri: URL,
-  _params: z.infer<typeof ParamsSchema>,
-  context: RequestContext,
+	uri: URL,
+	_params: z.infer<typeof ParamsSchema>,
+	context: RequestContext,
 ): string {
-  logger.debug('Serving data explorer UI resource.', {
-    ...context,
-    resourceUri: uri.href,
-  });
-  return APP_HTML;
+	logger.debug("Serving data explorer UI resource.", {
+		...context,
+		resourceUri: uri.href,
+	});
+	return APP_HTML;
 }
 
 // ─── Definition ───────────────────────────────────────────────────────────────
 
 export const dataExplorerUiResource: ResourceDefinition<typeof ParamsSchema> = {
-  name: 'data-explorer-ui',
-  title: 'Data Explorer UI',
-  description:
-    'Interactive HTML app for the data explorer tool. Renders a sortable, filterable table with row selection. Displayed as a sandboxed iframe by MCP Apps-capable hosts.',
-  uriTemplate: 'ui://template-data-explorer/app.html',
-  paramsSchema: ParamsSchema,
-  mimeType: RESOURCE_MIME_TYPE,
-  annotations: { readOnlyHint: true },
-  list: (_extra) => ({
-    resources: [
-      {
-        uri: 'ui://template-data-explorer/app.html',
-        name: 'Data Explorer App',
-        description:
-          'Interactive data table for the template_data_explorer tool.',
-        mimeType: RESOURCE_MIME_TYPE,
-      },
-    ],
-  }),
-  logic: withResourceAuth(
-    ['resource:data-explorer-ui:read'],
-    dataExplorerUiLogic,
-  ),
-  responseFormatter: (result, meta) => [
-    { uri: meta.uri.href, mimeType: meta.mimeType, text: result as string },
-  ],
+	name: "data-explorer-ui",
+	title: "Data Explorer UI",
+	description:
+		"Interactive HTML app for the data explorer tool. Renders a sortable, filterable table with row selection. Displayed as a sandboxed iframe by MCP Apps-capable hosts.",
+	uriTemplate: "ui://template-data-explorer/app.html",
+	paramsSchema: ParamsSchema,
+	mimeType: RESOURCE_MIME_TYPE,
+	annotations: { readOnlyHint: true },
+	list: (_extra) => ({
+		resources: [
+			{
+				uri: "ui://template-data-explorer/app.html",
+				name: "Data Explorer App",
+				description:
+					"Interactive data table for the template_data_explorer tool.",
+				mimeType: RESOURCE_MIME_TYPE,
+			},
+		],
+	}),
+	logic: withResourceAuth(
+		["resource:data-explorer-ui:read"],
+		dataExplorerUiLogic,
+	),
+	responseFormatter: (result, meta) => [
+		{ uri: meta.uri.href, mimeType: meta.mimeType, text: result as string },
+	],
 };

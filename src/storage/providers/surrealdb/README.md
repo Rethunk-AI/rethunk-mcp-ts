@@ -33,9 +33,9 @@ The provider's design is guided by the **Single Responsibility Principle** and *
 
 ## 🚀 Getting Started
 
-1.  **Configuration**: Set the required `SURREALDB_*` environment variables in your `.env` file as detailed in the root `README.md`.
-2.  **Schema Initialization**: Before first use, apply the base database schema located in `schemas/surrealdb/surrealdb-schema.surql`.
-3.  **Client Instantiation**: The `SurrealDbClient` and `SurrealKvProvider` are automatically registered in the DI container. Inject `IStorageProvider` (or the client directly) into your services as needed.
+1. **Configuration**: Set the required `SURREALDB_*` environment variables in your `.env` file as detailed in the root `README.md`.
+2. **Schema Initialization**: Before first use, apply the base database schema located in `schemas/surrealdb/surrealdb-schema.surql`.
+3. **Client Instantiation**: The `SurrealDbClient` and `SurrealKvProvider` are automatically registered in the DI container. Inject `IStorageProvider` (or the client directly) into your services as needed.
 
     ```ts
     // In a service class
@@ -45,7 +45,7 @@ The provider's design is guided by the **Single Responsibility Principle** and *
     ) {}
     ```
 
-4.  **Using Advanced Features**: Access specialized managers directly from the client instance.
+4. **Using Advanced Features**: Access specialized managers directly from the client instance.
 
     ```ts
     // Example: Create a graph edge

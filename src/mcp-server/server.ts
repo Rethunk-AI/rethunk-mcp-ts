@@ -13,15 +13,15 @@
  * - Transports: https://modelcontextprotocol.io/specification/2025-06-18/basic/transports
  * @module src/mcp-server/server
  */
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { container } from 'tsyringe';
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { container } from "tsyringe";
 
-import { config } from '@/config/index.js';
-import { PromptRegistry } from '@/mcp-server/prompts/prompt-registration.js';
-import { ResourceRegistry } from '@/mcp-server/resources/resource-registration.js';
-import { RootsRegistry } from '@/mcp-server/roots/roots-registration.js';
-import { ToolRegistry } from '@/mcp-server/tools/tool-registration.js';
-import { logger, requestContextService } from '@/utils/index.js';
+import { config } from "@/config/index.js";
+import { PromptRegistry } from "@/mcp-server/prompts/prompt-registration.js";
+import { ResourceRegistry } from "@/mcp-server/resources/resource-registration.js";
+import { RootsRegistry } from "@/mcp-server/roots/roots-registration.js";
+import { ToolRegistry } from "@/mcp-server/tools/tool-registration.js";
+import { logger, requestContextService } from "@/utils/index.js";
 
 /**
  * Creates and configures a new instance of the `McpServer`.
@@ -32,65 +32,65 @@ import { logger, requestContextService } from '@/utils/index.js';
  * @private
  */
 export async function createMcpServerInstance(): Promise<McpServer> {
-  const context = requestContextService.createRequestContext({
-    operation: 'createMcpServerInstance',
-  });
-  logger.info('Initializing MCP server instance', context);
+	const context = requestContextService.createRequestContext({
+		operation: "createMcpServerInstance",
+	});
+	logger.info("Initializing MCP server instance", context);
 
-  requestContextService.configure({
-    appName: config.mcpServerName,
-    appVersion: config.mcpServerVersion,
-    environment: config.environment,
-  });
+	requestContextService.configure({
+		appName: config.mcpServerName,
+		appVersion: config.mcpServerVersion,
+		environment: config.environment,
+	});
 
-  const server = new McpServer(
-    {
-      name: config.mcpServerName,
-      version: config.mcpServerVersion,
-    },
-    {
-      capabilities: {
-        logging: {},
-        resources: { listChanged: true },
-        tools: { listChanged: true },
-        prompts: { listChanged: true },
-        // Experimental: Tasks API for long-running async operations
-        tasks: {
-          list: {},
-          cancel: {},
-          requests: {
-            tools: { call: {} },
-          },
-        },
-      },
-    },
-  );
+	const server = new McpServer(
+		{
+			name: config.mcpServerName,
+			version: config.mcpServerVersion,
+		},
+		{
+			capabilities: {
+				logging: {},
+				resources: { listChanged: true },
+				tools: { listChanged: true },
+				prompts: { listChanged: true },
+				// Experimental: Tasks API for long-running async operations
+				tasks: {
+					list: {},
+					cancel: {},
+					requests: {
+						tools: { call: {} },
+					},
+				},
+			},
+		},
+	);
 
-  try {
-    logger.debug('Registering all MCP capabilities via registries...', context);
+	try {
+		logger.debug("Registering all MCP capabilities via registries...", context);
 
-    // Resolve and use registry services
-    const toolRegistry = container.resolve(ToolRegistry);
-    await toolRegistry.registerAll(server);
+		// Resolve and use registry services
+		const toolRegistry = container.resolve(ToolRegistry);
+		await toolRegistry.registerAll(server);
 
-    const resourceRegistry = container.resolve(ResourceRegistry);
-    await resourceRegistry.registerAll(server);
+		const resourceRegistry = container.resolve(ResourceRegistry);
+		await resourceRegistry.registerAll(server);
 
-    const promptRegistry = container.resolve(PromptRegistry);
-    promptRegistry.registerAll(server);
+		const promptRegistry = container.resolve(PromptRegistry);
+		promptRegistry.registerAll(server);
 
-    const rootsRegistry = container.resolve(RootsRegistry);
-    rootsRegistry.registerAll(server);
+		const rootsRegistry = container.resolve(RootsRegistry);
+		rootsRegistry.registerAll(server);
 
-    logger.info('All MCP capabilities registered successfully', context);
-  } catch (err) {
-    logger.error('Failed to register MCP capabilities', {
-      ...context,
-      error: err instanceof Error ? err.message : String(err),
-      stack: err instanceof Error ? err.stack : undefined,
-    });
-    throw err;
-  }
+		logger.info("All MCP capabilities registered successfully", context);
+	} catch (err) {
+		logger.error("Failed to register MCP capabilities", {
+			...context,
+			error: err instanceof Error ? err.message : String(err),
+			stack: err instanceof Error ? err.stack : undefined,
+		});
+		throw err;
+	}
 
-  return server;
+	return server;
 }

@@ -5,7 +5,7 @@
  * @module src/mcp-server/tools/definitions
  */
 
-import { checkTypeScriptProjectProblemsTool } from './check-typescript-project-problems.tool.js';
+import { checkTypeScriptProjectProblemsTool } from "./check-typescript-project-problems.tool.js";
 
 /**
  * An array containing all tool definitions for easy iteration and registration.

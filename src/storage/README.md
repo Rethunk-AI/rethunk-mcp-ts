@@ -568,7 +568,7 @@ async set(tenantId: string, key: string, value: unknown, context: RequestContext
 import { {Provider}Provider } from '@/storage/providers/{provider-name}/{provider-name}Provider.js';
 ```
 
-2. Add to `StorageFactoryDeps` interface:
+1. Add to `StorageFactoryDeps` interface:
 
 ```typescript
 export interface StorageFactoryDeps {
@@ -577,7 +577,7 @@ export interface StorageFactoryDeps {
 }
 ```
 
-3. Add case to switch statement:
+1. Add case to switch statement:
 
 ```typescript
 case '{provider-name}':
@@ -654,7 +654,7 @@ const configSchema = z.object({
 });
 ```
 
-2. Map environment variables:
+1. Map environment variables:
 
 ```typescript
 const config: z.infer<typeof configSchema> = {

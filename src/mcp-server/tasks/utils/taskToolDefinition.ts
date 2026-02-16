@@ -6,13 +6,13 @@
  * @experimental These APIs are experimental and may change without notice.
  * @module src/mcp-server/tasks/utils/taskToolDefinition
  */
-import type { ZodObject, ZodRawShape } from 'zod';
+import type { ZodObject, ZodRawShape } from "zod";
 
-import type { ToolAnnotations } from '@/mcp-server/tools/utils/toolDefinition.js';
+import type { ToolAnnotations } from "@/mcp-server/tools/utils/toolDefinition.js";
 import type {
-  ToolTaskHandler,
-  TaskToolExecution,
-} from '@/mcp-server/tasks/core/taskTypes.js';
+	ToolTaskHandler,
+	TaskToolExecution,
+} from "@/mcp-server/tasks/core/taskTypes.js";
 
 /**
  * Represents a task-based tool definition for long-running async operations.
@@ -54,64 +54,64 @@ import type {
  * @experimental
  */
 export interface TaskToolDefinition<
-  TInputSchema extends ZodObject<ZodRawShape>,
-  TOutputSchema extends ZodObject<ZodRawShape>,
+	TInputSchema extends ZodObject<ZodRawShape>,
+	TOutputSchema extends ZodObject<ZodRawShape>,
 > {
-  /**
-   * The programmatic, unique name for the tool (e.g., 'async_analysis').
-   * Must follow MCP tool naming conventions: alphanumeric, underscores, hyphens.
-   */
-  name: string;
+	/**
+	 * The programmatic, unique name for the tool (e.g., 'async_analysis').
+	 * Must follow MCP tool naming conventions: alphanumeric, underscores, hyphens.
+	 */
+	name: string;
 
-  /**
-   * An optional, human-readable title for the tool.
-   * If not provided, derived from `name` or `annotations.title`.
-   */
-  title?: string;
+	/**
+	 * An optional, human-readable title for the tool.
+	 * If not provided, derived from `name` or `annotations.title`.
+	 */
+	title?: string;
 
-  /**
-   * A clear, concise description of what the tool does.
-   * This is sent to the LLM to help it decide when to use the tool.
-   */
-  description: string;
+	/**
+	 * A clear, concise description of what the tool does.
+	 * This is sent to the LLM to help it decide when to use the tool.
+	 */
+	description: string;
 
-  /**
-   * The Zod schema for validating the tool's input parameters.
-   * All fields should have `.describe()` for LLM context.
-   */
-  inputSchema: TInputSchema;
+	/**
+	 * The Zod schema for validating the tool's input parameters.
+	 * All fields should have `.describe()` for LLM context.
+	 */
+	inputSchema: TInputSchema;
 
-  /**
-   * The Zod schema for validating the tool's successful output structure.
-   * Used for documentation and client-side type inference.
-   */
-  outputSchema?: TOutputSchema;
+	/**
+	 * The Zod schema for validating the tool's successful output structure.
+	 * Used for documentation and client-side type inference.
+	 */
+	outputSchema?: TOutputSchema;
 
-  /**
-   * Optional metadata providing hints about the tool's behavior.
-   */
-  annotations?: ToolAnnotations;
+	/**
+	 * Optional metadata providing hints about the tool's behavior.
+	 */
+	annotations?: ToolAnnotations;
 
-  /**
-   * Task execution configuration.
-   *
-   * - `taskSupport: 'required'` - Tool MUST be invoked as a task
-   * - `taskSupport: 'optional'` - Tool can be invoked normally or as a task
-   *
-   * Note: `taskSupport: 'forbidden'` is not valid for task tools;
-   * use a regular ToolDefinition instead.
-   */
-  execution: TaskToolExecution;
+	/**
+	 * Task execution configuration.
+	 *
+	 * - `taskSupport: 'required'` - Tool MUST be invoked as a task
+	 * - `taskSupport: 'optional'` - Tool can be invoked normally or as a task
+	 *
+	 * Note: `taskSupport: 'forbidden'` is not valid for task tools;
+	 * use a regular ToolDefinition instead.
+	 */
+	execution: TaskToolExecution;
 
-  /**
-   * The task handlers implementing the task lifecycle.
-   *
-   * These handlers are called by the SDK at different points:
-   * - `createTask`: When the tool is first invoked (tools/call with task param)
-   * - `getTask`: When polling for status (tasks/get)
-   * - `getTaskResult`: When retrieving results (tasks/result)
-   */
-  taskHandlers: ToolTaskHandler<TInputSchema>;
+	/**
+	 * The task handlers implementing the task lifecycle.
+	 *
+	 * These handlers are called by the SDK at different points:
+	 * - `createTask`: When the tool is first invoked (tools/call with task param)
+	 * - `getTask`: When polling for status (tasks/get)
+	 * - `getTaskResult`: When retrieving results (tasks/result)
+	 */
+	taskHandlers: ToolTaskHandler<TInputSchema>;
 }
 
 /**
@@ -121,13 +121,13 @@ export interface TaskToolDefinition<
  * @returns True if the definition has taskHandlers (is a TaskToolDefinition)
  */
 export function isTaskToolDefinition(
-  def: unknown,
+	def: unknown,
 ): def is TaskToolDefinition<ZodObject<ZodRawShape>, ZodObject<ZodRawShape>> {
-  return (
-    def !== null &&
-    typeof def === 'object' &&
-    'taskHandlers' in def &&
-    def.taskHandlers !== null &&
-    typeof def.taskHandlers === 'object'
-  );
+	return (
+		def !== null &&
+		typeof def === "object" &&
+		"taskHandlers" in def &&
+		def.taskHandlers !== null &&
+		typeof def.taskHandlers === "object"
+	);
 }
