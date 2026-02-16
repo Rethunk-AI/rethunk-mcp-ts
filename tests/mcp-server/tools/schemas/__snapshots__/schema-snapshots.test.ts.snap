@@ -121,6 +121,11 @@ exports[`Tool Schema Snapshots > Tool: stage_selected_specs_and_create_atomic_co
       "minItems": 1,
       "type": "array",
     },
+    "skipChecksIfHuskyPresent": {
+      "default": true,
+      "description": "If true (default), skips integrated quality checks when husky pre-commit hooks are configured to avoid duplicate runs. Set to false to ignore husky and run checks regardless.",
+      "type": "boolean",
+    },
     "skipPreStagedCheck": {
       "description": "If true, allows execution even when there are already staged changes. If false or omitted, tool fails when pre-existing staged changes are detected.",
       "type": "boolean",
@@ -129,6 +134,7 @@ exports[`Tool Schema Snapshots > Tool: stage_selected_specs_and_create_atomic_co
   "required": [
     "fileSpecs",
     "commitSummary",
+    "skipChecksIfHuskyPresent",
   ],
   "type": "object",
 }

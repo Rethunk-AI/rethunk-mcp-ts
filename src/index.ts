@@ -25,6 +25,12 @@ if (isStdioMode || isHttpModeWithoutTty) {
   process.env.FORCE_COLOR = '0'; // Disable forced coloring
 }
 
+import { installAbortSignalShim } from '@/mcp-server/tools/utils/signal.js';
+
+// Install best-effort AbortSignal shim early to avoid cross-realm getter
+// exceptions when SDK-provided signals are proxied into Node internals.
+installAbortSignalShim();
+
 import {
   initializeOpenTelemetry,
   shutdownOpenTelemetry,

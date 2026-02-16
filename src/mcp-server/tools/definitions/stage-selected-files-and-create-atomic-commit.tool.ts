@@ -4,6 +4,7 @@
  * @module src/mcp-server/tools/definitions/stage-selected-files-and-create-atomic-commit
  */
 
+import { existsSync, readFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { createOpenAI } from '@ai-sdk/openai';
 import type { ContentBlock } from '@modelcontextprotocol/sdk/types.js';
@@ -16,9 +17,12 @@ import type {
   ToolAnnotations,
   ToolDefinition,
 } from '@/mcp-server/tools/utils/index.js';
+import { sanitizeSdkContext } from '@/mcp-server/tools/utils/signal.js';
 import { withToolAuth } from '@/mcp-server/transports/auth/lib/withAuth.js';
 import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
 import { type RequestContext, logger } from '@/utils/index.js';
+
+// Centralized AbortSignal shim is applied at startup; use `sanitizeSdkContext`.
 
 const TOOL_NAME = 'stage_selected_specs_and_create_atomic_commit';
 const TOOL_TITLE = 'Stage Selected Specs and Create Atomic Commit';
@@ -57,6 +61,13 @@ const InputSchema = z.object({
     .optional()
     .describe(
       'If true, allows execution even when there are already staged changes. If false or omitted, tool fails when pre-existing staged changes are detected.',
+    ),
+  skipChecksIfHuskyPresent: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe(
+      'If true (default), skips integrated quality checks when husky pre-commit hooks are configured to avoid duplicate runs. Set to false to ignore husky and run checks regardless.',
     ),
 });
 
@@ -115,6 +126,38 @@ const RANGE_SPEC_PATTERN =
 const ALLOWED_COMMANDS = new Set(['git']);
 const CONVENTIONAL_COMMIT_PATTERN =
   /^(feat|fix|refactor|perf|test|docs|chore)(\([^)]+\))?!?:\s.+/;
+
+/**
+ * Detects if husky pre-commit hooks are configured in the current project.
+ * Checks for husky dependency in package.json and existence of .husky/pre-commit hook.
+ * @param cwd - Current working directory (defaults to process.cwd()).
+ * @returns True if husky is configured with a pre-commit hook, false otherwise.
+ */
+function detectHuskyPresent(cwd: string = process.cwd()): boolean {
+  try {
+    const packageJsonPath = `${cwd}/package.json`;
+    if (!existsSync(packageJsonPath)) {
+      return false;
+    }
+
+    const packageJsonContent = readFileSync(packageJsonPath, 'utf-8');
+    const packageJson = JSON.parse(packageJsonContent) as Record<
+      string,
+      unknown
+    >;
+    const deps = packageJson.devDependencies as
+      | Record<string, unknown>
+      | undefined;
+    if (!deps?.husky) {
+      return false;
+    }
+
+    const preCommitPath = `${cwd}/.husky/pre-commit`;
+    return existsSync(preCommitPath);
+  } catch {
+    return false;
+  }
+}
 
 function createOpenAiClient() {
   if (!config.openaiApiKey) {
@@ -585,8 +628,12 @@ function extractJsonPayload(text: string): Record<string, unknown> {
   }
 
   const jsonText = text.slice(firstBrace, lastBrace + 1);
-  const parsed = JSON.parse(jsonText) as unknown;
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+  const parsedRawUnknown = JSON.parse(jsonText) as unknown;
+  if (
+    !parsedRawUnknown ||
+    typeof parsedRawUnknown !== 'object' ||
+    Array.isArray(parsedRawUnknown)
+  ) {
     throw new McpError(
       JsonRpcErrorCode.ValidationError,
       'LLM response payload must be a JSON object.',
@@ -594,7 +641,7 @@ function extractJsonPayload(text: string): Record<string, unknown> {
     );
   }
 
-  return parsed as Record<string, unknown>;
+  return parsedRawUnknown as Record<string, unknown>;
 }
 
 export const commitMessageRefiner = {
@@ -608,27 +655,63 @@ export const commitMessageRefiner = {
     const openai = createOpenAiClient();
 
     const prompt = [
-      'You are a strict commit-message reviewer and formatter.',
-      'Input is a commit summary.',
-      'Decide if the summary is WHY-focused (motivation, reason, or outcome) instead of WHAT-focused (list of file/code edits).',
-      'If not why-focused, set isWhyFocused=false and explain why in feedback.',
-      'If why-focused, set isWhyFocused=true and provide a conventional-commit style message in refinedCommitMessage.',
-      'Use one of: feat, fix, refactor, perf, test, docs, chore.',
-      'Return JSON only with keys: isWhyFocused, refinedCommitMessage, feedback.',
-      '',
+      'Review commit summary: WHY-focused (motivation) or WHAT-focused (file list)?',
+      'Output JSON: {isWhyFocused: boolean, refinedCommitMessage: string, feedback: string}',
+      'If WHY-focused, format as conventional commit: feat/fix/refactor/perf/test/docs/chore(scope): summary',
       `Summary: ${commitSummary}`,
     ].join('\n');
 
-    const response = await generateText({
+    const rawResponse = (await generateText({
       model: openai('gpt-5-nano'),
       prompt,
       temperature: 0,
-    });
+    })) as unknown;
 
-    const payload = extractJsonPayload(response.text);
-    const isWhyFocused = payload.isWhyFocused;
-    const refinedCommitMessage = payload.refinedCommitMessage;
-    const feedback = payload.feedback;
+    if (!rawResponse || typeof rawResponse !== 'object') {
+      throw new McpError(
+        JsonRpcErrorCode.InternalError,
+        'LLM did not return a valid response object.',
+        { rawResponse },
+      );
+    }
+
+    const textVal = (rawResponse as Record<string, unknown>)['text'];
+    if (typeof textVal !== 'string') {
+      throw new McpError(
+        JsonRpcErrorCode.InternalError,
+        'LLM response did not include a string `text` field.',
+        { rawResponse },
+      );
+    }
+
+    const payload = extractJsonPayload(textVal);
+    const isWhyFocusedRaw = payload['isWhyFocused'];
+    const refinedCommitMessageRaw = payload['refinedCommitMessage'];
+    const feedbackRaw = payload['feedback'];
+
+    if (typeof isWhyFocusedRaw !== 'boolean') {
+      throw new McpError(
+        JsonRpcErrorCode.ValidationError,
+        'LLM response is missing boolean isWhyFocused.',
+        { payload },
+      );
+    }
+
+    if (
+      typeof refinedCommitMessageRaw !== 'string' ||
+      !refinedCommitMessageRaw.trim()
+    ) {
+      throw new McpError(
+        JsonRpcErrorCode.ValidationError,
+        'LLM response is missing refinedCommitMessage.',
+        { payload },
+      );
+    }
+
+    const isWhyFocused: boolean = isWhyFocusedRaw;
+    const refinedCommitMessage: string = refinedCommitMessageRaw.trim();
+    const feedback: string =
+      typeof feedbackRaw === 'string' ? feedbackRaw.trim() : '';
 
     if (typeof isWhyFocused !== 'boolean') {
       throw new McpError(
@@ -649,7 +732,7 @@ export const commitMessageRefiner = {
       );
     }
 
-    if (!CONVENTIONAL_COMMIT_PATTERN.test(refinedCommitMessage.trim())) {
+    if (!CONVENTIONAL_COMMIT_PATTERN.test(refinedCommitMessage)) {
       throw new McpError(
         JsonRpcErrorCode.ValidationError,
         'LLM refined commit message is not in conventional-commit format.',
@@ -685,22 +768,66 @@ export const gitRunner = {
         return;
       }
 
-      const child = spawn(commandName, args, {
+      const spawnOptions: Parameters<typeof spawn>[2] = {
         cwd: process.cwd(),
         env: createSafeCommandEnv(),
         stdio: ['pipe', 'pipe', 'pipe'],
-        signal: sdkContext.signal,
-      });
+      };
+
+      // Avoid passing potentially non-native signal objects directly to spawn.
+      // Some SDK signals originate from other realms and can cause Node to
+      // throw when accessing AbortSignal.aborted. Instead, spawn the child
+      // and register an abort listener that kills the child process.
+      const child = spawn(commandName, args, spawnOptions);
+
+      if (
+        sdkContext?.signal &&
+        typeof (sdkContext.signal as EventTarget).addEventListener ===
+          'function'
+      ) {
+        const onAbort = () => {
+          try {
+            child.kill('SIGTERM');
+          } catch {
+            // ignore
+          }
+        };
+
+        try {
+          (sdkContext.signal as EventTarget).addEventListener(
+            'abort',
+            onAbort,
+            { once: true } as AddEventListenerOptions,
+          );
+        } catch {
+          // ignore if addEventListener unavailable
+        }
+
+        child.on('close', () => {
+          try {
+            (sdkContext.signal as EventTarget).removeEventListener(
+              'abort',
+              onAbort,
+            );
+          } catch {
+            // ignore
+          }
+        });
+      }
 
       let stdout = '';
       let stderr = '';
 
-      child.stdout.on('data', (chunk: Buffer) => {
-        stdout += chunk.toString();
-      });
-      child.stderr.on('data', (chunk: Buffer) => {
-        stderr += chunk.toString();
-      });
+      if (child.stdout) {
+        child.stdout.on('data', (chunk: Buffer) => {
+          stdout += chunk.toString();
+        });
+      }
+      if (child.stderr) {
+        child.stderr.on('data', (chunk: Buffer) => {
+          stderr += chunk.toString();
+        });
+      }
 
       child.on('error', (error) => {
         reject(
@@ -712,10 +839,16 @@ export const gitRunner = {
         );
       });
 
-      if (stdin) {
-        child.stdin.write(stdin);
+      if (child.stdin) {
+        if (stdin) {
+          child.stdin.write(stdin);
+        }
+        try {
+          child.stdin.end();
+        } catch {
+          // ignore
+        }
       }
-      child.stdin.end();
 
       child.on('close', (exitCode) => {
         resolve({
@@ -792,6 +925,14 @@ async function stageAndCommitSelectedSpecsLogic(
     'Staging selected file specs and creating atomic commit.',
     appContext,
   );
+
+  // Detect husky presence and log when checks will be skipped
+  if (input.skipChecksIfHuskyPresent && detectHuskyPresent(process.cwd())) {
+    logger.info(
+      'Husky pre-commit hooks detected. Skipping integrated quality checks to avoid duplicate runs.',
+      appContext,
+    );
+  }
 
   const parsedSpecs = input.fileSpecs.map((spec) => parseFileSpec(spec));
 
@@ -949,7 +1090,10 @@ export const stageSelectedFilesAndCreateAtomicCommitTool: ToolDefinition<
   annotations: TOOL_ANNOTATIONS,
   logic: withToolAuth(
     ['tool:git-atomic-commit:write'],
-    stageAndCommitSelectedSpecsLogic,
+    async (input, ctx, sdk) => {
+      const safeSdk = sanitizeSdkContext(sdk);
+      return stageAndCommitSelectedSpecsLogic(input, ctx, safeSdk);
+    },
   ),
   responseFormatter,
 };

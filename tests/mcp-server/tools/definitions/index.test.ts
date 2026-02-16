@@ -17,9 +17,7 @@ describe('Tool Definitions Barrel Export', () => {
 
   it('should expose the TypeScript checking and stage-and-commit tools', () => {
     expect(allToolDefinitions).toHaveLength(2);
-    expect(allToolDefinitions).toContain(
-      checkTypeScriptProjectProblemsTool,
-    );
+    expect(allToolDefinitions).toContain(checkTypeScriptProjectProblemsTool);
     expect(allToolDefinitions).toContain(
       stageSelectedFilesAndCreateAtomicCommitTool,
     );
