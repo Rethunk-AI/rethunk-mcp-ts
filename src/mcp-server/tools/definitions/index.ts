@@ -8,8 +8,7 @@
 import { checkTypeScriptProjectProblemsTool } from './check-typescript-project-problems.tool.js';
 
 /**
- * An array containing all tool definitions for easy iteration.
- * Includes both regular tools and task-based tools (experimental).
+ * An array containing all tool definitions for easy iteration and registration.
  */
 export const allToolDefinitions = [
   checkTypeScriptProjectProblemsTool,
