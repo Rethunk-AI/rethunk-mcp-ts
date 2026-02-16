@@ -125,7 +125,7 @@ const RANGE_SPEC_PATTERN =
   /^(?<filePath>.+?)#L(?<start>\d+)(?:-L(?<end>\d+))?$/u;
 const ALLOWED_COMMANDS = new Set(['git']);
 const CONVENTIONAL_COMMIT_PATTERN =
-  /^(feat|fix|refactor|perf|test|docs|chore)(\([^)]+\))?!?:\s.+/;
+  /^[a-z]+(\([^)]+\))?!?:\s.+/;
 
 /**
  * Detects if husky pre-commit hooks are configured in the current project.
