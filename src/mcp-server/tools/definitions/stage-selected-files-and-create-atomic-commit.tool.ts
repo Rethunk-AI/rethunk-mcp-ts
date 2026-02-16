@@ -159,17 +159,6 @@ function detectHuskyPresent(cwd: string = process.cwd()): boolean {
   }
 }
 
-function createOpenAiClient() {
-  if (!config.openaiApiKey) {
-    throw new McpError(
-      JsonRpcErrorCode.ConfigurationError,
-      'OPENAI_API_KEY is required for commit summary validation and refinement.',
-    );
-  }
-
-  return createOpenAI({ apiKey: config.openaiApiKey });
-}
-
 function createSafeCommandEnv(): Record<string, string> {
   const safeKeys = [
     'PATH',
@@ -616,33 +605,22 @@ export function buildCachedPatchForRanges(
   return `${patchLines.join('\n')}\n`;
 }
 
-function extractJsonPayload(text: string): Record<string, unknown> {
-  const firstBrace = text.indexOf('{');
-  const lastBrace = text.lastIndexOf('}');
-  if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
-    throw new McpError(
-      JsonRpcErrorCode.ValidationError,
-      'LLM response did not contain valid JSON payload for commit validation.',
-      { text },
-    );
-  }
-
-  const jsonText = text.slice(firstBrace, lastBrace + 1);
-  const parsedRawUnknown = JSON.parse(jsonText) as unknown;
-  if (
-    !parsedRawUnknown ||
-    typeof parsedRawUnknown !== 'object' ||
-    Array.isArray(parsedRawUnknown)
-  ) {
-    throw new McpError(
-      JsonRpcErrorCode.ValidationError,
-      'LLM response payload must be a JSON object.',
-      { text: jsonText },
-    );
-  }
-
-  return parsedRawUnknown as Record<string, unknown>;
-}
+const CommitRefinerSchema = z.object({
+  isWhyFocused: z
+    .boolean()
+    .describe(
+      'Whether the commit summary is WHY-focused (motivation) vs WHAT-focused (file list).',
+    ),
+  refinedCommitMessage: z
+    .string()
+    .min(1)
+    .describe('Refined commit message in conventional-commit format.'),
+  feedback: z
+    .string()
+    .optional()
+    .default('')
+    .describe('Feedback or explanation for the refinement.'),
+});
 
 export const commitMessageRefiner = {
   refineCommitMessage: async (
@@ -652,98 +630,59 @@ export const commitMessageRefiner = {
     refinedCommitMessage: string;
     feedback: string;
   }> => {
-    const openai = createOpenAiClient();
+    const apiKey = config.openaiApiKey;
+    if (!apiKey) {
+      throw new McpError(
+        JsonRpcErrorCode.ConfigurationError,
+        'OPENAI_API_KEY is required for commit summary validation and refinement.',
+      );
+    }
 
-    const prompt = [
-      'Review commit summary: WHY-focused (motivation) or WHAT-focused (file list)?',
-      'Output JSON: {isWhyFocused: boolean, refinedCommitMessage: string, feedback: string}',
-      'If WHY-focused, format as conventional commit: feat/fix/refactor/perf/test/docs/chore(scope): summary',
-      `Summary: ${commitSummary}`,
-    ].join('\n');
+    const openai = createOpenAI({ apiKey });
 
-    const rawResponse = (await generateText({
+    const result = await generateText({
       model: openai('gpt-5-nano'),
-      prompt,
+      prompt: [
+        'Review commit summary: WHY-focused (motivation) or WHAT-focused (file list)?',
+        'If WHY-focused, format as conventional commit: feat/fix/refactor/perf/test/docs/chore(scope): summary',
+        `Summary: ${commitSummary}`,
+      ].join('\n\n'),
       temperature: 0,
-    })) as unknown;
+      providerOptions: {
+        openai: {
+          parallel_tool_calls: false,  // Force one step at a time
+          reasoning_effort: 'minimal',
+          reasoning_summary: 'auto',   // View the thought process
+          verbosity: 'low',
+        }
+      }
+    });
 
-    if (!rawResponse || typeof rawResponse !== 'object') {
-      throw new McpError(
-        JsonRpcErrorCode.InternalError,
-        'LLM did not return a valid response object.',
-        { rawResponse },
-      );
-    }
-
-    const textVal = (rawResponse as Record<string, unknown>)['text'];
-    if (typeof textVal !== 'string') {
-      throw new McpError(
-        JsonRpcErrorCode.InternalError,
-        'LLM response did not include a string `text` field.',
-        { rawResponse },
-      );
-    }
-
-    const payload = extractJsonPayload(textVal);
-    const isWhyFocusedRaw = payload['isWhyFocused'];
-    const refinedCommitMessageRaw = payload['refinedCommitMessage'];
-    const feedbackRaw = payload['feedback'];
-
-    if (typeof isWhyFocusedRaw !== 'boolean') {
+    // Parse the text response as JSON using the schema
+    let object: z.infer<typeof CommitRefinerSchema>;
+    try {
+      const parsed = JSON.parse(result.text) as unknown;
+      object = CommitRefinerSchema.parse(parsed);
+    } catch (error) {
       throw new McpError(
         JsonRpcErrorCode.ValidationError,
-        'LLM response is missing boolean isWhyFocused.',
-        { payload },
+        'Failed to parse LLM response as structured JSON.',
+        { text: result.text, error: String(error) },
       );
     }
 
-    if (
-      typeof refinedCommitMessageRaw !== 'string' ||
-      !refinedCommitMessageRaw.trim()
-    ) {
-      throw new McpError(
-        JsonRpcErrorCode.ValidationError,
-        'LLM response is missing refinedCommitMessage.',
-        { payload },
-      );
-    }
-
-    const isWhyFocused: boolean = isWhyFocusedRaw;
-    const refinedCommitMessage: string = refinedCommitMessageRaw.trim();
-    const feedback: string =
-      typeof feedbackRaw === 'string' ? feedbackRaw.trim() : '';
-
-    if (typeof isWhyFocused !== 'boolean') {
-      throw new McpError(
-        JsonRpcErrorCode.ValidationError,
-        'LLM response is missing boolean isWhyFocused.',
-        { payload },
-      );
-    }
-
-    if (
-      typeof refinedCommitMessage !== 'string' ||
-      !refinedCommitMessage.trim()
-    ) {
-      throw new McpError(
-        JsonRpcErrorCode.ValidationError,
-        'LLM response is missing refinedCommitMessage.',
-        { payload },
-      );
-    }
-
-    if (!CONVENTIONAL_COMMIT_PATTERN.test(refinedCommitMessage)) {
+    if (!CONVENTIONAL_COMMIT_PATTERN.test(object.refinedCommitMessage)) {
       throw new McpError(
         JsonRpcErrorCode.ValidationError,
         'LLM refined commit message is not in conventional-commit format.',
-        { refinedCommitMessage },
+        { refinedCommitMessage: object.refinedCommitMessage },
       );
     }
 
     return {
-      isWhyFocused,
-      refinedCommitMessage: refinedCommitMessage.trim(),
-      feedback: typeof feedback === 'string' ? feedback.trim() : '',
+      isWhyFocused: object.isWhyFocused,
+      refinedCommitMessage: object.refinedCommitMessage,
+      feedback: object.feedback,
     };
   },
 };
