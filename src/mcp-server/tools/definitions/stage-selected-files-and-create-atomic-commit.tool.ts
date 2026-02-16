@@ -783,7 +783,7 @@ export const gitRunner = {
       if (
         sdkContext?.signal &&
         typeof (sdkContext.signal as EventTarget).addEventListener ===
-          'function'
+        'function'
       ) {
         const onAbort = () => {
           try {
