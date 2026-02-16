@@ -1,7 +1,4 @@
-import 'reflect-metadata';
-
 import { describe, expect, it, vi, afterEach } from 'vitest';
-
 import {
   checkRunner,
   checkTypeScriptProjectProblemsTool,
@@ -11,6 +8,7 @@ import {
   McpError,
 } from '../../../../src/types-global/errors.js';
 import { requestContextService } from '../../../../src/utils/index.js';
+import 'reflect-metadata';
 
 describe('checkTypeScriptProjectProblemsTool', () => {
   const mockSdkContext = {
@@ -79,6 +77,8 @@ describe('checkTypeScriptProjectProblemsTool', () => {
       '--pretty',
       'false',
     ]);
+    // Verify sdkContext is passed (4th parameter)
+    expect(runnerSpy.mock.calls[0]?.[3]).toBe(mockSdkContext);
     expect(result.hasProblems).toBe(true);
     expect(result.checks).toHaveLength(3);
   });
