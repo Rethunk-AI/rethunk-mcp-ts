@@ -654,7 +654,7 @@ const configSchema = z.object({
 });
 ```
 
-1. Map environment variables:
+2. Map environment variables:
 
 ```typescript
 const config: z.infer<typeof configSchema> = {
