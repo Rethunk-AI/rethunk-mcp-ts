@@ -1,3 +1,9 @@
+/**
+ * @fileoverview MCP tool for checking TypeScript projects for code quality issues.
+ * Runs lint:fix and typecheck commands to validate project health.
+ * @module src/mcp-server/tools/definitions/check-typescript-project-problems
+ */
+
 import { spawn } from 'node:child_process';
 import type { ContentBlock } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
@@ -14,7 +20,7 @@ import { type RequestContext, logger } from '@/utils/index.js';
 const TOOL_NAME = 'check_typescript_project_for_problems';
 const TOOL_TITLE = 'Check TypeScript Project for Problems';
 const TOOL_DESCRIPTION =
-  'Runs quick local quality checks and returns combined output from lint fix and type checking commands in machine-parseable formats.';
+  'Runs quick local quality checks including lint fixing (which modifies files) and type checking. Returns combined output in machine-parseable JSON format.';
 
 const TOOL_ANNOTATIONS: ToolAnnotations = {
   readOnlyHint: false,
@@ -56,6 +62,11 @@ const QUICK_CHECKS = [
 
 const ALLOWED_COMMANDS = new Set(['yarn']);
 
+/**
+ * Creates a sanitized environment for executing child processes.
+ * Filters process.env to only include safe, non-sensitive variables needed for command execution.
+ * @returns A record of safe environment variables with color output disabled.
+ */
 function createSafeCommandEnv(): Record<string, string> {
   const safeKeys = [
     'PATH',
@@ -83,7 +94,20 @@ function createSafeCommandEnv(): Record<string, string> {
   return env;
 }
 
+/**
+ * Utility object for running validation checks via spawned child processes.
+ * Handles command validation, process execution, and output capture for TypeScript project checks.
+ */
 export const checkRunner = {
+  /**
+   * Executes a check command (e.g., yarn lint:fix, yarn typecheck) and captures output.
+   * @param checkName - Human-readable name of the check (e.g., "lint:fix").
+   * @param command - The command to execute (must be in ALLOWED_COMMANDS).
+   * @param args - Arguments to pass to the command.
+   * @param sdkContext - SDK context containing abort signal for cancellation.
+   * @param appContext - Application context for logging and request tracking.
+   * @returns Promise resolving to the check result with exit code, success status, and captured output.
+   */
   run: (
     checkName: string,
     command: string,
@@ -143,6 +167,14 @@ export const checkRunner = {
     }),
 };
 
+/**
+ * Core logic for executing TypeScript project quality checks.
+ * Runs all configured checks (lint:fix, typecheck, typecheck:scripts) in parallel.
+ * @param _input - Tool input (currently unused; tool takes no parameters).
+ * @param appContext - Application context for logging and request tracking.
+ * @param sdkContext - SDK context containing abort signal for cancellation.
+ * @returns Promise resolving to combined check results with overall problem status.
+ */
 async function checkTypeScriptProjectLogic(
   _input: z.infer<typeof InputSchema>,
   appContext: RequestContext,
@@ -162,7 +194,15 @@ async function checkTypeScriptProjectLogic(
   };
 }
 
-function responseFormatter(result: TypeScriptProjectCheckResponse): ContentBlock[] {
+/**
+ * Formats check results into ContentBlock array for MCP response.
+ * Converts the structured result object to pretty-printed JSON.
+ * @param result - The combined check results from checkTypeScriptProjectLogic.
+ * @returns Array containing a single text ContentBlock with JSON-formatted results.
+ */
+function responseFormatter(
+  result: TypeScriptProjectCheckResponse,
+): ContentBlock[] {
   return [
     {
       type: 'text',
