@@ -77,6 +77,7 @@ describe('Resource JSON Schema Draft 4 Compatibility', () => {
     it('should not use exclusiveMinimum as number (Draft 7 format)', () => {
       const allIssues: string[] = [];
 
+      // Note: Loop does not execute since allResourceDefinitions is intentionally empty.
       for (const resource of allResourceDefinitions) {
         const paramsSchema = toJsonSchema(resource.paramsSchema);
         const paramsIssues = findDraft7Incompatibilities(

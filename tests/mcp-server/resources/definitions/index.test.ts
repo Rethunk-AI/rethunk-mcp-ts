@@ -20,6 +20,8 @@ describe('Resource Definitions Barrel Export', () => {
     expect(uniqueNames.size).toBe(names.length);
   });
 
+  // Note: The following test suites are dynamically generated from allResourceDefinitions.
+  // Since the array is intentionally empty in current config, these suites do not execute.
   for (const resource of allResourceDefinitions) {
     describe(`Resource: ${resource.name}`, () => {
       it('should have required metadata', () => {

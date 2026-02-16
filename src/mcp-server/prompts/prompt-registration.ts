@@ -34,6 +34,7 @@ export class PromptRegistry {
     );
 
     // Register each prompt using the SDK's registerPrompt API
+    // Note: allPromptDefinitions is intentionally empty in current configuration
     for (const promptDef of allPromptDefinitions) {
       this.logger.debug(`Registering prompt: ${promptDef.name}`, context);
 
