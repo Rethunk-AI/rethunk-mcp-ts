@@ -47,6 +47,7 @@ describe('config parsing', () => {
     process.env.OTEL_TRACES_SAMPLER_ARG = '0.5';
     process.env.OPENROUTER_APP_URL = 'https://app.example.com';
     delete process.env.OPENROUTER_APP_NAME;
+    process.env.OPENAI_API_KEY = 'test-openai-key';
     delete process.env.LOGS_DIR;
     process.env.LLM_DEFAULT_TEMPERATURE = '0.7';
 
@@ -67,6 +68,7 @@ describe('config parsing', () => {
     expect(parsed.openTelemetry.samplingRatio).toBe(0.5);
     expect(parsed.openrouterAppUrl).toBe('https://app.example.com');
     expect(parsed.openrouterAppName).toBe('mcp-ts-template');
+    expect(parsed.openaiApiKey).toBe('test-openai-key');
     expect(parsed.llmDefaultTemperature).toBeCloseTo(0.7);
   });
 

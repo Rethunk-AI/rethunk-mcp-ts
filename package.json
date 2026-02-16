@@ -157,6 +157,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.29",
     "@hono/node-server": "^1.19.9",
     "@modelcontextprotocol/ext-apps": "^1.0.1",
     "@modelcontextprotocol/sdk": "^1.26.0",
@@ -171,6 +172,7 @@
     "@opentelemetry/sdk-trace-node": "^2.5.1",
     "@opentelemetry/semantic-conventions": "^1.39.0",
     "@supabase/supabase-js": "^2.95.3",
+    "ai": "^6.0.86",
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
     "axios": "^1.13.5",

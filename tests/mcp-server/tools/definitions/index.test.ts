@@ -6,11 +6,22 @@
 import { describe, it, expect } from 'vitest';
 
 import { allToolDefinitions } from '@/mcp-server/tools/definitions/index.js';
+import { stageSelectedFilesAndCreateAtomicCommitTool } from '@/mcp-server/tools/definitions/stage-selected-files-and-create-atomic-commit.tool.js';
 
 describe('Tool Definitions Barrel Export', () => {
   it('should export a non-empty array of tool definitions', () => {
     expect(allToolDefinitions).toBeInstanceOf(Array);
     expect(allToolDefinitions.length).toBeGreaterThan(0);
+  });
+
+  it('should expose only the stage-and-commit tool', () => {
+    expect(allToolDefinitions).toHaveLength(1);
+    expect(allToolDefinitions[0]).toBe(
+      stageSelectedFilesAndCreateAtomicCommitTool,
+    );
+    expect(allToolDefinitions[0]?.name).toBe(
+      'stage_selected_specs_and_create_atomic_commit',
+    );
   });
 
   it('should have unique tool names', () => {
