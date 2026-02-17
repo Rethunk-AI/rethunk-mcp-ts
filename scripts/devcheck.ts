@@ -93,6 +93,7 @@ interface AppContext {
   noFix: boolean
   isHuskyHook: boolean
   fastMode: boolean
+  fullMode: boolean
   cleanCache: boolean
   /** When set, only run checks whose name matches (case-insensitive). */
   onlyCheck: string | null
@@ -605,6 +606,7 @@ const GLOBAL_FLAGS = new Set([
   '--help',
   '--only',
   '--clean-cache',
+  '--full',
 ])
 
 /** All recognized flags (global + per-check skip flags). */
@@ -631,6 +633,9 @@ function printHelp() {
   UI.log(
     `  ${c.yellow('--clean-cache')}   Clear Biome cache before running checks`,
   )
+  UI.log(
+    `  ${c.yellow('--full')}          Run all checks including network-bound operations`,
+  )
   UI.log(`  ${c.yellow('--help')}          Show this help message\n`)
   UI.log(`${c.bold('Skip individual checks:')}`)
   for (const check of ALL_CHECKS) {
@@ -651,6 +656,7 @@ function parseArgs(
   let noFix = false
   let isHuskyHook = false
   let fastMode = false
+  let fullMode = false
   let cleanCache = false
   let onlyCheck: string | null = null
 
@@ -667,6 +673,10 @@ function parseArgs(
       fastMode = true
     } else if (arg === '--clean-cache') {
       cleanCache = true
+    } else if (arg === '--full') {
+      fullMode = true
+      // --full overrides --fast
+      fastMode = false
     } else if (arg === '--only') {
       const next = args[i + 1]
       if (!next || next.startsWith('--')) {
@@ -697,7 +707,7 @@ function parseArgs(
     isHuskyHook = true
   }
 
-  return { flags, noFix, isHuskyHook, fastMode, cleanCache, onlyCheck }
+  return { flags, noFix, isHuskyHook, fastMode, fullMode, cleanCache, onlyCheck }
 }
 
 async function runCheck(check: Check, ctx: AppContext): Promise<CommandResult> {
