@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Use aggressive caching in pre-commit mode
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo.precommit",
+
+    // Skip declaration generation in pre-commit (not needed for type checking)
+    "declaration": false,
+    "declarationMap": false,
+
+    // Faster checking by skipping some diagnostics
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+
+    // Keep strict type checking but optimize for speed
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "tests/**/*", "**/*.spec.ts"]
+}

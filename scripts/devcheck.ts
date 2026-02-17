@@ -325,10 +325,18 @@ const ALL_CHECKS: Check[] = [
     // TypeScript generally needs the whole project context for accurate checking.
     // Incremental compilation is enabled in tsconfig.json (.tsbuildinfo cache)
     // providing ~30-50% speedup on repeat checks by only re-checking changed files.
-    getCommand: (ctx) => [
-      path.join(ctx.rootDir, 'node_modules', '.bin', 'tsc'),
-      '--noEmit',
-    ],
+    // In pre-commit mode, uses tsconfig.precommit.json for faster checking of source files.
+    getCommand: (ctx) => {
+      const command = [
+        path.join(ctx.rootDir, 'node_modules', '.bin', 'tsc'),
+        '--noEmit',
+      ]
+      // Use pre-commit-specific config (excludes tests) when in Husky mode for faster checking
+      if (ctx.isHuskyHook) {
+        command.push('-p', 'tsconfig.precommit.json')
+      }
+      return command
+    },
     tip: () =>
       'Check TypeScript errors in your IDE or the console output. Incremental builds cached in .tsbuildinfo.',
   },
