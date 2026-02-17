@@ -12,11 +12,11 @@ import { fileURLToPath } from 'node:url'
  *   Pre-commit hooks analyze only staged files for maximum performance.
  *
  * @performance
- *   - Uses ESLint cache (.eslintcache) for faster linting
- *   - Uses Prettier cache (.prettiercache) for faster formatting
+ *   - Biome caching enabled by default (automatic incremental checking)
  *   - Uses TypeScript incremental builds (.tsbuildinfo) for faster type checking
  *   - Runs all checks in parallel using Promise.allSettled
  *   - Fast mode (--fast) skips slow network-bound checks
+ *   - Note: Biome cache is stored in system cache dir (~/.cache/biomejs on Linux)
  *
  * @example
  * // Run all checks (Auto-fixing enabled):
@@ -93,6 +93,7 @@ interface AppContext {
   noFix: boolean
   isHuskyHook: boolean
   fastMode: boolean
+  cleanCache: boolean
   /** When set, only run checks whose name matches (case-insensitive). */
   onlyCheck: string | null
   rootDir: string
@@ -584,6 +585,7 @@ const GLOBAL_FLAGS = new Set([
   '--fast',
   '--help',
   '--only',
+  '--clean-cache',
 ])
 
 /** All recognized flags (global + per-check skip flags). */
@@ -607,6 +609,9 @@ function printHelp() {
   UI.log(
     `  ${c.yellow('--only <name>')}   Run only the named check (case-insensitive partial match)`,
   )
+  UI.log(
+    `  ${c.yellow('--clean-cache')}   Clear Biome cache before running checks`,
+  )
   UI.log(`  ${c.yellow('--help')}          Show this help message\n`)
   UI.log(`${c.bold('Skip individual checks:')}`)
   for (const check of ALL_CHECKS) {
@@ -627,6 +632,7 @@ function parseArgs(
   let noFix = false
   let isHuskyHook = false
   let fastMode = false
+  let cleanCache = false
   let onlyCheck: string | null = null
 
   for (let i = 0; i < args.length; i++) {
@@ -640,6 +646,8 @@ function parseArgs(
       isHuskyHook = true
     } else if (arg === '--fast') {
       fastMode = true
+    } else if (arg === '--clean-cache') {
+      cleanCache = true
     } else if (arg === '--only') {
       const next = args[i + 1]
       if (!next || next.startsWith('--')) {
@@ -670,7 +678,7 @@ function parseArgs(
     isHuskyHook = true
   }
 
-  return { flags, noFix, isHuskyHook, fastMode, onlyCheck }
+  return { flags, noFix, isHuskyHook, fastMode, cleanCache, onlyCheck }
 }
 
 async function runCheck(check: Check, ctx: AppContext): Promise<CommandResult> {
@@ -857,6 +865,23 @@ async function main() {
   }
 
   UI.printHeader(appContext)
+
+  // Clear Biome cache if requested
+  if (appContext.cleanCache) {
+    const cleanStart = performance.now()
+    const cleanResult = await Shell.exec(
+      [path.join(appContext.rootDir, 'node_modules', '.bin', 'biome'), 'clean'],
+      { cwd: appContext.rootDir },
+    )
+    const cleanDuration = Math.round(performance.now() - cleanStart)
+    if (cleanResult.exitCode === 0) {
+      UI.log(c.dim(`🧹 Biome cache cleared (${cleanDuration}ms)`))
+    } else {
+      UI.log(c.yellow('⚠ Failed to clear Biome cache'))
+      if (cleanResult.stderr) UI.log(c.dim(cleanResult.stderr))
+    }
+    UI.log('')
+  }
 
   // Run checks concurrently, buffering output per check
   const totalStart = performance.now()
