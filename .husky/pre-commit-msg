@@ -1,0 +1,8 @@
+#!/bin/bash
+# Check if commit message contains [skip-checks] marker
+if grep -q "\[skip-checks\]" "$1"; then
+  echo "⏭️  Skipping pre-commit checks (marked with [skip-checks])"
+  exit 0
+fi
+# Otherwise, let pre-commit hook run
+exit 0
