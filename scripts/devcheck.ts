@@ -534,13 +534,21 @@ const UI = {
       }
     }
 
-    // Highlight the slowest check to help identify bottlenecks
+    // Highlight the slowest check and show parallelism efficiency
     const ranChecks = results.filter((r) => !r.skipped)
     if (ranChecks.length > 1) {
       const slowest = ranChecks.reduce((a, b) =>
         a.duration > b.duration ? a : b,
       )
-      UI.log(c.dim(`\n  Slowest: ${slowest.checkName} (${slowest.duration}ms)`))
+      const sumDurations = ranChecks.reduce((sum, r) => sum + r.duration, 0)
+      // Parallelism factor: how much faster than sequential execution
+      // If total time is 1600ms but sum is 3200ms, parallelism factor is 2.0x
+      const parallelismFactor = (sumDurations / slowest.duration).toFixed(1)
+      UI.log(
+        c.dim(
+          `\n  Slowest: ${slowest.checkName} (${slowest.duration}ms) | Parallelism: ${parallelismFactor}x`,
+        ),
+      )
     }
 
     UI.log('\n------------------------------------------------')
