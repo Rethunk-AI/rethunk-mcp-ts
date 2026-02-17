@@ -176,7 +176,7 @@ export const PROVIDER_ERROR_PATTERNS: ReadonlyArray<
     errorCode: JsonRpcErrorCode.Timeout,
   },
   {
-    pattern: /unique constraint|duplicate key/i,
+    pattern: /duplicate\s+key/i,
     errorCode: JsonRpcErrorCode.Conflict,
   },
   {
