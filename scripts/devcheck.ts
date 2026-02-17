@@ -707,7 +707,15 @@ function parseArgs(
     isHuskyHook = true
   }
 
-  return { flags, noFix, isHuskyHook, fastMode, fullMode, cleanCache, onlyCheck }
+  return {
+    flags,
+    noFix,
+    isHuskyHook,
+    fastMode,
+    fullMode,
+    cleanCache,
+    onlyCheck,
+  }
 }
 
 async function runCheck(check: Check, ctx: AppContext): Promise<CommandResult> {

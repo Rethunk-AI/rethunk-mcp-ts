@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 import { watch } from 'node:fs'
-import { spawn, type Subprocess } from 'bun'
 import * as path from 'node:path'
 import * as process from 'node:process'
+import { type Subprocess, spawn } from 'bun'
 
 /**
  * @fileoverview Watch mode for devcheck: automatically re-runs fast checks on file changes.
@@ -74,14 +74,10 @@ runDevcheck(fullMode)
 for (const watchPath of watchPaths) {
   const fullPath = path.join(ROOT_DIR, watchPath)
   try {
-    watch(
-      fullPath,
-      { recursive: true },
-      (_event, filename) => {
-        if (!filename || filename.includes('node_modules')) return
-        scheduleCheck(fullMode)
-      },
-    )
+    watch(fullPath, { recursive: true }, (_event, filename) => {
+      if (!filename || filename.includes('node_modules')) return
+      scheduleCheck(fullMode)
+    })
   } catch {
     // Path may not exist, skip
   }
