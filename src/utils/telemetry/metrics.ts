@@ -5,14 +5,14 @@
  * @module src/utils/telemetry/metrics
  */
 import {
-  metrics,
   type Counter,
   type Histogram,
   type Meter,
+  metrics,
   type ObservableGauge,
-} from '@opentelemetry/api';
+} from '@opentelemetry/api'
 
-import { config } from '@/config/index.js';
+import { config } from '@/config/index.js'
 
 /**
  * Gets or creates a meter for custom metrics.
@@ -31,7 +31,7 @@ export function getMeter(name?: string): Meter {
   return metrics.getMeter(
     name ?? config.openTelemetry.serviceName,
     config.openTelemetry.serviceVersion,
-  );
+  )
 }
 
 /**
@@ -63,8 +63,8 @@ export function createCounter(
   description: string,
   unit = '1',
 ): Counter {
-  const meter = getMeter();
-  return meter.createCounter(name, { description, unit });
+  const meter = getMeter()
+  return meter.createCounter(name, { description, unit })
 }
 
 /**
@@ -93,8 +93,8 @@ export function createUpDownCounter(
   description: string,
   unit = '1',
 ) {
-  const meter = getMeter();
-  return meter.createUpDownCounter(name, { description, unit });
+  const meter = getMeter()
+  return meter.createUpDownCounter(name, { description, unit })
 }
 
 /**
@@ -127,9 +127,9 @@ export function createHistogram(
   description: string,
   unit?: string,
 ): Histogram {
-  const meter = getMeter();
-  const options = unit ? { description, unit } : { description };
-  return meter.createHistogram(name, options);
+  const meter = getMeter()
+  const options = unit ? { description, unit } : { description }
+  return meter.createHistogram(name, options)
 }
 
 /**
@@ -165,9 +165,9 @@ export function createObservableGauge(
   _callback: () => Promise<number> | number,
   unit?: string,
 ): ObservableGauge {
-  const meter = getMeter();
-  const options = unit ? { description, unit } : { description };
-  return meter.createObservableGauge(name, options);
+  const meter = getMeter()
+  const options = unit ? { description, unit } : { description }
+  return meter.createObservableGauge(name, options)
 }
 
 /**
@@ -198,8 +198,8 @@ export function createObservableCounter(
   _callback: () => Promise<number> | number,
   unit = '1',
 ) {
-  const meter = getMeter();
-  return meter.createObservableCounter(name, { description, unit });
+  const meter = getMeter()
+  return meter.createObservableCounter(name, { description, unit })
 }
 
 /**
@@ -229,6 +229,6 @@ export function createObservableUpDownCounter(
   _callback: () => Promise<number> | number,
   unit = '1',
 ) {
-  const meter = getMeter();
-  return meter.createObservableUpDownCounter(name, { description, unit });
+  const meter = getMeter()
+  return meter.createObservableUpDownCounter(name, { description, unit })
 }

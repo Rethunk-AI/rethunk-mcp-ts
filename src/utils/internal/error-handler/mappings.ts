@@ -4,15 +4,15 @@
  * @module src/utils/internal/error-handler/mappings
  */
 
-import { JsonRpcErrorCode } from '@/types-global/errors.js';
-import type { BaseErrorMapping } from './types.js';
+import { JsonRpcErrorCode } from '@/types-global/errors.js'
+import type { BaseErrorMapping } from './types.js'
 
 /**
  * Compiled regex cache for performance optimization.
  * Prevents repeated regex compilation on every error classification.
  * @private
  */
-const COMPILED_PATTERN_CACHE = new Map<string, RegExp>();
+const COMPILED_PATTERN_CACHE = new Map<string, RegExp>()
 
 /**
  * Compiles and caches regex patterns at first use for faster matching.
@@ -23,29 +23,30 @@ const COMPILED_PATTERN_CACHE = new Map<string, RegExp>();
 export function getCompiledPattern(pattern: string | RegExp): RegExp {
   // Create a stable cache key
   const cacheKey =
-    pattern instanceof RegExp ? pattern.source + pattern.flags : pattern;
+    pattern instanceof RegExp ? pattern.source + pattern.flags : pattern
 
   // Return cached pattern if available
   if (COMPILED_PATTERN_CACHE.has(cacheKey)) {
-    return COMPILED_PATTERN_CACHE.get(cacheKey)!;
+    // biome-ignore lint/style/noNonNullAssertion: Already .has()!
+    return COMPILED_PATTERN_CACHE.get(cacheKey)!
   }
 
   // Compile new pattern
-  let compiled: RegExp;
+  let compiled: RegExp
   if (pattern instanceof RegExp) {
     // Remove global flag, ensure case-insensitive
-    let flags = pattern.flags.replace('g', '');
+    let flags = pattern.flags.replace('g', '')
     if (!flags.includes('i')) {
-      flags += 'i';
+      flags += 'i'
     }
-    compiled = new RegExp(pattern.source, flags);
+    compiled = new RegExp(pattern.source, flags)
   } else {
-    compiled = new RegExp(pattern, 'i');
+    compiled = new RegExp(pattern, 'i')
   }
 
   // Cache for future use
-  COMPILED_PATTERN_CACHE.set(cacheKey, compiled);
-  return compiled;
+  COMPILED_PATTERN_CACHE.set(cacheKey, compiled)
+  return compiled
 }
 
 /**
@@ -54,7 +55,7 @@ export function getCompiledPattern(pattern: string | RegExp): RegExp {
  */
 interface CompiledErrorMapping extends BaseErrorMapping {
   /** Pre-compiled regex pattern for efficient matching */
-  compiledPattern: RegExp;
+  compiledPattern: RegExp
 }
 
 /**
@@ -68,7 +69,7 @@ export const ERROR_TYPE_MAPPINGS: Readonly<Record<string, JsonRpcErrorCode>> = {
   URIError: JsonRpcErrorCode.ValidationError,
   EvalError: JsonRpcErrorCode.InternalError,
   AggregateError: JsonRpcErrorCode.InternalError,
-};
+}
 
 /**
  * Array of `BaseErrorMapping` rules to classify errors by message/name patterns.
@@ -119,7 +120,7 @@ export const COMMON_ERROR_PATTERNS: ReadonlyArray<Readonly<BaseErrorMapping>> =
       pattern: /zod|zoderror|schema validation/i,
       errorCode: JsonRpcErrorCode.ValidationError,
     },
-  ];
+  ]
 
 /**
  * Pre-compiled error patterns for performance optimization.
@@ -131,7 +132,7 @@ export const COMPILED_ERROR_PATTERNS: ReadonlyArray<
 > = COMMON_ERROR_PATTERNS.map((mapping) => ({
   ...mapping,
   compiledPattern: getCompiledPattern(mapping.pattern),
-}));
+}))
 
 /**
  * Provider-specific error patterns for external service integration.
@@ -207,7 +208,7 @@ export const PROVIDER_ERROR_PATTERNS: ReadonlyArray<
     pattern: /ECONNRESET|connection reset/i,
     errorCode: JsonRpcErrorCode.ServiceUnavailable,
   },
-];
+]
 
 /**
  * Pre-compiled provider error patterns for performance.
@@ -217,4 +218,4 @@ export const COMPILED_PROVIDER_PATTERNS: ReadonlyArray<
 > = PROVIDER_ERROR_PATTERNS.map((mapping) => ({
   ...mapping,
   compiledPattern: getCompiledPattern(mapping.pattern),
-}));
+}))

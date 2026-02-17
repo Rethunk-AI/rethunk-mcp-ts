@@ -5,26 +5,26 @@
  * @module src/mcp-server/resources/utils/resourceHandlerFactory
  */
 import {
-  McpServer,
+  type McpServer,
   ResourceTemplate,
-} from '@modelcontextprotocol/sdk/server/mcp.js';
-import type { ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
-import type { ZodObject, ZodRawShape, z } from 'zod';
+} from '@modelcontextprotocol/sdk/server/mcp.js'
+import type { ReadResourceResult } from '@modelcontextprotocol/sdk/types.js'
+import type { ZodObject, ZodRawShape, z } from 'zod'
 
-import type { ResourceDefinition } from '@/mcp-server/resources/utils/resourceDefinition.js';
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
+import type { ResourceDefinition } from '@/mcp-server/resources/utils/resourceDefinition.js'
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
 import {
   ErrorHandler,
-  type RequestContext,
   logger,
+  type RequestContext,
   requestContextService,
-} from '@/utils/index.js';
+} from '@/utils/index.js'
 
 /** Default formatter producing a single JSON text content block. */
 type ResponseFormatter = (
   result: unknown,
   meta: { uri: URL; mimeType: string },
-) => ReadResourceResult['contents'];
+) => ReadResourceResult['contents']
 
 function defaultResponseFormatter(
   result: unknown,
@@ -36,7 +36,7 @@ function defaultResponseFormatter(
       text: JSON.stringify(result),
       mimeType: meta.mimeType,
     },
-  ];
+  ]
 }
 
 function ensureResourceContents(
@@ -54,7 +54,7 @@ function ensureResourceContents(
         resourceName,
         uri: uri.href,
       },
-    );
+    )
   }
 
   // We perform a shallow validation here. A full Zod schema validation would be safer
@@ -69,11 +69,11 @@ function ensureResourceContents(
           resourceName,
           uri: uri.href,
         },
-      );
+      )
     }
   }
 
-  return contents as ReadResourceResult['contents'];
+  return contents as ReadResourceResult['contents']
 }
 
 /**
@@ -86,25 +86,25 @@ export async function registerResource<
   server: McpServer,
   def: ResourceDefinition<TParamsSchema, TOutputSchema>,
 ): Promise<void> {
-  const resourceName = def.name;
+  const resourceName = def.name
   const registrationContext: RequestContext =
     requestContextService.createRequestContext({
       operation: 'RegisterResource',
       additionalContext: { resourceName },
-    });
+    })
 
-  logger.info(`Registering resource: '${resourceName}'`, registrationContext);
+  logger.info(`Registering resource: '${resourceName}'`, registrationContext)
 
   await ErrorHandler.tryCatch(
     () => {
       const template = new ResourceTemplate(def.uriTemplate, {
         list: def.list,
-      });
+      })
 
-      const mimeType = def.mimeType ?? 'application/json';
+      const mimeType = def.mimeType ?? 'application/json'
       const formatter: ResponseFormatter =
-        def.responseFormatter ?? defaultResponseFormatter;
-      const title = def.title ?? resourceName;
+        def.responseFormatter ?? defaultResponseFormatter
+      const title = def.title ?? resourceName
 
       server.resource(
         resourceName,
@@ -119,7 +119,7 @@ export async function registerResource<
           const sessionId =
             typeof callContext?.sessionId === 'string'
               ? callContext.sessionId
-              : undefined;
+              : undefined
 
           const handlerContext: RequestContext =
             requestContextService.createRequestContext({
@@ -130,51 +130,51 @@ export async function registerResource<
                 sessionId,
                 inputParams: params,
               },
-            });
+            })
 
           try {
             // Validate params via the schema before invoking logic
-            type TParams = z.infer<TParamsSchema>;
+            type TParams = z.infer<TParamsSchema>
             type TOutput =
               TOutputSchema extends ZodObject<ZodRawShape>
                 ? z.infer<TOutputSchema>
-                : unknown;
-            const parsedParams = def.paramsSchema.parse(params) as TParams;
+                : unknown
+            const parsedParams = def.paramsSchema.parse(params) as TParams
             const responseData = (await def.logic(
               uri,
               parsedParams,
               handlerContext,
-            )) as TOutput;
+            )) as TOutput
 
             const rawContents: unknown = formatter(responseData, {
               uri,
               mimeType,
-            });
+            })
 
             const contents = ensureResourceContents(
               rawContents,
               handlerContext,
               resourceName,
               uri,
-            );
+            )
 
-            const readResult: ReadResourceResult = { contents };
-            return readResult;
+            const readResult: ReadResourceResult = { contents }
+            return readResult
           } catch (error: unknown) {
             // Centralized handler re-throws the error for the SDK to catch
             throw ErrorHandler.handleError(error, {
               operation: `resource:${resourceName}:readHandler`,
               context: handlerContext,
               input: { uri: uri.href, params },
-            });
+            })
           }
         },
-      );
+      )
 
       logger.notice(
         `Resource '${resourceName}' registered successfully.`,
         registrationContext,
-      );
+      )
     },
     {
       operation: `RegisteringResource_${resourceName}`,
@@ -182,5 +182,5 @@ export async function registerResource<
       errorCode: JsonRpcErrorCode.InitializationFailed,
       critical: true,
     },
-  );
+  )
 }

@@ -5,24 +5,24 @@
  */
 
 export interface RuntimeCapabilities {
-  isNode: boolean;
-  isWorkerLike: boolean;
-  isBrowserLike: boolean;
-  hasProcess: boolean;
-  hasBuffer: boolean;
-  hasTextEncoder: boolean;
-  hasPerformanceNow: boolean;
+  isNode: boolean
+  isWorkerLike: boolean
+  isBrowserLike: boolean
+  hasProcess: boolean
+  hasBuffer: boolean
+  hasTextEncoder: boolean
+  hasPerformanceNow: boolean
 }
 
 // Best-effort static detection without throwing in restricted envs
 const safeHas = (key: string): boolean => {
   try {
     // @ts-expect-error index access on globalThis
-    return typeof globalThis[key] !== 'undefined';
+    return typeof globalThis[key] !== 'undefined'
   } catch {
-    return false;
+    return false
   }
-};
+}
 
 /**
  * Safely checks if process.versions.node exists and is a string.
@@ -35,11 +35,11 @@ const hasNodeVersion = (): boolean => {
       typeof process.versions === 'object' &&
       process.versions !== null &&
       typeof process.versions.node === 'string'
-    );
+    )
   } catch {
-    return false;
+    return false
   }
-};
+}
 
 /**
  * Safely checks if globalThis.performance.now is a function.
@@ -51,17 +51,17 @@ const hasPerformanceNowFunction = (): boolean => {
       typeof globalThis.performance === 'object' &&
       globalThis.performance !== null &&
       typeof globalThis.performance.now === 'function'
-    );
+    )
   } catch {
-    return false;
+    return false
   }
-};
+}
 
-const isNode = hasNodeVersion();
-const hasProcess = typeof process !== 'undefined';
-const hasBuffer = typeof Buffer !== 'undefined';
-const hasTextEncoder = safeHas('TextEncoder');
-const hasPerformanceNow = hasPerformanceNowFunction();
+const isNode = hasNodeVersion()
+const hasProcess = typeof process !== 'undefined'
+const hasBuffer = typeof Buffer !== 'undefined'
+const hasTextEncoder = safeHas('TextEncoder')
+const hasPerformanceNow = hasPerformanceNowFunction()
 
 /**
  * Safely checks if WorkerGlobalScope exists.
@@ -69,15 +69,15 @@ const hasPerformanceNow = hasPerformanceNowFunction();
  */
 const hasWorkerGlobalScope = (): boolean => {
   try {
-    return 'WorkerGlobalScope' in globalThis;
+    return 'WorkerGlobalScope' in globalThis
   } catch {
-    return false;
+    return false
   }
-};
+}
 
 // Cloudflare Workers expose "Web Worker"-like environment (self, caches, fetch, etc.)
-const isWorkerLike = !isNode && hasWorkerGlobalScope();
-const isBrowserLike = !isNode && !isWorkerLike && safeHas('window');
+const isWorkerLike = !isNode && hasWorkerGlobalScope()
+const isBrowserLike = !isNode && !isWorkerLike && safeHas('window')
 
 export const runtimeCaps: RuntimeCapabilities = {
   isNode,
@@ -87,4 +87,4 @@ export const runtimeCaps: RuntimeCapabilities = {
   hasBuffer,
   hasTextEncoder,
   hasPerformanceNow,
-};
+}

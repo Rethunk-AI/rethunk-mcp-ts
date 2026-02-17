@@ -4,24 +4,24 @@
  * @module src/services/graph/core/IGraphProvider
  */
 
-import type { RequestContext } from '@/utils/index.js';
-import type { GraphStats } from '../types.js';
+import type { RequestContext } from '@/utils/index.js'
+import type { GraphStats } from '../types.js'
 
 /**
  * Direction for graph traversal.
  */
-export type TraversalDirection = 'out' | 'in' | 'both';
+export type TraversalDirection = 'out' | 'in' | 'both'
 
 /**
  * Represents a vertex (node) in the graph.
  */
 export interface Vertex {
   /** Unique identifier for the vertex */
-  id: string;
+  id: string
   /** Table/type of the vertex */
-  table: string;
+  table: string
   /** Vertex data */
-  data: Record<string, unknown>;
+  data: Record<string, unknown>
 }
 
 /**
@@ -29,15 +29,15 @@ export interface Vertex {
  */
 export interface Edge {
   /** Unique identifier for the edge */
-  id: string;
+  id: string
   /** Table/type of the edge */
-  table: string;
+  table: string
   /** Source vertex ID */
-  from: string;
+  from: string
   /** Target vertex ID */
-  to: string;
+  to: string
   /** Edge metadata */
-  data: Record<string, unknown>;
+  data: Record<string, unknown>
 }
 
 /**
@@ -45,9 +45,9 @@ export interface Edge {
  */
 export interface RelateOptions {
   /** Edge metadata to store */
-  data?: Record<string, unknown>;
+  data?: Record<string, unknown>
   /** Whether to allow duplicate relationships */
-  allowDuplicates?: boolean;
+  allowDuplicates?: boolean
 }
 
 /**
@@ -55,15 +55,15 @@ export interface RelateOptions {
  */
 export interface TraversalOptions {
   /** Maximum depth to traverse (default: 1) */
-  maxDepth?: number;
+  maxDepth?: number
   /** Direction to traverse (default: 'out') */
-  direction?: TraversalDirection;
+  direction?: TraversalDirection
   /** Filter edges by type */
-  edgeTypes?: string[];
+  edgeTypes?: string[]
   /** Filter vertices by type */
-  vertexTypes?: string[];
+  vertexTypes?: string[]
   /** WHERE clause for filtering */
-  where?: string;
+  where?: string
 }
 
 /**
@@ -71,9 +71,9 @@ export interface TraversalOptions {
  */
 export interface TraversalResult {
   /** Starting vertex */
-  start: Vertex;
+  start: Vertex
   /** Paths found during traversal */
-  paths: GraphPath[];
+  paths: GraphPath[]
 }
 
 /**
@@ -81,11 +81,11 @@ export interface TraversalResult {
  */
 export interface GraphPath {
   /** Vertices in the path */
-  vertices: Vertex[];
+  vertices: Vertex[]
   /** Edges connecting the vertices */
-  edges: Edge[];
+  edges: Edge[]
   /** Total weight/cost of the path */
-  weight?: number;
+  weight?: number
 }
 
 /**
@@ -93,11 +93,11 @@ export interface GraphPath {
  */
 export interface PathOptions {
   /** Maximum path length to search */
-  maxLength?: number;
+  maxLength?: number
   /** Weight function for edges */
-  weightFn?: (edge: Edge) => number;
+  weightFn?: (edge: Edge) => number
   /** Algorithm to use */
-  algorithm?: 'dijkstra' | 'bfs' | 'dfs';
+  algorithm?: 'dijkstra' | 'bfs' | 'dfs'
 }
 
 /**
@@ -111,7 +111,7 @@ export interface IGraphProvider {
   /**
    * Provider name identifier.
    */
-  readonly name: string;
+  readonly name: string
 
   /**
    * Create a relationship between two vertices.
@@ -129,7 +129,7 @@ export interface IGraphProvider {
     to: string,
     context: RequestContext,
     options?: RelateOptions,
-  ): Promise<Edge>;
+  ): Promise<Edge>
 
   /**
    * Delete a relationship edge.
@@ -138,7 +138,7 @@ export interface IGraphProvider {
    * @param context - Request context for logging
    * @returns True if deleted
    */
-  unrelate(edgeId: string, context: RequestContext): Promise<boolean>;
+  unrelate(edgeId: string, context: RequestContext): Promise<boolean>
 
   /**
    * Traverse the graph from a starting vertex.
@@ -152,7 +152,7 @@ export interface IGraphProvider {
     startVertexId: string,
     context: RequestContext,
     options?: TraversalOptions,
-  ): Promise<TraversalResult>;
+  ): Promise<TraversalResult>
 
   /**
    * Find the shortest path between two vertices.
@@ -168,7 +168,7 @@ export interface IGraphProvider {
     to: string,
     context: RequestContext,
     options?: PathOptions,
-  ): Promise<GraphPath | null>;
+  ): Promise<GraphPath | null>
 
   /**
    * Get all outgoing edges from a vertex.
@@ -182,7 +182,7 @@ export interface IGraphProvider {
     vertexId: string,
     context: RequestContext,
     edgeTypes?: string[],
-  ): Promise<Edge[]>;
+  ): Promise<Edge[]>
 
   /**
    * Get all incoming edges to a vertex.
@@ -196,7 +196,7 @@ export interface IGraphProvider {
     vertexId: string,
     context: RequestContext,
     edgeTypes?: string[],
-  ): Promise<Edge[]>;
+  ): Promise<Edge[]>
 
   /**
    * Check if a path exists between two vertices.
@@ -212,7 +212,7 @@ export interface IGraphProvider {
     to: string,
     context: RequestContext,
     maxDepth?: number,
-  ): Promise<boolean>;
+  ): Promise<boolean>
 
   /**
    * Get statistics about the graph.
@@ -220,12 +220,12 @@ export interface IGraphProvider {
    * @param context - Request context for logging
    * @returns Graph statistics including vertex/edge counts and type distributions
    */
-  getStats(context: RequestContext): Promise<GraphStats>;
+  getStats(context: RequestContext): Promise<GraphStats>
 
   /**
    * Perform health check on the provider.
    *
    * @returns True if provider is healthy
    */
-  healthCheck(): Promise<boolean>;
+  healthCheck(): Promise<boolean>
 }

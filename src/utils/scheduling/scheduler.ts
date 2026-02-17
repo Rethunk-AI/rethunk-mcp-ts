@@ -4,30 +4,29 @@
  * defining, starting, stopping, and listing recurring tasks within the application.
  * @module src/utils/scheduling/scheduler
  */
-import type { ScheduledTask } from 'node-cron';
-
-import { runtimeCaps } from '@/utils/internal/runtime.js';
-import { type RequestContext, logger } from '@/utils/internal/index.js';
-import { requestContextService } from '@/utils/internal/requestContext.js';
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
+import type { ScheduledTask } from 'node-cron'
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
+import { logger, type RequestContext } from '@/utils/internal/index.js'
+import { requestContextService } from '@/utils/internal/requestContext.js'
+import { runtimeCaps } from '@/utils/internal/runtime.js'
 
 /**
  * Lazily loads the node-cron module. Cached after first successful import.
  * Throws McpError if called outside a Node.js runtime (e.g., Cloudflare Workers).
  */
-let cronModulePromise: Promise<typeof import('node-cron')> | null = null;
+let cronModulePromise: Promise<typeof import('node-cron')> | null = null
 
 async function loadCron(): Promise<typeof import('node-cron')> {
   if (!runtimeCaps.isNode) {
     throw new McpError(
       JsonRpcErrorCode.ConfigurationError,
       'SchedulerService requires a Node.js runtime. Cron scheduling is not available in Workers or browser environments.',
-    );
+    )
   }
   if (!cronModulePromise) {
-    cronModulePromise = import('node-cron');
+    cronModulePromise = import('node-cron')
   }
-  return cronModulePromise;
+  return cronModulePromise
 }
 
 /**
@@ -35,23 +34,23 @@ async function loadCron(): Promise<typeof import('node-cron')> {
  */
 export interface Job {
   /** A unique identifier for the job. */
-  id: string;
+  id: string
   /** The cron pattern defining the job's schedule. */
-  schedule: string;
+  schedule: string
   /** A description of what the job does. */
-  description: string;
+  description: string
   /** The underlying 'node-cron' task instance. */
-  task: ScheduledTask;
+  task: ScheduledTask
   /** Indicates whether the job is currently running. */
-  isRunning: boolean;
+  isRunning: boolean
 }
 
 /**
  * A singleton service for scheduling and managing cron jobs.
  */
 export class SchedulerService {
-  private static instance: SchedulerService;
-  private jobs: Map<string, Job> = new Map();
+  private static instance: SchedulerService
+  private jobs: Map<string, Job> = new Map()
 
   /** @private */
   private constructor() {
@@ -66,9 +65,9 @@ export class SchedulerService {
    */
   public static getInstance(): SchedulerService {
     if (!SchedulerService.instance) {
-      SchedulerService.instance = new SchedulerService();
+      SchedulerService.instance = new SchedulerService()
     }
-    return SchedulerService.instance;
+    return SchedulerService.instance
   }
 
   /**
@@ -87,49 +86,49 @@ export class SchedulerService {
     description: string,
   ): Promise<Job> {
     if (this.jobs.has(id)) {
-      throw new Error(`Job with ID '${id}' already exists.`);
+      throw new Error(`Job with ID '${id}' already exists.`)
     }
 
-    const cron = await loadCron();
+    const cron = await loadCron()
 
     if (!cron.validate(schedule)) {
-      throw new Error(`Invalid cron schedule: ${schedule}`);
+      throw new Error(`Invalid cron schedule: ${schedule}`)
     }
 
     const task = cron.createTask(schedule, async () => {
-      const job = this.jobs.get(id);
-      if (job && job.isRunning) {
+      const job = this.jobs.get(id)
+      if (job?.isRunning) {
         logger.warning(
           `Job '${id}' is already running. Skipping this execution.`,
           {
             requestId: `job-skip-${id}`,
             timestamp: new Date().toISOString(),
           },
-        );
-        return;
+        )
+        return
       }
 
       if (job) {
-        job.isRunning = true;
+        job.isRunning = true
       }
 
       const context = requestContextService.createRequestContext({
         jobId: id,
         schedule,
-      });
+      })
 
-      logger.info(`Starting job '${id}'...`, context);
+      logger.info(`Starting job '${id}'...`, context)
       try {
-        await Promise.resolve(taskFunction(context));
-        logger.info(`Job '${id}' completed successfully.`, context);
+        await Promise.resolve(taskFunction(context))
+        logger.info(`Job '${id}' completed successfully.`, context)
       } catch (error) {
-        logger.error(`Job '${id}' failed.`, error as Error, context);
+        logger.error(`Job '${id}' failed.`, error as Error, context)
       } finally {
         if (job) {
-          job.isRunning = false;
+          job.isRunning = false
         }
       }
-    });
+    })
 
     const newJob: Job = {
       id,
@@ -137,14 +136,14 @@ export class SchedulerService {
       description,
       task,
       isRunning: false,
-    };
+    }
 
-    this.jobs.set(id, newJob);
+    this.jobs.set(id, newJob)
     logger.info(`Job '${id}' scheduled: ${description}`, {
       requestId: `job-schedule-${id}`,
       timestamp: new Date().toISOString(),
-    });
-    return newJob;
+    })
+    return newJob
   }
 
   /**
@@ -152,15 +151,15 @@ export class SchedulerService {
    * @param id - The ID of the job to start.
    */
   public start(id: string): void {
-    const job = this.jobs.get(id);
+    const job = this.jobs.get(id)
     if (!job) {
-      throw new Error(`Job with ID '${id}' not found.`);
+      throw new Error(`Job with ID '${id}' not found.`)
     }
-    void job.task.start();
+    void job.task.start()
     logger.info(`Job '${id}' started.`, {
       requestId: `job-start-${id}`,
       timestamp: new Date().toISOString(),
-    });
+    })
   }
 
   /**
@@ -168,15 +167,15 @@ export class SchedulerService {
    * @param id - The ID of the job to stop.
    */
   public stop(id: string): void {
-    const job = this.jobs.get(id);
+    const job = this.jobs.get(id)
     if (!job) {
-      throw new Error(`Job with ID '${id}' not found.`);
+      throw new Error(`Job with ID '${id}' not found.`)
     }
-    void job.task.stop();
+    void job.task.stop()
     logger.info(`Job '${id}' stopped.`, {
       requestId: `job-stop-${id}`,
       timestamp: new Date().toISOString(),
-    });
+    })
   }
 
   /**
@@ -184,16 +183,16 @@ export class SchedulerService {
    * @param id - The ID of the job to remove.
    */
   public remove(id: string): void {
-    const job = this.jobs.get(id);
+    const job = this.jobs.get(id)
     if (!job) {
-      throw new Error(`Job with ID '${id}' not found.`);
+      throw new Error(`Job with ID '${id}' not found.`)
     }
-    void job.task.stop();
-    this.jobs.delete(id);
+    void job.task.stop()
+    this.jobs.delete(id)
     logger.info(`Job '${id}' removed.`, {
       requestId: `job-remove-${id}`,
       timestamp: new Date().toISOString(),
-    });
+    })
   }
 
   /**
@@ -201,7 +200,7 @@ export class SchedulerService {
    * @returns An array of all Job objects.
    */
   public listJobs(): Job[] {
-    return Array.from(this.jobs.values());
+    return Array.from(this.jobs.values())
   }
 }
 
@@ -209,4 +208,4 @@ export class SchedulerService {
  * The singleton instance of the SchedulerService.
  * Use this instance for all job scheduling operations.
  */
-export const schedulerService = SchedulerService.getInstance();
+export const schedulerService = SchedulerService.getInstance()

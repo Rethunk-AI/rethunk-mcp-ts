@@ -3,17 +3,17 @@
  * @module src/storage/providers/surrealdb/core/surrealDbClient
  */
 
-import Surreal from 'surrealdb';
-import { type RequestContext } from '@/utils/index.js';
-import { ConnectionManager } from './connectionManager.js';
-import { TransactionManager } from './transactionManager.js';
-import { AuthManager } from '../auth/authManager.js';
-import { GraphOperations } from '../graph/graphOperations.js';
-import { EventManager } from '../events/eventManager.js';
-import { CustomFunctions } from '../functions/customFunctions.js';
-import { MigrationRunner } from '../migrations/migrationRunner.js';
-import { SchemaIntrospector } from '../introspection/schemaIntrospector.js';
-import type { SurrealDbConfig } from '../types.js';
+import Surreal from 'surrealdb'
+import type { RequestContext } from '@/utils/index.js'
+import { AuthManager } from '../auth/authManager.js'
+import { EventManager } from '../events/eventManager.js'
+import { CustomFunctions } from '../functions/customFunctions.js'
+import { GraphOperations } from '../graph/graphOperations.js'
+import { SchemaIntrospector } from '../introspection/schemaIntrospector.js'
+import { MigrationRunner } from '../migrations/migrationRunner.js'
+import type { SurrealDbConfig } from '../types.js'
+import { ConnectionManager } from './connectionManager.js'
+import { TransactionManager } from './transactionManager.js'
 
 /**
  * A centralized client for interacting with SurrealDB.
@@ -44,14 +44,14 @@ import type { SurrealDbConfig } from '../types.js';
  * ```
  */
 export class SurrealDbClient {
-  private readonly client: Surreal;
-  public readonly connection: ConnectionManager;
-  public readonly transactions: TransactionManager;
+  private readonly client: Surreal
+  public readonly connection: ConnectionManager
+  public readonly transactions: TransactionManager
 
   constructor(config?: SurrealDbConfig) {
-    this.client = new Surreal();
-    this.connection = new ConnectionManager(this.client, config);
-    this.transactions = new TransactionManager(this.client);
+    this.client = new Surreal()
+    this.connection = new ConnectionManager(this.client, config)
+    this.transactions = new TransactionManager(this.client)
   }
 
   /**
@@ -59,7 +59,7 @@ export class SurrealDbClient {
    * @param context - The request context for logging.
    */
   public async connect(context: RequestContext): Promise<void> {
-    await this.connection.connect(context);
+    await this.connection.connect(context)
   }
 
   /**
@@ -67,7 +67,7 @@ export class SurrealDbClient {
    * @param context - The request context for logging.
    */
   public async disconnect(context: RequestContext): Promise<void> {
-    await this.connection.disconnect(context);
+    await this.connection.disconnect(context)
   }
 
   /**
@@ -75,7 +75,7 @@ export class SurrealDbClient {
    * @returns The Surreal client instance.
    */
   public getClient(): Surreal {
-    return this.client;
+    return this.client
   }
 
   /**
@@ -83,7 +83,7 @@ export class SurrealDbClient {
    * @returns An instance of AuthManager.
    */
   public auth(): AuthManager {
-    return new AuthManager(this.client);
+    return new AuthManager(this.client)
   }
 
   /**
@@ -91,7 +91,7 @@ export class SurrealDbClient {
    * @returns An instance of GraphOperations.
    */
   public graph(): GraphOperations {
-    return new GraphOperations(this.client);
+    return new GraphOperations(this.client)
   }
 
   /**
@@ -99,7 +99,7 @@ export class SurrealDbClient {
    * @returns An instance of EventManager.
    */
   public events(): EventManager {
-    return new EventManager(this.client);
+    return new EventManager(this.client)
   }
 
   /**
@@ -107,7 +107,7 @@ export class SurrealDbClient {
    * @returns An instance of CustomFunctions.
    */
   public functions(): CustomFunctions {
-    return new CustomFunctions(this.client);
+    return new CustomFunctions(this.client)
   }
 
   /**
@@ -115,7 +115,7 @@ export class SurrealDbClient {
    * @returns An instance of MigrationRunner.
    */
   public migrations(): MigrationRunner {
-    return new MigrationRunner(this.client);
+    return new MigrationRunner(this.client)
   }
 
   /**
@@ -123,6 +123,6 @@ export class SurrealDbClient {
    * @returns An instance of SchemaIntrospector.
    */
   public introspector(): SchemaIntrospector {
-    return new SchemaIntrospector(this.client);
+    return new SchemaIntrospector(this.client)
   }
 }

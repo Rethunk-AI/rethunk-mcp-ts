@@ -5,15 +5,15 @@
  * Workers), it uses a lightweight console-based logger.
  * @module src/utils/internal/logger
  */
-import type { LevelWithSilent, Logger as PinoLogger } from 'pino';
-import pino from 'pino';
+import type { LevelWithSilent, Logger as PinoLogger } from 'pino'
+import pino from 'pino'
 
-import { config } from '@/config/index.js';
+import { config } from '@/config/index.js'
 import {
-  requestContextService,
   type RequestContext,
-} from '@/utils/internal/requestContext.js';
-import { sanitization } from '@/utils/security/sanitization.js';
+  requestContextService,
+} from '@/utils/internal/requestContext.js'
+import { sanitization } from '@/utils/security/sanitization.js'
 
 export type McpLogLevel =
   | 'debug'
@@ -23,7 +23,7 @@ export type McpLogLevel =
   | 'error'
   | 'crit'
   | 'alert'
-  | 'emerg';
+  | 'emerg'
 
 const mcpToPinoLevel: Record<McpLogLevel, LevelWithSilent> = {
   emerg: 'fatal',
@@ -34,7 +34,7 @@ const mcpToPinoLevel: Record<McpLogLevel, LevelWithSilent> = {
   notice: 'info',
   info: 'info',
   debug: 'debug',
-};
+}
 
 const pinoToMcpLevelSeverity: Record<string, number> = {
   fatal: 0,
@@ -42,41 +42,41 @@ const pinoToMcpLevelSeverity: Record<string, number> = {
   warn: 4,
   info: 6,
   debug: 7,
-};
+}
 
 const isServerless =
-  typeof process === 'undefined' || process.env.IS_SERVERLESS === 'true';
+  typeof process === 'undefined' || process.env.IS_SERVERLESS === 'true'
 
 export class Logger {
-  private static readonly instance: Logger = new Logger();
-  private pinoLogger?: PinoLogger;
-  private interactionLogger?: PinoLogger | undefined;
-  private initialized = false;
-  private currentMcpLevel: McpLogLevel = 'info';
-  private transportType: 'stdio' | 'http' | undefined;
+  private static readonly instance: Logger = new Logger()
+  private pinoLogger?: PinoLogger
+  private interactionLogger?: PinoLogger | undefined
+  private initialized = false
+  private currentMcpLevel: McpLogLevel = 'info'
+  private transportType: 'stdio' | 'http' | undefined
 
-  private rateLimitThreshold = 10;
-  private rateLimitWindow = 60000;
+  private rateLimitThreshold = 10
+  private rateLimitWindow = 60000
   private messageCounts = new Map<
     string,
     { count: number; firstSeen: number }
-  >();
-  private suppressedMessages = new Map<string, number>();
-  private cleanupTimer?: NodeJS.Timeout;
+  >()
+  private suppressedMessages = new Map<string, number>()
+  private cleanupTimer?: NodeJS.Timeout
 
   private constructor() {
     // The constructor is now safe to call in a global scope.
   }
 
   public static getInstance(): Logger {
-    return Logger.instance;
+    return Logger.instance
   }
 
   private async createPinoLogger(
     level: McpLogLevel,
     transportType?: 'stdio' | 'http',
   ): Promise<PinoLogger> {
-    const pinoLevel = mcpToPinoLevel[level] || 'info';
+    const pinoLevel = mcpToPinoLevel[level] || 'info'
 
     const pinoOptions: pino.LoggerOptions = {
       level: pinoLevel,
@@ -89,60 +89,60 @@ export class Logger {
         paths: sanitization.getSensitivePinoFields(),
         censor: '[REDACTED]',
       },
-    };
+    }
 
     if (isServerless) {
-      return pino(pinoOptions);
+      return pino(pinoOptions)
     }
 
     // Node.js specific transports
-    const { default: fs } = await import('fs');
-    const { default: path } = await import('path');
+    const { default: fs } = await import('node:fs')
+    const { default: path } = await import('node:path')
 
-    const transports: pino.TransportTargetOptions[] = [];
-    const isDevelopment = config.environment === 'development';
-    const isTest = config.environment === 'testing';
+    const transports: pino.TransportTargetOptions[] = []
+    const isDevelopment = config.environment === 'development'
+    const isTest = config.environment === 'testing'
 
     // CRITICAL: STDIO transport MUST NOT output colored logs to stdout.
     // The MCP specification requires clean JSON-RPC on stdout with no ANSI codes.
     // Only use pretty/colored output for HTTP mode or when explicitly debugging.
     // Respect NO_COLOR environment variable (https://no-color.org/)
     const noColorEnv =
-      process.env.NO_COLOR === '1' || process.env.FORCE_COLOR === '0';
+      process.env.NO_COLOR === '1' || process.env.FORCE_COLOR === '0'
     const useColoredOutput =
-      isDevelopment && transportType !== 'stdio' && !noColorEnv;
+      isDevelopment && transportType !== 'stdio' && !noColorEnv
 
     if (useColoredOutput && !isServerless) {
       // Try to resolve 'pino-pretty' robustly even when bundled (e.g., Bun/ESM),
       // falling back to JSON stdout if resolution fails.
       try {
-        const { createRequire } = await import('node:module');
-        const require = createRequire(import.meta.url);
-        const prettyTarget = require.resolve('pino-pretty');
+        const { createRequire } = await import('node:module')
+        const require = createRequire(import.meta.url)
+        const prettyTarget = require.resolve('pino-pretty')
         transports.push({
           target: prettyTarget,
           options: { colorize: true, translateTime: 'yyyy-mm-dd HH:MM:ss' },
-        });
+        })
       } catch (err) {
         // Only log to console if TTY to avoid polluting stderr in STDIO mode
         if (process.stderr?.isTTY) {
           console.warn(
             `[Logger Init] Pretty transport unavailable (${err instanceof Error ? err.message : String(err)}); falling back to stdout JSON.`,
-          );
+          )
         }
-        transports.push({ target: 'pino/file', options: { destination: 1 } });
+        transports.push({ target: 'pino/file', options: { destination: 1 } })
       }
     } else if (!isTest) {
       // CRITICAL: For STDIO transport, logs MUST go to stderr (fd 2), NOT stdout (fd 1).
       // The MCP specification requires only JSON-RPC messages on stdout.
       // For HTTP transport or production, we also use stderr to avoid polluting stdout.
-      transports.push({ target: 'pino/file', options: { destination: 2 } });
+      transports.push({ target: 'pino/file', options: { destination: 2 } })
     }
 
     if (config.logsPath) {
       try {
         if (!fs.existsSync(config.logsPath)) {
-          fs.mkdirSync(config.logsPath, { recursive: true });
+          fs.mkdirSync(config.logsPath, { recursive: true })
         }
         transports.push({
           level: pinoLevel,
@@ -151,7 +151,7 @@ export class Logger {
             destination: path.join(config.logsPath, 'combined.log'),
             mkdir: true,
           },
-        });
+        })
         transports.push({
           level: 'error',
           target: 'pino/file',
@@ -159,24 +159,24 @@ export class Logger {
             destination: path.join(config.logsPath, 'error.log'),
             mkdir: true,
           },
-        });
+        })
       } catch (err) {
         // Only log to console if TTY to avoid polluting stderr in STDIO mode
         if (process.stderr?.isTTY) {
           console.error(
             `[Logger Init] Failed to configure file logging: ${err instanceof Error ? err.message : String(err)}`,
-          );
+          )
         }
       }
     }
 
-    return pino({ ...pinoOptions, transport: { targets: transports } });
+    return pino({ ...pinoOptions, transport: { targets: transports } })
   }
 
   private async createInteractionLogger(): Promise<PinoLogger | undefined> {
-    if (isServerless || !config.logsPath) return undefined;
+    if (isServerless || !config.logsPath) return undefined
 
-    const { default: path } = await import('path');
+    const { default: path } = await import('node:path')
     return pino({
       redact: {
         paths: sanitization.getSensitivePinoFields(),
@@ -189,7 +189,7 @@ export class Logger {
           mkdir: true,
         },
       },
-    });
+    })
   }
 
   public async initialize(
@@ -202,56 +202,56 @@ export class Logger {
         requestContextService.createRequestContext({
           operation: 'loggerReinit',
         }),
-      );
-      return;
+      )
+      return
     }
-    this.currentMcpLevel = level;
-    this.transportType = transportType;
-    this.pinoLogger = await this.createPinoLogger(level, transportType);
-    this.interactionLogger = await this.createInteractionLogger();
+    this.currentMcpLevel = level
+    this.transportType = transportType
+    this.pinoLogger = await this.createPinoLogger(level, transportType)
+    this.interactionLogger = await this.createInteractionLogger()
 
     // Start the cleanup timer only after initialization and only in Node.js
     if (!isServerless && !this.cleanupTimer) {
       this.cleanupTimer = setInterval(
         () => this.flushSuppressedMessages(),
         this.rateLimitWindow,
-      );
-      this.cleanupTimer.unref?.();
+      )
+      this.cleanupTimer.unref?.()
     }
 
-    this.initialized = true;
+    this.initialized = true
     this.info(
       `Logger initialized. MCP level: ${level}.`,
       requestContextService.createRequestContext({ operation: 'loggerInit' }),
-    );
+    )
   }
 
   public setLevel(newLevel: McpLogLevel): void {
     if (!this.pinoLogger || !this.initialized) {
       // Only log to console if TTY to avoid polluting stderr in STDIO mode
       if (process.stderr?.isTTY) {
-        console.error('Cannot set level: Logger not initialized.');
+        console.error('Cannot set level: Logger not initialized.')
       }
-      return;
+      return
     }
-    this.currentMcpLevel = newLevel;
-    this.pinoLogger.level = mcpToPinoLevel[newLevel] || 'info';
+    this.currentMcpLevel = newLevel
+    this.pinoLogger.level = mcpToPinoLevel[newLevel] || 'info'
     this.info(
       `Log level changed to ${newLevel}.`,
       requestContextService.createRequestContext({
         operation: 'loggerSetLevel',
       }),
-    );
+    )
   }
 
   public async close(): Promise<void> {
-    if (!this.initialized) return Promise.resolve();
+    if (!this.initialized) return Promise.resolve()
     this.info(
       'Logger shutting down.',
       requestContextService.createRequestContext({ operation: 'loggerClose' }),
-    );
-    if (this.cleanupTimer) clearInterval(this.cleanupTimer);
-    this.flushSuppressedMessages();
+    )
+    if (this.cleanupTimer) clearInterval(this.cleanupTimer)
+    this.flushSuppressedMessages()
 
     // Wait for all pending writes to complete
     await Promise.all([
@@ -265,12 +265,12 @@ export class Logger {
               process.stderr?.isTTY &&
               this.transportType !== 'stdio'
             ) {
-              console.error('Error flushing main logger:', err);
+              console.error('Error flushing main logger:', err)
             }
-            resolve();
-          });
+            resolve()
+          })
         } else {
-          resolve();
+          resolve()
         }
       }),
       new Promise<void>((resolve) => {
@@ -283,47 +283,47 @@ export class Logger {
               process.stderr?.isTTY &&
               this.transportType !== 'stdio'
             ) {
-              console.error('Error flushing interaction logger:', err);
+              console.error('Error flushing interaction logger:', err)
             }
-            resolve();
-          });
+            resolve()
+          })
         } else {
-          resolve();
+          resolve()
         }
       }),
-    ]);
+    ])
 
-    this.initialized = false;
+    this.initialized = false
   }
 
   public isInitialized(): boolean {
-    return this.initialized;
+    return this.initialized
   }
 
   private isRateLimited(message: string): boolean {
-    const now = Date.now();
-    const entry = this.messageCounts.get(message);
+    const now = Date.now()
+    const entry = this.messageCounts.get(message)
     if (!entry) {
-      this.messageCounts.set(message, { count: 1, firstSeen: now });
-      return false;
+      this.messageCounts.set(message, { count: 1, firstSeen: now })
+      return false
     }
     if (now - entry.firstSeen > this.rateLimitWindow) {
-      this.messageCounts.set(message, { count: 1, firstSeen: now });
-      return false;
+      this.messageCounts.set(message, { count: 1, firstSeen: now })
+      return false
     }
-    entry.count++;
+    entry.count++
     if (entry.count > this.rateLimitThreshold) {
       this.suppressedMessages.set(
         message,
         (this.suppressedMessages.get(message) || 0) + 1,
-      );
-      return true;
+      )
+      return true
     }
-    return false;
+    return false
   }
 
   private flushSuppressedMessages(): void {
-    if (this.suppressedMessages.size === 0) return;
+    if (this.suppressedMessages.size === 0) return
     for (const [message, count] of this.suppressedMessages.entries()) {
       this.warning(
         `Log message suppressed ${count} times due to rate limiting.`,
@@ -331,10 +331,10 @@ export class Logger {
           operation: 'loggerRateLimitFlush',
           additionalContext: { originalMessage: message },
         }),
-      );
+      )
     }
-    this.suppressedMessages.clear();
-    this.messageCounts.clear();
+    this.suppressedMessages.clear()
+    this.messageCounts.clear()
   }
 
   private log(
@@ -343,41 +343,41 @@ export class Logger {
     context?: RequestContext,
     error?: Error,
   ): void {
-    if (!this.pinoLogger || !this.initialized) return;
+    if (!this.pinoLogger || !this.initialized) return
 
-    const pinoLevel = mcpToPinoLevel[level] || 'info';
-    const currentPinoLevel = mcpToPinoLevel[this.currentMcpLevel] || 'info';
+    const pinoLevel = mcpToPinoLevel[level] || 'info'
+    const currentPinoLevel = mcpToPinoLevel[this.currentMcpLevel] || 'info'
 
-    const levelSeverity = pinoToMcpLevelSeverity[pinoLevel];
-    const currentLevelSeverity = pinoToMcpLevelSeverity[currentPinoLevel];
+    const levelSeverity = pinoToMcpLevelSeverity[pinoLevel]
+    const currentLevelSeverity = pinoToMcpLevelSeverity[currentPinoLevel]
 
     if (
       typeof levelSeverity === 'number' &&
       typeof currentLevelSeverity === 'number' &&
       levelSeverity > currentLevelSeverity
     ) {
-      return;
+      return
     }
 
-    if (this.isRateLimited(msg)) return;
+    if (this.isRateLimited(msg)) return
 
-    const logObject: Record<string, unknown> = { ...context };
-    if (error) logObject.err = pino.stdSerializers.err(error);
+    const logObject: Record<string, unknown> = { ...context }
+    if (error) logObject.err = pino.stdSerializers.err(error)
 
-    this.pinoLogger[pinoLevel](logObject, msg);
+    this.pinoLogger[pinoLevel](logObject, msg)
   }
 
   public debug(msg: string, context?: RequestContext): void {
-    this.log('debug', msg, context);
+    this.log('debug', msg, context)
   }
   public info(msg: string, context?: RequestContext): void {
-    this.log('info', msg, context);
+    this.log('info', msg, context)
   }
   public notice(msg: string, context?: RequestContext): void {
-    this.log('notice', msg, context);
+    this.log('notice', msg, context)
   }
   public warning(msg: string, context?: RequestContext): void {
-    this.log('warning', msg, context);
+    this.log('warning', msg, context)
   }
 
   public error(
@@ -386,10 +386,10 @@ export class Logger {
     context?: RequestContext,
   ): void {
     const errorObj =
-      errorOrContext instanceof Error ? errorOrContext : undefined;
+      errorOrContext instanceof Error ? errorOrContext : undefined
     const actualContext =
-      errorOrContext instanceof Error ? context : errorOrContext;
-    this.log('error', msg, actualContext, errorObj);
+      errorOrContext instanceof Error ? context : errorOrContext
+    this.log('error', msg, actualContext, errorObj)
   }
 
   public crit(
@@ -398,10 +398,10 @@ export class Logger {
     context?: RequestContext,
   ): void {
     const errorObj =
-      errorOrContext instanceof Error ? errorOrContext : undefined;
+      errorOrContext instanceof Error ? errorOrContext : undefined
     const actualContext =
-      errorOrContext instanceof Error ? context : errorOrContext;
-    this.log('crit', msg, actualContext, errorObj);
+      errorOrContext instanceof Error ? context : errorOrContext
+    this.log('crit', msg, actualContext, errorObj)
   }
 
   public alert(
@@ -410,10 +410,10 @@ export class Logger {
     context?: RequestContext,
   ): void {
     const errorObj =
-      errorOrContext instanceof Error ? errorOrContext : undefined;
+      errorOrContext instanceof Error ? errorOrContext : undefined
     const actualContext =
-      errorOrContext instanceof Error ? context : errorOrContext;
-    this.log('alert', msg, actualContext, errorObj);
+      errorOrContext instanceof Error ? context : errorOrContext
+    this.log('alert', msg, actualContext, errorObj)
   }
 
   public emerg(
@@ -422,10 +422,10 @@ export class Logger {
     context?: RequestContext,
   ): void {
     const errorObj =
-      errorOrContext instanceof Error ? errorOrContext : undefined;
+      errorOrContext instanceof Error ? errorOrContext : undefined
     const actualContext =
-      errorOrContext instanceof Error ? context : errorOrContext;
-    this.log('emerg', msg, actualContext, errorObj);
+      errorOrContext instanceof Error ? context : errorOrContext
+    this.log('emerg', msg, actualContext, errorObj)
   }
 
   public fatal(
@@ -433,7 +433,7 @@ export class Logger {
     errorOrContext: Error | RequestContext,
     context?: RequestContext,
   ): void {
-    this.emerg(msg, errorOrContext, context);
+    this.emerg(msg, errorOrContext, context)
   }
 
   public logInteraction(
@@ -445,11 +445,11 @@ export class Logger {
         this.warning(
           'Interaction logger not available.',
           (data.context || {}) as RequestContext,
-        );
-      return;
+        )
+      return
     }
-    this.interactionLogger.info({ interactionName, ...data });
+    this.interactionLogger.info({ interactionName, ...data })
   }
 }
 
-export const logger = Logger.getInstance();
+export const logger = Logger.getInstance()

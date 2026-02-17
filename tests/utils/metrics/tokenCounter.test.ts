@@ -2,29 +2,29 @@
  * @fileoverview Tests for the tokenCounter utility.
  * @module tests/utils/metrics/tokenCounter.test
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest'
 
 import {
   type ChatMessage,
   countChatTokens,
   countTokens,
-} from '../../../src/utils/metrics/tokenCounter.js';
+} from '../../../src/utils/metrics/tokenCounter.js'
 
 describe('tokenCounter', () => {
   describe('countTokens', () => {
     it('should count tokens in a simple string (approximate)', async () => {
-      const text = 'hello world';
-      const tokenCount = await countTokens(text);
-      expect(tokenCount).toBeGreaterThan(0);
-      expect(tokenCount).toBeLessThanOrEqual(4);
-    });
+      const text = 'hello world'
+      const tokenCount = await countTokens(text)
+      expect(tokenCount).toBeGreaterThan(0)
+      expect(tokenCount).toBeLessThanOrEqual(4)
+    })
 
     it('should return 0 for an empty string', async () => {
-      const text = '';
-      const tokenCount = await countTokens(text);
-      expect(tokenCount).toBe(0);
-    });
-  });
+      const text = ''
+      const tokenCount = await countTokens(text)
+      expect(tokenCount).toBe(0)
+    })
+  })
 
   describe('countChatTokens', () => {
     it('should estimate tokens for a series of chat messages', async () => {
@@ -35,10 +35,10 @@ describe('tokenCounter', () => {
           role: 'assistant',
           content: 'I am fine, thank you!',
         },
-      ];
-      const tokenCount = await countChatTokens(messages);
-      expect(tokenCount).toBeGreaterThan(10);
-    });
+      ]
+      const tokenCount = await countChatTokens(messages)
+      expect(tokenCount).toBeGreaterThan(10)
+    })
 
     it('should handle tool calls in assistant messages', async () => {
       const messages: ChatMessage[] = [
@@ -56,10 +56,10 @@ describe('tokenCounter', () => {
             },
           ],
         },
-      ];
-      const tokenCount = await countChatTokens(messages);
-      expect(tokenCount).toBeGreaterThan(5);
-    });
+      ]
+      const tokenCount = await countChatTokens(messages)
+      expect(tokenCount).toBeGreaterThan(5)
+    })
 
     it('should handle multi-part user messages', async () => {
       const messages: ChatMessage[] = [
@@ -73,10 +73,10 @@ describe('tokenCounter', () => {
             },
           ],
         },
-      ];
-      const tokenCount = await countChatTokens(messages);
-      expect(tokenCount).toBeGreaterThan(5);
-    });
+      ]
+      const tokenCount = await countChatTokens(messages)
+      expect(tokenCount).toBeGreaterThan(5)
+    })
 
     it('should include name overhead when a message defines name', async () => {
       const messages: ChatMessage[] = [
@@ -85,14 +85,14 @@ describe('tokenCounter', () => {
           name: 'context-provider',
           content: 'You set contextual instructions for the assistant.',
         },
-      ];
+      ]
 
       const withoutName = await countChatTokens([
         { role: 'system', content: messages[0]!.content },
-      ]);
-      const withName = await countChatTokens(messages);
+      ])
+      const withName = await countChatTokens(messages)
 
-      expect(withName).toBeGreaterThan(withoutName);
-    });
-  });
-});
+      expect(withName).toBeGreaterThan(withoutName)
+    })
+  })
+})

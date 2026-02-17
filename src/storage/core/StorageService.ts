@@ -5,24 +5,24 @@
  * provider via dependency injection.
  * @module src/storage/core/StorageService
  */
-import { injectable, inject } from 'tsyringe';
+import { inject, injectable } from 'tsyringe'
 
-import { StorageProvider } from '@/container/tokens.js';
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
-import { logger, type RequestContext } from '@/utils/index.js';
+import { StorageProvider } from '@/container/tokens.js'
 import type {
   IStorageProvider,
-  StorageOptions,
   ListOptions,
   ListResult,
-} from '@/storage/core/IStorageProvider.js';
+  StorageOptions,
+} from '@/storage/core/IStorageProvider.js'
 import {
-  validateTenantId,
   validateKey,
+  validateListOptions,
   validatePrefix,
   validateStorageOptions,
-  validateListOptions,
-} from '@/storage/core/storageValidation.js';
+  validateTenantId,
+} from '@/storage/core/storageValidation.js'
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
+import { logger, type RequestContext } from '@/utils/index.js'
 
 /**
  * Validates and returns the tenant ID from the request context.
@@ -38,7 +38,7 @@ import {
  * @internal
  */
 function requireTenantId(context: RequestContext): string {
-  const tenantId = context.tenantId;
+  const tenantId = context.tenantId
 
   // Check if tenant ID is missing (undefined or null)
   if (tenantId === undefined || tenantId === null) {
@@ -51,13 +51,13 @@ function requireTenantId(context: RequestContext): string {
         // Include call stack hint for debugging
         calledFrom: 'StorageService',
       },
-    );
+    )
   }
 
   // Delegate validation to shared utility
-  validateTenantId(tenantId, context);
+  validateTenantId(tenantId, context)
 
-  return tenantId.trim();
+  return tenantId.trim()
 }
 
 @injectable()
@@ -68,17 +68,17 @@ export class StorageService {
   }
 
   get<T>(key: string, context: RequestContext): Promise<T | null> {
-    const tenantId = requireTenantId(context);
-    validateKey(key, context);
+    const tenantId = requireTenantId(context)
+    validateKey(key, context)
 
     logger.debug('[StorageService] get operation', {
       ...context,
       operation: 'StorageService.get',
       tenantId,
       key,
-    });
+    })
 
-    return this.provider.get(tenantId, key, context);
+    return this.provider.get(tenantId, key, context)
   }
 
   set(
@@ -87,9 +87,9 @@ export class StorageService {
     context: RequestContext,
     options?: StorageOptions,
   ): Promise<void> {
-    const tenantId = requireTenantId(context);
-    validateKey(key, context);
-    validateStorageOptions(options, context);
+    const tenantId = requireTenantId(context)
+    validateKey(key, context)
+    validateStorageOptions(options, context)
 
     logger.debug('[StorageService] set operation', {
       ...context,
@@ -98,23 +98,23 @@ export class StorageService {
       key,
       hasTTL: options?.ttl !== undefined,
       ttl: options?.ttl,
-    });
+    })
 
-    return this.provider.set(tenantId, key, value, context, options);
+    return this.provider.set(tenantId, key, value, context, options)
   }
 
   delete(key: string, context: RequestContext): Promise<boolean> {
-    const tenantId = requireTenantId(context);
-    validateKey(key, context);
+    const tenantId = requireTenantId(context)
+    validateKey(key, context)
 
     logger.debug('[StorageService] delete operation', {
       ...context,
       operation: 'StorageService.delete',
       tenantId,
       key,
-    });
+    })
 
-    return this.provider.delete(tenantId, key, context);
+    return this.provider.delete(tenantId, key, context)
   }
 
   list(
@@ -122,9 +122,9 @@ export class StorageService {
     context: RequestContext,
     options?: ListOptions,
   ): Promise<ListResult> {
-    const tenantId = requireTenantId(context);
-    validatePrefix(prefix, context);
-    validateListOptions(options, context);
+    const tenantId = requireTenantId(context)
+    validatePrefix(prefix, context)
+    validateListOptions(options, context)
 
     logger.debug('[StorageService] list operation', {
       ...context,
@@ -133,16 +133,16 @@ export class StorageService {
       prefix,
       limit: options?.limit,
       hasCursor: !!options?.cursor,
-    });
+    })
 
-    return this.provider.list(tenantId, prefix, context, options);
+    return this.provider.list(tenantId, prefix, context, options)
   }
 
   getMany<T>(keys: string[], context: RequestContext): Promise<Map<string, T>> {
-    const tenantId = requireTenantId(context);
+    const tenantId = requireTenantId(context)
     // Validate all keys
     for (const key of keys) {
-      validateKey(key, context);
+      validateKey(key, context)
     }
 
     logger.debug('[StorageService] getMany operation', {
@@ -150,9 +150,9 @@ export class StorageService {
       operation: 'StorageService.getMany',
       tenantId,
       keyCount: keys.length,
-    });
+    })
 
-    return this.provider.getMany(tenantId, keys, context);
+    return this.provider.getMany(tenantId, keys, context)
   }
 
   setMany(
@@ -160,11 +160,11 @@ export class StorageService {
     context: RequestContext,
     options?: StorageOptions,
   ): Promise<void> {
-    const tenantId = requireTenantId(context);
-    validateStorageOptions(options, context);
+    const tenantId = requireTenantId(context)
+    validateStorageOptions(options, context)
     // Validate all keys
     for (const key of entries.keys()) {
-      validateKey(key, context);
+      validateKey(key, context)
     }
 
     logger.debug('[StorageService] setMany operation', {
@@ -174,16 +174,16 @@ export class StorageService {
       entryCount: entries.size,
       hasTTL: options?.ttl !== undefined,
       ttl: options?.ttl,
-    });
+    })
 
-    return this.provider.setMany(tenantId, entries, context, options);
+    return this.provider.setMany(tenantId, entries, context, options)
   }
 
   deleteMany(keys: string[], context: RequestContext): Promise<number> {
-    const tenantId = requireTenantId(context);
+    const tenantId = requireTenantId(context)
     // Validate all keys
     for (const key of keys) {
-      validateKey(key, context);
+      validateKey(key, context)
     }
 
     logger.debug('[StorageService] deleteMany operation', {
@@ -191,20 +191,20 @@ export class StorageService {
       operation: 'StorageService.deleteMany',
       tenantId,
       keyCount: keys.length,
-    });
+    })
 
-    return this.provider.deleteMany(tenantId, keys, context);
+    return this.provider.deleteMany(tenantId, keys, context)
   }
 
   clear(context: RequestContext): Promise<number> {
-    const tenantId = requireTenantId(context);
+    const tenantId = requireTenantId(context)
 
     logger.info('[StorageService] clear operation', {
       ...context,
       operation: 'StorageService.clear',
       tenantId,
-    });
+    })
 
-    return this.provider.clear(tenantId, context);
+    return this.provider.clear(tenantId, context)
   }
 }

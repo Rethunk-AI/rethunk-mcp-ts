@@ -12,9 +12,9 @@
  * @module src/utils/pagination
  */
 
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
-import type { RequestContext } from '@/utils/index.js';
-import { logger } from '@/utils/index.js';
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
+import type { RequestContext } from '@/utils/index.js'
+import { logger } from '@/utils/index.js'
 
 /**
  * Generic pagination state that can be encoded into a cursor.
@@ -22,11 +22,11 @@ import { logger } from '@/utils/index.js';
  */
 export interface PaginationState {
   /** Current page offset or starting position */
-  offset: number;
+  offset: number
   /** Maximum number of items per page */
-  limit: number;
+  limit: number
   /** Optional additional state (implementation-specific) */
-  [key: string]: unknown;
+  [key: string]: unknown
 }
 
 /**
@@ -34,11 +34,11 @@ export interface PaginationState {
  */
 export interface PaginatedResult<T> {
   /** Array of items for the current page */
-  items: T[];
+  items: T[]
   /** Opaque cursor for the next page, undefined if no more results */
-  nextCursor?: string;
+  nextCursor?: string
   /** Total count if available (optional, some backends may not support this efficiently) */
-  totalCount?: number;
+  totalCount?: number
 }
 
 /**
@@ -52,15 +52,15 @@ export interface PaginatedResult<T> {
  */
 export function encodeCursor(state: PaginationState): string {
   try {
-    const jsonString = JSON.stringify(state);
-    const base64 = Buffer.from(jsonString, 'utf-8').toString('base64url');
-    return base64;
+    const jsonString = JSON.stringify(state)
+    const base64 = Buffer.from(jsonString, 'utf-8').toString('base64url')
+    return base64
   } catch (error: unknown) {
     throw new McpError(
       JsonRpcErrorCode.InternalError,
       'Failed to encode pagination cursor',
       { error: error instanceof Error ? error.message : String(error) },
-    );
+    )
   }
 }
 
@@ -78,8 +78,8 @@ export function decodeCursor(
   context: RequestContext,
 ): PaginationState {
   try {
-    const jsonString = Buffer.from(cursor, 'base64url').toString('utf-8');
-    const state = JSON.parse(jsonString) as PaginationState;
+    const jsonString = Buffer.from(cursor, 'base64url').toString('utf-8')
+    const state = JSON.parse(jsonString) as PaginationState
 
     // Validate required fields
     if (
@@ -88,21 +88,21 @@ export function decodeCursor(
       state.offset < 0 ||
       state.limit <= 0
     ) {
-      throw new Error('Invalid pagination state structure');
+      throw new Error('Invalid pagination state structure')
     }
 
-    return state;
+    return state
   } catch (error: unknown) {
     logger.warning('Failed to decode pagination cursor', {
       ...context,
       cursor,
       error: error instanceof Error ? error.message : String(error),
-    });
+    })
     throw new McpError(
       JsonRpcErrorCode.InvalidParams,
       'Invalid pagination cursor. The cursor may be expired, corrupted, or from a different request.',
       { cursor },
-    );
+    )
   }
 }
 
@@ -114,10 +114,10 @@ export function decodeCursor(
  * @returns Cursor string if present, undefined otherwise
  */
 export function extractCursor(params?: {
-  cursor?: string;
-  _meta?: { cursor?: string };
+  cursor?: string
+  _meta?: { cursor?: string }
 }): string | undefined {
-  return params?.cursor ?? params?._meta?.cursor;
+  return params?.cursor ?? params?._meta?.cursor
 }
 
 /**
@@ -138,14 +138,14 @@ export function paginateArray<T>(
   maxPageSize: number,
   context: RequestContext,
 ): PaginatedResult<T> {
-  let offset = 0;
-  let limit = defaultPageSize;
+  let offset = 0
+  let limit = defaultPageSize
 
   // Decode cursor if provided
   if (cursorStr) {
-    const state = decodeCursor(cursorStr, context);
-    offset = state.offset;
-    limit = Math.min(state.limit, maxPageSize); // Enforce max page size
+    const state = decodeCursor(cursorStr, context)
+    offset = state.offset
+    limit = Math.min(state.limit, maxPageSize) // Enforce max page size
   }
 
   // Validate bounds
@@ -153,25 +153,25 @@ export function paginateArray<T>(
     return {
       items: [],
       totalCount: items.length,
-    };
+    }
   }
 
   // Extract page
-  const pageItems = items.slice(offset, offset + limit);
-  const hasMore = offset + limit < items.length;
+  const pageItems = items.slice(offset, offset + limit)
+  const hasMore = offset + limit < items.length
 
   // Build result, conditionally adding nextCursor only if it exists
   const result: PaginatedResult<T> = {
     items: pageItems,
     totalCount: items.length,
-  };
+  }
 
   // Only add nextCursor if more results exist
   if (hasMore) {
-    result.nextCursor = encodeCursor({ offset: offset + limit, limit });
+    result.nextCursor = encodeCursor({ offset: offset + limit, limit })
   }
 
-  return result;
+  return result
 }
 
 /**
@@ -185,4 +185,4 @@ export const DEFAULT_PAGINATION_CONFIG = {
   MAX_PAGE_SIZE: 1000,
   /** Minimum allowed items per page */
   MIN_PAGE_SIZE: 1,
-} as const;
+} as const

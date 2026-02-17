@@ -7,8 +7,8 @@
  * @see {@link https://modelcontextprotocol.io/specification/2025-06-18/basic/prompts | MCP Prompts}
  * @module src/mcp-server/prompts/utils/promptDefinition
  */
-import type { PromptMessage } from '@modelcontextprotocol/sdk/types.js';
-import type { ZodObject, ZodRawShape, z } from 'zod';
+import type { PromptMessage } from '@modelcontextprotocol/sdk/types.js'
+import type { ZodObject, ZodRawShape, z } from 'zod'
 
 /**
  * Represents the complete, self-contained definition of an MCP prompt.
@@ -19,19 +19,19 @@ export interface PromptDefinition<
   /**
    * The programmatic, unique name for the prompt (e.g., 'code_review').
    */
-  name: string;
+  name: string
 
   /**
    * A clear, concise description of what the prompt does.
    * This helps users understand when to use this prompt.
    */
-  description: string;
+  description: string
 
   /**
    * Optional Zod schema for validating the prompt's arguments.
    * If undefined, the prompt accepts no arguments.
    */
-  argumentsSchema?: TArgumentsSchema;
+  argumentsSchema?: TArgumentsSchema
 
   /**
    * The function that generates the prompt messages.
@@ -42,5 +42,5 @@ export interface PromptDefinition<
     args: TArgumentsSchema extends ZodObject<ZodRawShape>
       ? z.infer<TArgumentsSchema>
       : Record<string, never>,
-  ) => PromptMessage[] | Promise<PromptMessage[]>;
+  ) => PromptMessage[] | Promise<PromptMessage[]>
 }

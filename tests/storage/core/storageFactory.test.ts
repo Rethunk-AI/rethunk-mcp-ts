@@ -2,15 +2,15 @@
  * @fileoverview Unit tests for storage provider factory.
  * @module tests/storage/core/storageFactory
  */
-import { describe, it, expect, vi } from 'vitest';
-import type { AppConfig } from '@/config/index.js';
+import { describe, expect, it, vi } from 'vitest'
+import type { AppConfig } from '@/config/index.js'
 
-import { createStorageProvider } from '@/storage/core/storageFactory.js';
-import { InMemoryProvider } from '@/storage/providers/inMemory/inMemoryProvider.js';
-import { FileSystemProvider } from '@/storage/providers/fileSystem/fileSystemProvider.js';
-import { SupabaseProvider } from '@/storage/providers/supabase/supabaseProvider.js';
-import { SurrealKvProvider } from '@/storage/providers/surrealdb/kv/surrealKvProvider.js';
-import { McpError } from '@/types-global/errors.js';
+import { createStorageProvider } from '@/storage/core/storageFactory.js'
+import { FileSystemProvider } from '@/storage/providers/fileSystem/fileSystemProvider.js'
+import { InMemoryProvider } from '@/storage/providers/inMemory/inMemoryProvider.js'
+import { SupabaseProvider } from '@/storage/providers/supabase/supabaseProvider.js'
+import { SurrealKvProvider } from '@/storage/providers/surrealdb/kv/surrealKvProvider.js'
+import { McpError } from '@/types-global/errors.js'
 
 // Mock Supabase client
 vi.mock('@supabase/supabase-js', () => ({
@@ -22,7 +22,7 @@ vi.mock('@supabase/supabase-js', () => ({
       delete: vi.fn().mockReturnThis(),
     }),
   }),
-}));
+}))
 
 describe('createStorageProvider', () => {
   describe('in-memory provider', () => {
@@ -31,12 +31,12 @@ describe('createStorageProvider', () => {
         storage: {
           providerType: 'in-memory' as const,
         },
-      } as AppConfig;
+      } as AppConfig
 
-      const provider = createStorageProvider(mockConfig);
+      const provider = createStorageProvider(mockConfig)
 
-      expect(provider).toBeInstanceOf(InMemoryProvider);
-    });
+      expect(provider).toBeInstanceOf(InMemoryProvider)
+    })
 
     it('should force in-memory provider for non-serverless-compatible types', () => {
       // Note: isServerless is evaluated at module load time, so we can't easily test
@@ -48,13 +48,13 @@ describe('createStorageProvider', () => {
         storage: {
           providerType: 'in-memory' as const,
         },
-      } as AppConfig;
+      } as AppConfig
 
-      const provider = createStorageProvider(mockConfig);
+      const provider = createStorageProvider(mockConfig)
 
-      expect(provider).toBeInstanceOf(InMemoryProvider);
-    });
-  });
+      expect(provider).toBeInstanceOf(InMemoryProvider)
+    })
+  })
 
   describe('filesystem provider', () => {
     it('should create FileSystemProvider with valid path', () => {
@@ -63,12 +63,12 @@ describe('createStorageProvider', () => {
           providerType: 'filesystem' as const,
           filesystemPath: '/tmp/test-storage',
         },
-      } as AppConfig;
+      } as AppConfig
 
-      const provider = createStorageProvider(mockConfig);
+      const provider = createStorageProvider(mockConfig)
 
-      expect(provider).toBeInstanceOf(FileSystemProvider);
-    });
+      expect(provider).toBeInstanceOf(FileSystemProvider)
+    })
 
     it('should throw McpError when filesystem path is missing', () => {
       const mockConfig = {
@@ -76,14 +76,14 @@ describe('createStorageProvider', () => {
           providerType: 'filesystem' as const,
           filesystemPath: undefined,
         },
-      } as unknown as AppConfig;
+      } as unknown as AppConfig
 
-      expect(() => createStorageProvider(mockConfig)).toThrow(McpError);
+      expect(() => createStorageProvider(mockConfig)).toThrow(McpError)
       expect(() => createStorageProvider(mockConfig)).toThrow(
         /STORAGE_FILESYSTEM_PATH must be set/,
-      );
-    });
-  });
+      )
+    })
+  })
 
   describe('supabase provider', () => {
     it('should create SupabaseProvider with provided client', () => {
@@ -95,20 +95,20 @@ describe('createStorageProvider', () => {
           url: 'https://test.supabase.co',
           serviceRoleKey: 'test-key',
         },
-      } as AppConfig;
+      } as AppConfig
 
       const mockClient = {
         from: vi.fn(),
-      };
+      }
 
       // Provide the client to avoid DI container issues
       const provider = createStorageProvider(mockConfig, {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         supabaseClient: mockClient as any,
-      });
+      })
 
-      expect(provider).toBeInstanceOf(SupabaseProvider);
-    });
+      expect(provider).toBeInstanceOf(SupabaseProvider)
+    })
 
     it('should throw McpError when supabase URL is missing', () => {
       const mockConfig = {
@@ -119,13 +119,13 @@ describe('createStorageProvider', () => {
           url: undefined,
           serviceRoleKey: 'test-key',
         },
-      } as unknown as AppConfig;
+      } as unknown as AppConfig
 
-      expect(() => createStorageProvider(mockConfig)).toThrow(McpError);
+      expect(() => createStorageProvider(mockConfig)).toThrow(McpError)
       expect(() => createStorageProvider(mockConfig)).toThrow(
         /SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set/,
-      );
-    });
+      )
+    })
 
     it('should throw McpError when supabase service role key is missing', () => {
       const mockConfig = {
@@ -136,11 +136,11 @@ describe('createStorageProvider', () => {
           url: 'https://test.supabase.co',
           serviceRoleKey: undefined,
         },
-      } as AppConfig;
+      } as AppConfig
 
-      expect(() => createStorageProvider(mockConfig)).toThrow(McpError);
-    });
-  });
+      expect(() => createStorageProvider(mockConfig)).toThrow(McpError)
+    })
+  })
 
   describe('surrealdb provider', () => {
     it('should create SurrealKvProvider with provided client', () => {
@@ -154,22 +154,22 @@ describe('createStorageProvider', () => {
           database: 'test-database',
           tableName: 'kv_store',
         },
-      } as AppConfig;
+      } as AppConfig
 
       const mockClient = {
         query: vi.fn(),
         connect: vi.fn(),
         close: vi.fn(),
-      };
+      }
 
       // Provide the client to avoid DI container issues
       const provider = createStorageProvider(mockConfig, {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         surrealdbClient: mockClient as any,
-      });
+      })
 
-      expect(provider).toBeInstanceOf(SurrealKvProvider);
-    });
+      expect(provider).toBeInstanceOf(SurrealKvProvider)
+    })
 
     it('should throw McpError when surrealdb URL is missing', () => {
       const mockConfig = {
@@ -181,13 +181,13 @@ describe('createStorageProvider', () => {
           namespace: 'test',
           database: 'test',
         },
-      } as unknown as AppConfig;
+      } as unknown as AppConfig
 
-      expect(() => createStorageProvider(mockConfig)).toThrow(McpError);
+      expect(() => createStorageProvider(mockConfig)).toThrow(McpError)
       expect(() => createStorageProvider(mockConfig)).toThrow(
         /SURREALDB_URL, SURREALDB_NAMESPACE, and SURREALDB_DATABASE must be set/,
-      );
-    });
+      )
+    })
 
     it('should throw McpError when surrealdb namespace is missing', () => {
       const mockConfig = {
@@ -199,10 +199,10 @@ describe('createStorageProvider', () => {
           namespace: undefined,
           database: 'test',
         },
-      } as unknown as AppConfig;
+      } as unknown as AppConfig
 
-      expect(() => createStorageProvider(mockConfig)).toThrow(McpError);
-    });
+      expect(() => createStorageProvider(mockConfig)).toThrow(McpError)
+    })
 
     it('should throw McpError when surrealdb database is missing', () => {
       const mockConfig = {
@@ -214,11 +214,11 @@ describe('createStorageProvider', () => {
           namespace: 'test',
           database: undefined,
         },
-      } as unknown as AppConfig;
+      } as unknown as AppConfig
 
-      expect(() => createStorageProvider(mockConfig)).toThrow(McpError);
-    });
-  });
+      expect(() => createStorageProvider(mockConfig)).toThrow(McpError)
+    })
+  })
 
   describe('cloudflare providers', () => {
     it('should throw error for R2 provider outside serverless environment', () => {
@@ -226,40 +226,40 @@ describe('createStorageProvider', () => {
         storage: {
           providerType: 'cloudflare-r2' as const,
         },
-      } as AppConfig;
+      } as AppConfig
 
-      expect(() => createStorageProvider(mockConfig)).toThrow(McpError);
+      expect(() => createStorageProvider(mockConfig)).toThrow(McpError)
       expect(() => createStorageProvider(mockConfig)).toThrow(
         /Cloudflare R2 storage is only available in a Cloudflare Worker environment/,
-      );
-    });
+      )
+    })
 
     it('should throw error for KV provider outside serverless environment', () => {
       const mockConfig = {
         storage: {
           providerType: 'cloudflare-kv' as const,
         },
-      } as AppConfig;
+      } as AppConfig
 
-      expect(() => createStorageProvider(mockConfig)).toThrow(McpError);
+      expect(() => createStorageProvider(mockConfig)).toThrow(McpError)
       expect(() => createStorageProvider(mockConfig)).toThrow(
         /Cloudflare KV storage is only available in a Cloudflare Worker environment/,
-      );
-    });
+      )
+    })
 
     it('should throw error for D1 provider outside serverless environment', () => {
       const mockConfig = {
         storage: {
           providerType: 'cloudflare-d1' as const,
         },
-      } as AppConfig;
+      } as AppConfig
 
-      expect(() => createStorageProvider(mockConfig)).toThrow(McpError);
+      expect(() => createStorageProvider(mockConfig)).toThrow(McpError)
       expect(() => createStorageProvider(mockConfig)).toThrow(
         /Cloudflare D1 storage is only available in a Cloudflare Worker environment/,
-      );
-    });
-  });
+      )
+    })
+  })
 
   describe('unknown provider type', () => {
     it('should throw error for unsupported provider type', () => {
@@ -268,14 +268,14 @@ describe('createStorageProvider', () => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           providerType: 'invalid-provider' as any,
         },
-      } as AppConfig;
+      } as AppConfig
 
-      expect(() => createStorageProvider(mockConfig)).toThrow(McpError);
+      expect(() => createStorageProvider(mockConfig)).toThrow(McpError)
       expect(() => createStorageProvider(mockConfig)).toThrow(
         /Unhandled storage provider type/,
-      );
-    });
-  });
+      )
+    })
+  })
 
   describe('dependency injection', () => {
     it('should use provided Supabase client when available', () => {
@@ -287,21 +287,21 @@ describe('createStorageProvider', () => {
           url: 'https://test.supabase.co',
           serviceRoleKey: 'test-key',
         },
-      } as AppConfig;
+      } as AppConfig
 
       const mockClient = {
         from: vi.fn().mockReturnValue({
           select: vi.fn(),
         }),
-      };
+      }
 
       const provider = createStorageProvider(mockConfig, {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         supabaseClient: mockClient as any,
-      });
+      })
 
-      expect(provider).toBeInstanceOf(SupabaseProvider);
-    });
+      expect(provider).toBeInstanceOf(SupabaseProvider)
+    })
 
     it('should use provided SurrealDB client when available', () => {
       const mockConfig = {
@@ -314,22 +314,22 @@ describe('createStorageProvider', () => {
           database: 'test',
           tableName: 'kv_store',
         },
-      } as AppConfig;
+      } as AppConfig
 
       const mockClient = {
         query: vi.fn(),
         connect: vi.fn(),
         close: vi.fn(),
-      };
+      }
 
       const provider = createStorageProvider(mockConfig, {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         surrealdbClient: mockClient as any,
-      });
+      })
 
-      expect(provider).toBeInstanceOf(SurrealKvProvider);
-    });
-  });
+      expect(provider).toBeInstanceOf(SurrealKvProvider)
+    })
+  })
 
   describe('edge cases', () => {
     it('should handle in-memory provider creation consistently', () => {
@@ -338,19 +338,19 @@ describe('createStorageProvider', () => {
         storage: {
           providerType: 'in-memory' as const,
         },
-      } as AppConfig;
+      } as AppConfig
 
-      const provider = createStorageProvider(mockConfig);
+      const provider = createStorageProvider(mockConfig)
 
-      expect(provider).toBeInstanceOf(InMemoryProvider);
-    });
+      expect(provider).toBeInstanceOf(InMemoryProvider)
+    })
 
     it('should handle filesystem provider with various path formats', () => {
       const testPaths = [
         '/tmp/test-storage-1',
         '/tmp/test-storage-2',
         '/tmp/test-storage-3',
-      ];
+      ]
 
       for (const path of testPaths) {
         const mockConfig = {
@@ -358,12 +358,12 @@ describe('createStorageProvider', () => {
             providerType: 'filesystem' as const,
             filesystemPath: path,
           },
-        } as AppConfig;
+        } as AppConfig
 
-        const provider = createStorageProvider(mockConfig);
-        expect(provider).toBeInstanceOf(FileSystemProvider);
+        const provider = createStorageProvider(mockConfig)
+        expect(provider).toBeInstanceOf(FileSystemProvider)
       }
-    });
+    })
 
     it('should handle empty filesystem path as missing', () => {
       const mockConfig = {
@@ -371,13 +371,13 @@ describe('createStorageProvider', () => {
           providerType: 'filesystem' as const,
           filesystemPath: '',
         },
-      } as AppConfig;
+      } as AppConfig
 
-      expect(() => createStorageProvider(mockConfig)).toThrow(McpError);
+      expect(() => createStorageProvider(mockConfig)).toThrow(McpError)
       expect(() => createStorageProvider(mockConfig)).toThrow(
         /STORAGE_FILESYSTEM_PATH must be set/,
-      );
-    });
+      )
+    })
 
     it('should handle missing Supabase URL with present service role key', () => {
       const mockConfig = {
@@ -388,10 +388,10 @@ describe('createStorageProvider', () => {
           url: '',
           serviceRoleKey: 'test-key',
         },
-      } as AppConfig;
+      } as AppConfig
 
-      expect(() => createStorageProvider(mockConfig)).toThrow(McpError);
-    });
+      expect(() => createStorageProvider(mockConfig)).toThrow(McpError)
+    })
 
     it('should handle missing Supabase service role key with present URL', () => {
       const mockConfig = {
@@ -402,10 +402,10 @@ describe('createStorageProvider', () => {
           url: 'https://test.supabase.co',
           serviceRoleKey: '',
         },
-      } as AppConfig;
+      } as AppConfig
 
-      expect(() => createStorageProvider(mockConfig)).toThrow(McpError);
-    });
+      expect(() => createStorageProvider(mockConfig)).toThrow(McpError)
+    })
 
     it('should handle missing SurrealDB namespace', () => {
       const mockConfig = {
@@ -417,10 +417,10 @@ describe('createStorageProvider', () => {
           namespace: '',
           database: 'test',
         },
-      } as AppConfig;
+      } as AppConfig
 
-      expect(() => createStorageProvider(mockConfig)).toThrow(McpError);
-    });
+      expect(() => createStorageProvider(mockConfig)).toThrow(McpError)
+    })
 
     it('should handle missing SurrealDB database', () => {
       const mockConfig = {
@@ -432,10 +432,10 @@ describe('createStorageProvider', () => {
           namespace: 'test',
           database: '',
         },
-      } as AppConfig;
+      } as AppConfig
 
-      expect(() => createStorageProvider(mockConfig)).toThrow(McpError);
-    });
+      expect(() => createStorageProvider(mockConfig)).toThrow(McpError)
+    })
 
     it('should handle empty SurrealDB URL', () => {
       const mockConfig = {
@@ -447,9 +447,9 @@ describe('createStorageProvider', () => {
           namespace: 'test',
           database: 'test',
         },
-      } as AppConfig;
+      } as AppConfig
 
-      expect(() => createStorageProvider(mockConfig)).toThrow(McpError);
-    });
-  });
-});
+      expect(() => createStorageProvider(mockConfig)).toThrow(McpError)
+    })
+  })
+})

@@ -1,17 +1,19 @@
+/** biome-ignore-all lint/suspicious/noThenProperty: We use this as a variable in test cases and Surreal events. */
+
 /**
  * @fileoverview Event manager for SurrealDB table events.
  * Manages DEFINE EVENT creation, deletion, and inspection.
  * @module src/storage/providers/surrealdb/events/eventManager
  */
 
-import type Surreal from 'surrealdb';
-import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js';
+import type Surreal from 'surrealdb'
+import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js'
 import type {
-  EventConfig,
-  EventTrigger,
   DefineEventResult,
+  EventConfig,
   EventInfo,
-} from './eventTypes.js';
+  EventTrigger,
+} from './eventTypes.js'
 
 /**
  * Manages table events in SurrealDB.
@@ -59,29 +61,29 @@ export class EventManager {
         logger.info(
           `[EventManager] Defining event: ${config.table}.${config.name}`,
           context,
-        );
+        )
 
-        const query = this.buildDefineEventQuery(config);
+        const query = this.buildDefineEventQuery(config)
 
-        await this.client.query(query);
+        await this.client.query(query)
 
         logger.info(
           `[EventManager] Event defined successfully: ${config.name}`,
           context,
-        );
+        )
 
         return {
           name: config.name,
           table: config.table,
           success: true,
-        };
+        }
       },
       {
         operation: 'EventManager.defineEvent',
         context,
         input: { table: config.table, name: config.name },
       },
-    );
+    )
   }
 
   /**
@@ -102,22 +104,22 @@ export class EventManager {
         logger.info(
           `[EventManager] Removing event: ${table}.${eventName}`,
           context,
-        );
+        )
 
-        const query = `REMOVE EVENT ${eventName} ON TABLE ${table}`;
+        const query = `REMOVE EVENT ${eventName} ON TABLE ${table}`
 
-        await this.client.query(query);
+        await this.client.query(query)
 
-        logger.info(`[EventManager] Event removed: ${eventName}`, context);
+        logger.info(`[EventManager] Event removed: ${eventName}`, context)
 
-        return true;
+        return true
       },
       {
         operation: 'EventManager.removeEvent',
         context,
         input: { table, eventName },
       },
-    );
+    )
   }
 
   /**
@@ -133,14 +135,14 @@ export class EventManager {
   ): Promise<EventInfo[]> {
     return ErrorHandler.tryCatch(
       async () => {
-        const query = `INFO FOR TABLE ${table}`;
+        const query = `INFO FOR TABLE ${table}`
 
         const result =
           await this.client.query<
             [{ result: { events: Record<string, unknown> } }]
-          >(query);
+          >(query)
 
-        const eventsObj = result[0]?.result?.events || {};
+        const eventsObj = result[0]?.result?.events || {}
 
         // Parse events from INFO result
         const events: EventInfo[] = Object.entries(eventsObj).map(
@@ -149,49 +151,49 @@ export class EventManager {
             triggers: [] as EventTrigger[], // Would parse from details
             then: '', // Would parse from details
           }),
-        );
+        )
 
-        return events;
+        return events
       },
       {
         operation: 'EventManager.listEvents',
         context,
         input: { table },
       },
-    );
+    )
   }
 
   /**
    * Build DEFINE EVENT query from configuration.
    */
   private buildDefineEventQuery(config: EventConfig): string {
-    const parts = [`DEFINE EVENT ${config.name} ON TABLE ${config.table}`];
+    const parts = [`DEFINE EVENT ${config.name} ON TABLE ${config.table}`]
 
     // Build WHEN clause
-    const whenConditions: string[] = [];
+    const whenConditions: string[] = []
 
     // Add event type conditions
     if (config.triggers.length > 0 && config.triggers.length < 3) {
       const eventConditions = config.triggers
         .map((t) => `$event = "${t}"`)
-        .join(' OR ');
-      whenConditions.push(`(${eventConditions})`);
+        .join(' OR ')
+      whenConditions.push(`(${eventConditions})`)
     }
 
     // Add custom WHEN condition
     if (config.when) {
-      whenConditions.push(`(${config.when})`);
+      whenConditions.push(`(${config.when})`)
     }
 
     if (whenConditions.length > 0) {
-      parts.push(`WHEN ${whenConditions.join(' AND ')}`);
+      parts.push(`WHEN ${whenConditions.join(' AND ')}`)
     }
 
     // Add THEN clause
-    parts.push(`THEN {`);
-    parts.push(`  ${config.then}`);
-    parts.push(`}`);
+    parts.push(`THEN {`)
+    parts.push(`  ${config.then}`)
+    parts.push(`}`)
 
-    return parts.join('\n');
+    return parts.join('\n')
   }
 }

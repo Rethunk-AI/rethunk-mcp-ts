@@ -4,37 +4,33 @@
  * performance measurement, and response formatting for tool handlers.
  * @module mcp-server/tools/utils/toolHandlerFactory
  */
-import type { AnySchema } from '@modelcontextprotocol/sdk/server/zod-compat.js';
-import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
+import type { AnySchema } from '@modelcontextprotocol/sdk/server/zod-compat.js'
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
 import type {
   CallToolResult,
   ContentBlock,
   ServerNotification,
   ServerRequest,
-} from '@modelcontextprotocol/sdk/types.js';
-import type { z } from 'zod';
-
-import type { SdkContext } from './toolDefinition.js';
-import { McpError } from '@/types-global/errors.js';
+} from '@modelcontextprotocol/sdk/types.js'
+import type { z } from 'zod'
+import type { McpError } from '@/types-global/errors.js'
 import {
   ErrorHandler,
-  type RequestContext,
   measureToolExecution,
+  type RequestContext,
   requestContextService,
-} from '@/utils/index.js';
+} from '@/utils/index.js'
+import type { SdkContext } from './toolDefinition.js'
 
 // Define a type for a context that may have elicitation capabilities.
 type ElicitableContext = RequestContext & {
-  elicitInput?: (args: {
-    message: string;
-    schema: unknown;
-  }) => Promise<unknown>;
-};
+  elicitInput?: (args: { message: string; schema: unknown }) => Promise<unknown>
+}
 
 // Default formatter for successful responses
 const defaultResponseFormatter = (result: unknown): ContentBlock[] => [
   { type: 'text', text: JSON.stringify(result, null, 2) },
-];
+]
 
 /**
  * Options for creating an MCP tool handler via the factory.
@@ -44,16 +40,16 @@ export type ToolHandlerFactoryOptions<
   TInputSchema extends AnySchema,
   TOutput extends Record<string, unknown>,
 > = {
-  toolName: string;
+  toolName: string
   /** The input schema, captured for type inference (not used at runtime). */
-  inputSchema: TInputSchema;
+  inputSchema: TInputSchema
   logic: (
     input: z.infer<TInputSchema>,
     appContext: RequestContext,
     sdkContext: SdkContext,
-  ) => Promise<TOutput>;
-  responseFormatter?: (result: TOutput) => ContentBlock[];
-};
+  ) => Promise<TOutput>
+  responseFormatter?: (result: TOutput) => ContentBlock[]
+}
 
 /**
  * Creates a standardized MCP tool handler.
@@ -81,12 +77,12 @@ export function createMcpToolHandler<
     callContext: Record<string, unknown>,
   ): Promise<CallToolResult> => {
     // The `callContext` from the SDK is cast to our specific SdkContext type.
-    const sdkContext = callContext as SdkContext;
+    const sdkContext = callContext as SdkContext
 
     const sessionId =
       typeof sdkContext?.sessionId === 'string'
         ? sdkContext.sessionId
-        : undefined;
+        : undefined
 
     // Create the application's internal logger/tracing context.
     const appContext: ElicitableContext =
@@ -94,7 +90,7 @@ export function createMcpToolHandler<
         parentContext: sdkContext,
         operation: 'HandleToolRequest',
         additionalContext: { toolName, sessionId, input },
-      });
+      })
 
     // If the SDK context supports elicitation, add it to our app context.
     // This makes it available to the tool's logic function.
@@ -103,9 +99,9 @@ export function createMcpToolHandler<
       typeof sdkContext.elicitInput === 'function'
     ) {
       appContext.elicitInput = sdkContext.elicitInput as (args: {
-        message: string;
-        schema: unknown;
-      }) => Promise<unknown>;
+        message: string
+        schema: unknown
+      }) => Promise<unknown>
     }
 
     try {
@@ -114,18 +110,18 @@ export function createMcpToolHandler<
         () => logic(input, appContext, sdkContext),
         { ...appContext, toolName },
         input,
-      );
+      )
 
       return {
         structuredContent: result,
         content: responseFormatter(result),
-      };
+      }
     } catch (error: unknown) {
       const mcpError = ErrorHandler.handleError(error, {
         operation: `tool:${toolName}`,
         context: appContext,
         input,
-      }) as McpError;
+      }) as McpError
 
       return {
         isError: true,
@@ -135,7 +131,7 @@ export function createMcpToolHandler<
           message: mcpError.message,
           data: mcpError.data,
         },
-      };
+      }
     }
-  };
+  }
 }

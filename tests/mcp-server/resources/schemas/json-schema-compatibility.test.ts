@@ -5,27 +5,27 @@
  * Ensures resource schemas remain compatible with clients using older JSON Schema
  * draft versions (particularly Draft 4, used by Go-based MCP clients).
  */
-import { describe, it, expect } from 'vitest';
-import { z } from 'zod';
+import { describe, expect, it } from 'vitest'
+import { z } from 'zod'
 
-import { allResourceDefinitions } from '@/mcp-server/resources/definitions/index.js';
+import { allResourceDefinitions } from '@/mcp-server/resources/definitions/index.js'
 
 type JsonSchemaProperty = {
-  type?: string;
-  minimum?: number;
-  maximum?: number;
-  exclusiveMinimum?: number | boolean;
-  exclusiveMaximum?: number | boolean;
-  properties?: Record<string, JsonSchemaProperty>;
-  items?: JsonSchemaProperty;
-  [key: string]: unknown;
-};
+  type?: string
+  minimum?: number
+  maximum?: number
+  exclusiveMinimum?: number | boolean
+  exclusiveMaximum?: number | boolean
+  properties?: Record<string, JsonSchemaProperty>
+  items?: JsonSchemaProperty
+  [key: string]: unknown
+}
 
 type JsonSchema = {
-  type?: string;
-  properties?: Record<string, JsonSchemaProperty>;
-  [key: string]: unknown;
-};
+  type?: string
+  properties?: Record<string, JsonSchemaProperty>
+  [key: string]: unknown
+}
 
 /**
  * Recursively find all properties in a JSON Schema that have Draft 7-only
@@ -35,24 +35,24 @@ function findDraft7Incompatibilities(
   schema: JsonSchemaProperty,
   path: string = '',
 ): string[] {
-  const issues: string[] = [];
+  const issues: string[] = []
 
   if (typeof schema.exclusiveMinimum === 'number') {
     issues.push(
       `${path || 'root'}: exclusiveMinimum is number (${schema.exclusiveMinimum}) - use .min() instead of .positive()`,
-    );
+    )
   }
   if (typeof schema.exclusiveMaximum === 'number') {
     issues.push(
       `${path || 'root'}: exclusiveMaximum is number (${schema.exclusiveMaximum}) - use .max() instead of .negative()`,
-    );
+    )
   }
 
   if (schema.properties) {
     for (const [key, prop] of Object.entries(schema.properties)) {
       issues.push(
         ...findDraft7Incompatibilities(prop, path ? `${path}.${key}` : key),
-      );
+      )
     }
   }
 
@@ -62,54 +62,54 @@ function findDraft7Incompatibilities(
         schema.items as JsonSchemaProperty,
         `${path}[]`,
       ),
-    );
+    )
   }
 
-  return issues;
+  return issues
 }
 
 function toJsonSchema(schema: z.ZodTypeAny): JsonSchema {
-  return z.toJSONSchema(schema, { target: 'draft-7' }) as JsonSchema;
+  return z.toJSONSchema(schema, { target: 'draft-7' }) as JsonSchema
 }
 
 describe('Resource JSON Schema Draft 4 Compatibility', () => {
   describe('All Resource Schemas', () => {
     it('should not use exclusiveMinimum as number (Draft 7 format)', () => {
-      const allIssues: string[] = [];
+      const allIssues: string[] = []
 
       // Note: Loop does not execute since allResourceDefinitions is intentionally empty.
       for (const resource of allResourceDefinitions) {
-        const paramsSchema = toJsonSchema(resource.paramsSchema);
+        const paramsSchema = toJsonSchema(resource.paramsSchema)
         const paramsIssues = findDraft7Incompatibilities(
           paramsSchema as JsonSchemaProperty,
-        );
+        )
 
         if (paramsIssues.length > 0) {
           allIssues.push(
             `Resource "${resource.name}" paramsSchema:\n  - ${paramsIssues.join('\n  - ')}`,
-          );
+          )
         }
 
         // Test output schema if defined
         if (resource.outputSchema) {
-          const outputSchema = toJsonSchema(resource.outputSchema);
+          const outputSchema = toJsonSchema(resource.outputSchema)
           const outputIssues = findDraft7Incompatibilities(
             outputSchema as JsonSchemaProperty,
-          );
+          )
 
           if (outputIssues.length > 0) {
             allIssues.push(
               `Resource "${resource.name}" outputSchema:\n  - ${outputIssues.join('\n  - ')}`,
-            );
+            )
           }
         }
       }
 
-      expect(allIssues, 'Found Draft 7-only JSON Schema features').toEqual([]);
-    });
+      expect(allIssues, 'Found Draft 7-only JSON Schema features').toEqual([])
+    })
 
     it('should expose no registered resources', () => {
-      expect(allResourceDefinitions).toHaveLength(0);
-    });
-  });
-});
+      expect(allResourceDefinitions).toHaveLength(0)
+    })
+  })
+})

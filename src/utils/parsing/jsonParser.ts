@@ -7,14 +7,14 @@
 import {
   Allow as PartialJsonAllow,
   parse as parsePartialJson,
-} from 'partial-json';
+} from 'partial-json'
 
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
 import {
-  type RequestContext,
   logger,
+  type RequestContext,
   requestContextService,
-} from '@/utils/index.js';
+} from '@/utils/index.js'
 
 /**
  * Enum mirroring `partial-json`'s `Allow` constants. These specify
@@ -38,14 +38,14 @@ import {
  * - `ALL`: Allow all value types to be partial (default for `partial-json`'s parse).
  * @see {@link https://github.com/promplate/partial-json-parser-js} for more details.
  */
-export const Allow = PartialJsonAllow;
+export const Allow = PartialJsonAllow
 
 /**
  * Regular expression to find a <think> block at the start of a string.
  * Captures content within <think>...</think> (Group 1) and the rest of the string (Group 2).
  * @private
  */
-const thinkBlockRegex = /^<think>([\s\S]*?)<\/think>\s*([\s\S]*)$/;
+const thinkBlockRegex = /^<think>([\s\S]*?)<\/think>\s*([\s\S]*)$/
 
 /**
  * Utility class for parsing potentially partial JSON strings.
@@ -71,53 +71,53 @@ export class JsonParser {
     allowPartial: number = Allow.ALL,
     context?: RequestContext,
   ): T {
-    let stringToParse = jsonString;
-    const match = jsonString.match(thinkBlockRegex);
+    let stringToParse = jsonString
+    const match = jsonString.match(thinkBlockRegex)
 
     if (match) {
-      const thinkContent = match[1]?.trim() ?? '';
-      const restOfString = match[2] ?? '';
+      const thinkContent = match[1]?.trim() ?? ''
+      const restOfString = match[2] ?? ''
 
       const logContext =
         context ||
         requestContextService.createRequestContext({
           operation: 'JsonParser.thinkBlock',
-        });
+        })
       if (thinkContent) {
         logger.debug('LLM <think> block detected and logged.', {
           ...logContext,
           thinkContent,
-        });
+        })
       } else {
-        logger.debug('Empty LLM <think> block detected.', logContext);
+        logger.debug('Empty LLM <think> block detected.', logContext)
       }
-      stringToParse = restOfString;
+      stringToParse = restOfString
     }
 
-    stringToParse = stringToParse.trim();
+    stringToParse = stringToParse.trim()
 
     if (!stringToParse) {
       throw new McpError(
         JsonRpcErrorCode.ValidationError,
         'JSON string is empty after removing <think> block and trimming.',
         context,
-      );
+      )
     }
 
     try {
-      return parsePartialJson(stringToParse, allowPartial) as T;
+      return parsePartialJson(stringToParse, allowPartial) as T
     } catch (e: unknown) {
-      const error = e as Error;
+      const error = e as Error
       const errorLogContext =
         context ||
         requestContextService.createRequestContext({
           operation: 'JsonParser.parseError',
-        });
+        })
       logger.error('Failed to parse JSON content.', {
         ...errorLogContext,
         errorDetails: error.message,
         contentAttempted: stringToParse.substring(0, 200),
-      });
+      })
 
       throw new McpError(
         JsonRpcErrorCode.ValidationError,
@@ -129,7 +129,7 @@ export class JsonParser {
             (stringToParse.length > 200 ? '...' : ''),
           rawError: error instanceof Error ? error.stack : String(error),
         },
-      );
+      )
     }
   }
 }
@@ -155,4 +155,4 @@ export class JsonParser {
  * }
  * ```
  */
-export const jsonParser = new JsonParser();
+export const jsonParser = new JsonParser()

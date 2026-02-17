@@ -4,22 +4,22 @@
  * @module tests/services/graph/types.test
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest'
 import type {
-  Vertex,
   Edge,
   GraphPath,
-  TraversalResult,
-  TraversalDirection,
-  RelateOptions,
-  TraversalOptions,
-  PathOptions,
+  GraphPattern,
   GraphProviderType,
   GraphServiceConfig,
   GraphStats,
-  GraphPattern,
+  PathOptions,
   PatternMatchResult,
-} from '@/services/graph/types.js';
+  RelateOptions,
+  TraversalDirection,
+  TraversalOptions,
+  TraversalResult,
+  Vertex,
+} from '@/services/graph/types.js'
 
 describe('Graph Service Types', () => {
   describe('Re-exported Core Types', () => {
@@ -28,12 +28,12 @@ describe('Graph Service Types', () => {
         id: 'test:123',
         table: 'test',
         data: { name: 'Test' },
-      };
+      }
 
-      expect(vertex).toHaveProperty('id');
-      expect(vertex).toHaveProperty('table');
-      expect(vertex).toHaveProperty('data');
-    });
+      expect(vertex).toHaveProperty('id')
+      expect(vertex).toHaveProperty('table')
+      expect(vertex).toHaveProperty('data')
+    })
 
     it('should export Edge type', () => {
       const edge: Edge = {
@@ -42,49 +42,49 @@ describe('Graph Service Types', () => {
         from: 'user:alice',
         to: 'user:bob',
         data: {},
-      };
+      }
 
-      expect(edge).toHaveProperty('id');
-      expect(edge).toHaveProperty('table');
-      expect(edge).toHaveProperty('from');
-      expect(edge).toHaveProperty('to');
-      expect(edge).toHaveProperty('data');
-    });
+      expect(edge).toHaveProperty('id')
+      expect(edge).toHaveProperty('table')
+      expect(edge).toHaveProperty('from')
+      expect(edge).toHaveProperty('to')
+      expect(edge).toHaveProperty('data')
+    })
 
     it('should export GraphPath type', () => {
       const path: GraphPath = {
         vertices: [],
         edges: [],
         weight: 1.0,
-      };
+      }
 
-      expect(path).toHaveProperty('vertices');
-      expect(path).toHaveProperty('edges');
-    });
+      expect(path).toHaveProperty('vertices')
+      expect(path).toHaveProperty('edges')
+    })
 
     it('should export TraversalResult type', () => {
       const result: TraversalResult = {
         start: { id: 'test:1', table: 'test', data: {} },
         paths: [],
-      };
+      }
 
-      expect(result).toHaveProperty('start');
-      expect(result).toHaveProperty('paths');
-    });
+      expect(result).toHaveProperty('start')
+      expect(result).toHaveProperty('paths')
+    })
 
     it('should export TraversalDirection type', () => {
-      const directions: TraversalDirection[] = ['out', 'in', 'both'];
-      expect(directions).toHaveLength(3);
-    });
+      const directions: TraversalDirection[] = ['out', 'in', 'both']
+      expect(directions).toHaveLength(3)
+    })
 
     it('should export RelateOptions type', () => {
       const options: RelateOptions = {
         data: { weight: 1 },
         allowDuplicates: false,
-      };
+      }
 
-      expect(options).toBeDefined();
-    });
+      expect(options).toBeDefined()
+    })
 
     it('should export TraversalOptions type', () => {
       const options: TraversalOptions = {
@@ -93,47 +93,47 @@ describe('Graph Service Types', () => {
         edgeTypes: ['follows'],
         vertexTypes: ['user'],
         where: 'age > 18',
-      };
+      }
 
-      expect(options).toBeDefined();
-    });
+      expect(options).toBeDefined()
+    })
 
     it('should export PathOptions type', () => {
       const options: PathOptions = {
         maxLength: 5,
         algorithm: 'dijkstra',
-      };
+      }
 
-      expect(options).toBeDefined();
-    });
-  });
+      expect(options).toBeDefined()
+    })
+  })
 
   describe('GraphProviderType', () => {
     it('should define surrealdb provider type', () => {
-      const providerType: GraphProviderType = 'surrealdb';
-      expect(providerType).toBe('surrealdb');
-    });
+      const providerType: GraphProviderType = 'surrealdb'
+      expect(providerType).toBe('surrealdb')
+    })
 
     it('should define mock provider type', () => {
-      const providerType: GraphProviderType = 'mock';
-      expect(providerType).toBe('mock');
-    });
+      const providerType: GraphProviderType = 'mock'
+      expect(providerType).toBe('mock')
+    })
 
     it('should only allow valid provider types', () => {
-      const validTypes: GraphProviderType[] = ['surrealdb', 'mock'];
-      expect(validTypes).toHaveLength(2);
-    });
-  });
+      const validTypes: GraphProviderType[] = ['surrealdb', 'mock']
+      expect(validTypes).toHaveLength(2)
+    })
+  })
 
   describe('GraphServiceConfig', () => {
     it('should define config structure with provider', () => {
       const config: GraphServiceConfig = {
         provider: 'surrealdb',
-      };
+      }
 
-      expect(config).toHaveProperty('provider');
-      expect(config.provider).toBe('surrealdb');
-    });
+      expect(config).toHaveProperty('provider')
+      expect(config.provider).toBe('surrealdb')
+    })
 
     it('should support additional provider config', () => {
       const config: GraphServiceConfig = {
@@ -142,12 +142,12 @@ describe('Graph Service Types', () => {
           namespace: 'test',
           database: 'graph',
         },
-      };
+      }
 
-      expect(config).toHaveProperty('config');
-      expect(config.config).toHaveProperty('namespace');
-      expect(config.config).toHaveProperty('database');
-    });
+      expect(config).toHaveProperty('config')
+      expect(config.config).toHaveProperty('namespace')
+      expect(config.config).toHaveProperty('database')
+    })
 
     it('should work with mock provider', () => {
       const config: GraphServiceConfig = {
@@ -155,11 +155,11 @@ describe('Graph Service Types', () => {
         config: {
           autoConnect: true,
         },
-      };
+      }
 
-      expect(config.provider).toBe('mock');
-    });
-  });
+      expect(config.provider).toBe('mock')
+    })
+  })
 
   describe('GraphStats', () => {
     it('should define statistics structure', () => {
@@ -175,14 +175,14 @@ describe('Graph Service Types', () => {
           follows: 100,
           likes: 150,
         },
-      };
+      }
 
-      expect(stats).toHaveProperty('vertexCount');
-      expect(stats).toHaveProperty('edgeCount');
-      expect(stats).toHaveProperty('avgDegree');
-      expect(stats).toHaveProperty('vertexTypes');
-      expect(stats).toHaveProperty('edgeTypes');
-    });
+      expect(stats).toHaveProperty('vertexCount')
+      expect(stats).toHaveProperty('edgeCount')
+      expect(stats).toHaveProperty('avgDegree')
+      expect(stats).toHaveProperty('vertexTypes')
+      expect(stats).toHaveProperty('edgeTypes')
+    })
 
     it('should support zero counts', () => {
       const stats: GraphStats = {
@@ -191,11 +191,11 @@ describe('Graph Service Types', () => {
         avgDegree: 0,
         vertexTypes: {},
         edgeTypes: {},
-      };
+      }
 
-      expect(stats.vertexCount).toBe(0);
-      expect(stats.edgeCount).toBe(0);
-    });
+      expect(stats.vertexCount).toBe(0)
+      expect(stats.edgeCount).toBe(0)
+    })
 
     it('should calculate average degree correctly', () => {
       const stats: GraphStats = {
@@ -204,21 +204,21 @@ describe('Graph Service Types', () => {
         avgDegree: 2.5,
         vertexTypes: { user: 10 },
         edgeTypes: { follows: 25 },
-      };
+      }
 
-      expect(stats.avgDegree).toBe(stats.edgeCount / stats.vertexCount);
-    });
-  });
+      expect(stats.avgDegree).toBe(stats.edgeCount / stats.vertexCount)
+    })
+  })
 
   describe('GraphPattern', () => {
     it('should define pattern structure', () => {
       const pattern: GraphPattern = {
         pattern: '(person)-[knows]->(person)',
-      };
+      }
 
-      expect(pattern).toHaveProperty('pattern');
-      expect(typeof pattern.pattern).toBe('string');
-    });
+      expect(pattern).toHaveProperty('pattern')
+      expect(typeof pattern.pattern).toBe('string')
+    })
 
     it('should support pattern parameters', () => {
       const pattern: GraphPattern = {
@@ -226,11 +226,11 @@ describe('Graph Service Types', () => {
         params: {
           name: 'Alice',
         },
-      };
+      }
 
-      expect(pattern).toHaveProperty('params');
-      expect(pattern.params).toHaveProperty('name');
-    });
+      expect(pattern).toHaveProperty('params')
+      expect(pattern.params).toHaveProperty('name')
+    })
 
     it('should support complex patterns', () => {
       const pattern: GraphPattern = {
@@ -239,24 +239,24 @@ describe('Graph Service Types', () => {
           minAge: 18,
           maxHops: 3,
         },
-      };
+      }
 
-      expect(pattern.pattern).toContain('*1..3');
-      expect(pattern.params).toBeDefined();
-    });
-  });
+      expect(pattern.pattern).toContain('*1..3')
+      expect(pattern.params).toBeDefined()
+    })
+  })
 
   describe('PatternMatchResult', () => {
     it('should define result structure', () => {
       const result: PatternMatchResult = {
         matches: [],
         count: 0,
-      };
+      }
 
-      expect(result).toHaveProperty('matches');
-      expect(result).toHaveProperty('count');
-      expect(Array.isArray(result.matches)).toBe(true);
-    });
+      expect(result).toHaveProperty('matches')
+      expect(result).toHaveProperty('count')
+      expect(Array.isArray(result.matches)).toBe(true)
+    })
 
     it('should support matched subgraphs', () => {
       const result: PatternMatchResult = {
@@ -278,13 +278,13 @@ describe('Graph Service Types', () => {
           },
         ],
         count: 1,
-      };
+      }
 
-      expect(result.matches).toHaveLength(1);
-      expect(result.count).toBe(1);
-      expect(result.matches[0]).toHaveProperty('vertices');
-      expect(result.matches[0]).toHaveProperty('edges');
-    });
+      expect(result.matches).toHaveLength(1)
+      expect(result.count).toBe(1)
+      expect(result.matches[0]).toHaveProperty('vertices')
+      expect(result.matches[0]).toHaveProperty('edges')
+    })
 
     it('should support weighted matches', () => {
       const result: PatternMatchResult = {
@@ -296,10 +296,10 @@ describe('Graph Service Types', () => {
           },
         ],
         count: 1,
-      };
+      }
 
-      expect(result.matches[0]?.weight).toBe(1.5);
-    });
+      expect(result.matches[0]?.weight).toBe(1.5)
+    })
 
     it('should handle multiple matches', () => {
       const result: PatternMatchResult = {
@@ -318,22 +318,22 @@ describe('Graph Service Types', () => {
           },
         ],
         count: 3,
-      };
+      }
 
-      expect(result.matches).toHaveLength(3);
-      expect(result.count).toBe(3);
-    });
-  });
+      expect(result.matches).toHaveLength(3)
+      expect(result.count).toBe(3)
+    })
+  })
 
   describe('Type Compatibility', () => {
     it('should allow Vertex in arrays', () => {
       const vertices: Vertex[] = [
         { id: 'user:1', table: 'user', data: {} },
         { id: 'user:2', table: 'user', data: {} },
-      ];
+      ]
 
-      expect(vertices).toHaveLength(2);
-    });
+      expect(vertices).toHaveLength(2)
+    })
 
     it('should allow Edge in arrays', () => {
       const edges: Edge[] = [
@@ -344,16 +344,16 @@ describe('Graph Service Types', () => {
           to: 'user:2',
           data: {},
         },
-      ];
+      ]
 
-      expect(edges).toHaveLength(1);
-    });
+      expect(edges).toHaveLength(1)
+    })
 
     it('should compose GraphPath with vertices and edges', () => {
       const vertices: Vertex[] = [
         { id: 'user:1', table: 'user', data: {} },
         { id: 'user:2', table: 'user', data: {} },
-      ];
+      ]
 
       const edges: Edge[] = [
         {
@@ -363,16 +363,16 @@ describe('Graph Service Types', () => {
           to: 'user:2',
           data: {},
         },
-      ];
+      ]
 
       const path: GraphPath = {
         vertices,
         edges,
         weight: 1.0,
-      };
+      }
 
-      expect(path.vertices).toBe(vertices);
-      expect(path.edges).toBe(edges);
-    });
-  });
-});
+      expect(path.vertices).toBe(vertices)
+      expect(path.edges).toBe(edges)
+    })
+  })
+})

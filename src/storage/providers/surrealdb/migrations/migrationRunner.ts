@@ -4,15 +4,15 @@
  * @module src/storage/providers/surrealdb/migrations/migrationRunner
  */
 
-import type Surreal from 'surrealdb';
-import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js';
+import type Surreal from 'surrealdb'
+import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js'
 import type {
   Migration,
-  MigrationResult,
+  MigrationDirection,
   MigrationHistory,
   MigrationPlan,
-  MigrationDirection,
-} from './migrationTypes.js';
+  MigrationResult,
+} from './migrationTypes.js'
 
 /**
  * Manages schema migrations for SurrealDB.
@@ -39,7 +39,7 @@ import type {
  * ```
  */
 export class MigrationRunner {
-  private readonly historyTable = 'migration_history';
+  private readonly historyTable = 'migration_history'
 
   constructor(private readonly client: Surreal) {}
 
@@ -51,7 +51,7 @@ export class MigrationRunner {
   async initialize(context: RequestContext): Promise<void> {
     return ErrorHandler.tryCatch(
       async () => {
-        logger.info('[MigrationRunner] Initializing migration system', context);
+        logger.info('[MigrationRunner] Initializing migration system', context)
 
         const schema = `
           DEFINE TABLE ${this.historyTable} SCHEMAFULL
@@ -78,17 +78,17 @@ export class MigrationRunner {
           DEFINE INDEX idx_migration_id ON TABLE ${this.historyTable}
             COLUMNS migration_id
             UNIQUE;
-        `;
+        `
 
-        await this.client.query(schema);
+        await this.client.query(schema)
 
-        logger.info('[MigrationRunner] Migration system initialized', context);
+        logger.info('[MigrationRunner] Migration system initialized', context)
       },
       {
         operation: 'MigrationRunner.initialize',
         context,
       },
-    );
+    )
   }
 
   /**
@@ -109,40 +109,40 @@ export class MigrationRunner {
         logger.info(
           `[MigrationRunner] Running ${migrations.length} migrations (${direction})`,
           context,
-        );
+        )
 
-        const results: MigrationResult[] = [];
+        const results: MigrationResult[] = []
 
         for (const migration of migrations) {
           const result = await this.executeMigration(
             migration,
             direction,
             context,
-          );
-          results.push(result);
+          )
+          results.push(result)
 
           if (!result.success) {
             logger.error(
               `[MigrationRunner] Migration failed: ${migration.id}`,
               context,
-            );
-            break; // Stop on first failure
+            )
+            break // Stop on first failure
           }
         }
 
         logger.info(
           `[MigrationRunner] Completed ${results.filter((r) => r.success).length}/${migrations.length} migrations`,
           context,
-        );
+        )
 
-        return results;
+        return results
       },
       {
         operation: 'MigrationRunner.migrate',
         context,
         input: { count: migrations.length, direction },
       },
-    );
+    )
   }
 
   /**
@@ -154,18 +154,18 @@ export class MigrationRunner {
   async getHistory(context: RequestContext): Promise<MigrationHistory[]> {
     return ErrorHandler.tryCatch(
       async () => {
-        const query = `SELECT * FROM ${this.historyTable} ORDER BY applied_at ASC`;
+        const query = `SELECT * FROM ${this.historyTable} ORDER BY applied_at ASC`
 
         const result =
-          await this.client.query<[{ result: MigrationHistory[] }]>(query);
+          await this.client.query<[{ result: MigrationHistory[] }]>(query)
 
-        return result[0]?.result ?? [];
+        return result[0]?.result ?? []
       },
       {
         operation: 'MigrationRunner.getHistory',
         context,
       },
-    );
+    )
   }
 
   /**
@@ -181,26 +181,26 @@ export class MigrationRunner {
     direction: MigrationDirection,
     context: RequestContext,
   ): Promise<MigrationPlan> {
-    const history = await this.getHistory(context);
+    const history = await this.getHistory(context)
     const appliedIds = new Set(
       history.filter((h) => h.status === 'applied').map((h) => h.migration_id),
-    );
+    )
 
-    let toExecute: Migration[];
+    let toExecute: Migration[]
 
     if (direction === 'up') {
       // Only run migrations not yet applied
-      toExecute = migrations.filter((m) => !appliedIds.has(m.id));
+      toExecute = migrations.filter((m) => !appliedIds.has(m.id))
     } else {
       // Rollback applied migrations in reverse order
-      toExecute = migrations.filter((m) => appliedIds.has(m.id)).reverse();
+      toExecute = migrations.filter((m) => appliedIds.has(m.id)).reverse()
     }
 
     return {
       migrations: toExecute,
       count: toExecute.length,
       direction,
-    };
+    }
   }
 
   /**
@@ -211,61 +211,61 @@ export class MigrationRunner {
     direction: MigrationDirection,
     context: RequestContext,
   ): Promise<MigrationResult> {
-    const startTime = Date.now();
+    const startTime = Date.now()
 
     try {
       logger.info(
         `[MigrationRunner] Executing migration: ${migration.id} (${direction})`,
         context,
-      );
+      )
 
-      const sql = direction === 'up' ? migration.up : migration.down;
+      const sql = direction === 'up' ? migration.up : migration.down
 
       // Execute within transaction
-      await this.client.query('BEGIN TRANSACTION');
+      await this.client.query('BEGIN TRANSACTION')
 
       try {
         // Run migration SQL
-        await this.client.query(sql);
+        await this.client.query(sql)
 
         // Update history
-        await this.recordMigration(migration, direction, null, context);
+        await this.recordMigration(migration, direction, null, context)
 
-        await this.client.query('COMMIT TRANSACTION');
+        await this.client.query('COMMIT TRANSACTION')
 
-        const duration = Date.now() - startTime;
+        const duration = Date.now() - startTime
 
         logger.info(
           `[MigrationRunner] Migration succeeded: ${migration.id} (${duration}ms)`,
           context,
-        );
+        )
 
         return {
           id: migration.id,
           success: true,
           duration,
-        };
+        }
       } catch (error: unknown) {
-        await this.client.query('CANCEL TRANSACTION');
-        throw error;
+        await this.client.query('CANCEL TRANSACTION')
+        throw error
       }
     } catch (error: unknown) {
-      const duration = Date.now() - startTime;
-      const errorMsg = error instanceof Error ? error.message : String(error);
+      const duration = Date.now() - startTime
+      const errorMsg = error instanceof Error ? error.message : String(error)
 
       logger.error(
         `[MigrationRunner] Migration failed: ${migration.id} - ${errorMsg}`,
         context,
-      );
+      )
 
-      await this.recordMigration(migration, direction, errorMsg, context);
+      await this.recordMigration(migration, direction, errorMsg, context)
 
       return {
         id: migration.id,
         success: false,
         error: errorMsg,
         duration,
-      };
+      }
     }
   }
 
@@ -282,7 +282,7 @@ export class MigrationRunner {
       ? 'failed'
       : direction === 'up'
         ? 'applied'
-        : 'rolled_back';
+        : 'rolled_back'
 
     const query = `
       UPDATE ${this.historyTable} SET
@@ -296,13 +296,13 @@ export class MigrationRunner {
         status = $status,
         ${direction === 'up' ? 'applied_at' : 'rolled_back_at'} = time::now()
         ${error ? ', error = $error' : ''}
-    `;
+    `
 
     await this.client.query(query, {
       migration_id: migration.id,
       name: migration.name,
       status,
       ...(error && { error }),
-    });
+    })
   }
 }

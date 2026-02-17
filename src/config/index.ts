@@ -7,35 +7,35 @@
  *
  * @module src/config/index
  */
-import dotenv from 'dotenv';
-import { z } from 'zod';
+import dotenv from 'dotenv'
+import { z } from 'zod'
 
-import packageJson from '../../package.json' with { type: 'json' };
-import { JsonRpcErrorCode, McpError } from '../types-global/errors.js';
+import packageJson from '../../package.json' with { type: 'json' }
+import { JsonRpcErrorCode, McpError } from '../types-global/errors.js'
 
 type PackageManifest = {
-  name?: string;
-  version?: string;
-  description?: string;
-};
+  name?: string
+  version?: string
+  description?: string
+}
 
-const packageManifest = packageJson as PackageManifest;
+const packageManifest = packageJson as PackageManifest
 const hasFileSystemAccess =
   typeof process !== 'undefined' &&
   typeof process.versions === 'object' &&
   process.versions !== null &&
-  typeof process.versions.node === 'string';
+  typeof process.versions.node === 'string'
 
 // Suppress dotenv's noisy initial log message as suggested by its output.
-dotenv.config({ quiet: true });
+dotenv.config({ quiet: true })
 
 // --- Helper Functions ---
 const emptyStringAsUndefined = (val: unknown) => {
   if (typeof val === 'string' && val.trim() === '') {
-    return undefined;
+    return undefined
   }
-  return val;
-};
+  return val
+}
 
 // --- Schema Definition ---
 const ConfigSchema = z.object({
@@ -51,17 +51,17 @@ const ConfigSchema = z.object({
   logLevel: z
     .preprocess(
       (val) => {
-        const str = emptyStringAsUndefined(val);
+        const str = emptyStringAsUndefined(val)
         if (typeof str === 'string') {
-          const lower = str.toLowerCase();
+          const lower = str.toLowerCase()
           const aliasMap: Record<string, string> = {
             warning: 'warn',
             err: 'error',
             information: 'info',
-          };
-          return aliasMap[lower] ?? lower;
+          }
+          return aliasMap[lower] ?? lower
         }
-        return str;
+        return str
       },
       z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']),
     )
@@ -70,17 +70,17 @@ const ConfigSchema = z.object({
   environment: z
     .preprocess(
       (val) => {
-        const str = emptyStringAsUndefined(val);
+        const str = emptyStringAsUndefined(val)
         if (typeof str === 'string') {
-          const lower = str.toLowerCase();
+          const lower = str.toLowerCase()
           const aliasMap: Record<string, string> = {
             dev: 'development',
             prod: 'production',
             test: 'testing',
-          };
-          return aliasMap[lower] ?? lower;
+          }
+          return aliasMap[lower] ?? lower
         }
-        return str;
+        return str
       },
       z.enum(['development', 'production', 'testing']),
     )
@@ -158,16 +158,16 @@ const ConfigSchema = z.object({
     providerType: z
       .preprocess(
         (val) => {
-          const str = emptyStringAsUndefined(val);
+          const str = emptyStringAsUndefined(val)
           if (typeof str === 'string') {
-            const lower = str.toLowerCase();
+            const lower = str.toLowerCase()
             const aliasMap: Record<string, string> = {
               mem: 'in-memory',
               fs: 'filesystem',
-            };
-            return aliasMap[lower] ?? lower;
+            }
+            return aliasMap[lower] ?? lower
           }
-          return str;
+          return str
         },
         z.enum([
           'in-memory',
@@ -187,17 +187,17 @@ const ConfigSchema = z.object({
     storeType: z
       .preprocess(
         (val) => {
-          const str = emptyStringAsUndefined(val);
+          const str = emptyStringAsUndefined(val)
           if (typeof str === 'string') {
-            const lower = str.toLowerCase();
+            const lower = str.toLowerCase()
             const aliasMap: Record<string, string> = {
               mem: 'in-memory',
               memory: 'in-memory',
               persistent: 'storage',
-            };
-            return aliasMap[lower] ?? lower;
+            }
+            return aliasMap[lower] ?? lower
           }
-          return str;
+          return str
         },
         z.enum(['in-memory', 'storage']),
       )
@@ -215,17 +215,17 @@ const ConfigSchema = z.object({
     logLevel: z
       .preprocess(
         (val) => {
-          const str = emptyStringAsUndefined(val);
+          const str = emptyStringAsUndefined(val)
           if (typeof str === 'string') {
-            const lower = str.toLowerCase();
+            const lower = str.toLowerCase()
             const aliasMap: Record<string, string> = {
               err: 'ERROR',
               warning: 'WARN',
               information: 'INFO',
-            };
-            return aliasMap[lower] ?? str.toUpperCase();
+            }
+            return aliasMap[lower] ?? str.toUpperCase()
           }
-          return str;
+          return str
         },
         z.enum(['NONE', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'VERBOSE', 'ALL']),
       )
@@ -256,11 +256,11 @@ const ConfigSchema = z.object({
         .optional(),
     })
     .optional(),
-});
+})
 
 // --- Parsing Logic ---
 const parseConfig = () => {
-  const env = process.env;
+  const env = process.env
 
   const rawConfig = {
     pkg: {
@@ -384,15 +384,15 @@ const parseConfig = () => {
     mcpServerName: env.MCP_SERVER_NAME,
     mcpServerVersion: env.MCP_SERVER_VERSION,
     mcpServerDescription: env.MCP_SERVER_DESCRIPTION,
-  };
+  }
 
   // Use a temporary schema to parse package info and provide defaults
   const pkgSchema = z.object({
     name: z.string(),
     version: z.string(),
     description: z.string().optional(),
-  });
-  const parsedPkg = pkgSchema.parse(rawConfig.pkg);
+  })
+  const parsedPkg = pkgSchema.parse(rawConfig.pkg)
 
   // Now add the derived values to the main rawConfig object to be parsed
   const finalRawConfig = {
@@ -402,12 +402,10 @@ const parseConfig = () => {
       ? (() => {
           // Derive project root from this module's URL (src/config/index.ts → ../../)
           // URL API is universal (Node, Bun, Workers) — no node:path/node:url imports needed
-          const root = new URL('../..', import.meta.url).pathname;
-          const logsDir = rawConfig.logsPath ?? 'logs';
-          if (logsDir.startsWith('/')) return logsDir;
-          return root.endsWith('/')
-            ? `${root}${logsDir}`
-            : `${root}/${logsDir}`;
+          const root = new URL('../..', import.meta.url).pathname
+          const logsDir = rawConfig.logsPath ?? 'logs'
+          if (logsDir.startsWith('/')) return logsDir
+          return root.endsWith('/') ? `${root}${logsDir}` : `${root}/${logsDir}`
         })()
       : undefined,
     mcpServerName: env.MCP_SERVER_NAME ?? parsedPkg.name,
@@ -419,9 +417,9 @@ const parseConfig = () => {
       serviceVersion: env.OTEL_SERVICE_VERSION ?? parsedPkg.version,
     },
     openrouterAppName: env.OPENROUTER_APP_NAME ?? parsedPkg.name,
-  };
+  }
 
-  const parsedConfig = ConfigSchema.safeParse(finalRawConfig);
+  const parsedConfig = ConfigSchema.safeParse(finalRawConfig)
 
   if (!parsedConfig.success) {
     // Keep existing TTY error logging for developer convenience.
@@ -429,7 +427,7 @@ const parseConfig = () => {
       console.error(
         '❌ Invalid configuration found. Please check your environment variables.',
         parsedConfig.error.flatten().fieldErrors,
-      );
+      )
     }
     // Throw a specific, typed error instead of exiting.
     throw new McpError(
@@ -438,17 +436,17 @@ const parseConfig = () => {
       {
         validationErrors: parsedConfig.error.flatten().fieldErrors,
       },
-    );
+    )
   }
 
-  return parsedConfig.data;
-};
+  return parsedConfig.data
+}
 
-const config = parseConfig();
+const config = parseConfig()
 
 /**
  * Export the runtime configuration, parser, and schema, plus a static AppConfig type.
  */
-export type AppConfig = z.infer<typeof ConfigSchema>;
+export type AppConfig = z.infer<typeof ConfigSchema>
 
-export { config, ConfigSchema, parseConfig };
+export { config, ConfigSchema, parseConfig }

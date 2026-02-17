@@ -4,7 +4,7 @@
  * @module src/storage/providers/surrealdb/functions/functionRegistry
  */
 
-import type { CustomFunctionConfig } from './customFunctions.js';
+import type { CustomFunctionConfig } from './customFunctions.js'
 
 /**
  * Registry of predefined utility functions.
@@ -16,24 +16,24 @@ import type { CustomFunctionConfig } from './customFunctions.js';
  * - String manipulation
  * - Array operations
  */
-export class FunctionRegistry {
+export const FunctionRegistry = {
   /**
    * Validate email format function.
    */
-  static validateEmail(): CustomFunctionConfig {
+  validateEmail(): CustomFunctionConfig {
     return {
       name: 'validate_email',
       parameters: [{ name: 'email', type: 'string' }],
       returnType: 'bool',
       body: 'RETURN string::is::email($email);',
       comment: 'Validates email address format',
-    };
-  }
+    }
+  },
 
   /**
    * Calculate percentage function.
    */
-  static calculatePercentage(): CustomFunctionConfig {
+  calculatePercentage(): CustomFunctionConfig {
     return {
       name: 'calculate_percentage',
       parameters: [
@@ -49,13 +49,13 @@ export class FunctionRegistry {
         END;
       `,
       comment: 'Calculate percentage with division by zero protection',
-    };
-  }
+    }
+  },
 
   /**
    * Generate slug from text function.
    */
-  static generateSlug(): CustomFunctionConfig {
+  generateSlug(): CustomFunctionConfig {
     return {
       name: 'generate_slug',
       parameters: [{ name: 'text', type: 'string' }],
@@ -67,13 +67,13 @@ export class FunctionRegistry {
         RETURN $replaced;
       `,
       comment: 'Generate URL-friendly slug from text',
-    };
-  }
+    }
+  },
 
   /**
    * Calculate distance between two points function.
    */
-  static haversineDistance(): CustomFunctionConfig {
+  haversineDistance(): CustomFunctionConfig {
     return {
       name: 'haversine_distance',
       parameters: [
@@ -94,39 +94,39 @@ export class FunctionRegistry {
         RETURN $r * $c;
       `,
       comment: 'Calculate distance between two coordinates in kilometers',
-    };
-  }
+    }
+  },
 
   /**
    * Array unique function (remove duplicates).
    */
-  static arrayUnique(): CustomFunctionConfig {
+  arrayUnique(): CustomFunctionConfig {
     return {
       name: 'array_unique',
       parameters: [{ name: 'arr', type: 'array' }],
       returnType: 'array',
       body: 'RETURN array::distinct($arr);',
       comment: 'Remove duplicate values from array',
-    };
-  }
+    }
+  },
 
   /**
    * Get all predefined utility functions.
    */
-  static getAll(): CustomFunctionConfig[] {
+  getAll(): CustomFunctionConfig[] {
     return [
       FunctionRegistry.validateEmail(),
       FunctionRegistry.calculatePercentage(),
       FunctionRegistry.generateSlug(),
       FunctionRegistry.haversineDistance(),
       FunctionRegistry.arrayUnique(),
-    ];
-  }
+    ]
+  },
 
   /**
    * Get function by name.
    */
-  static getByName(name: string): CustomFunctionConfig | undefined {
-    return FunctionRegistry.getAll().find((f) => f.name === name);
-  }
+  getByName(name: string): CustomFunctionConfig | undefined {
+    return FunctionRegistry.getAll().find((f) => f.name === name)
+  },
 }

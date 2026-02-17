@@ -5,8 +5,8 @@
  * @module src/mcp-server/tools/definitions
  */
 
-import { checkTypeScriptProjectProblemsTool } from './check-typescript-project-problems.tool.js';
-import { stageSelectedFilesAndCreateAtomicCommitTool } from './stage-selected-files-and-create-atomic-commit.tool.js';
+import { checkTypeScriptProjectProblemsTool } from './check-typescript-project-problems.tool.js'
+import { stageSelectedFilesAndCreateAtomicCommitTool } from './stage-selected-files-and-create-atomic-commit.tool.js'
 
 /**
  * An array containing all tool definitions for easy iteration and registration.
@@ -14,4 +14,4 @@ import { stageSelectedFilesAndCreateAtomicCommitTool } from './stage-selected-fi
 export const allToolDefinitions = [
   checkTypeScriptProjectProblemsTool,
   stageSelectedFilesAndCreateAtomicCommitTool,
-];
+]

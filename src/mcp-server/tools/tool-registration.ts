@@ -4,23 +4,23 @@
  * McpServer instance. Supports both regular tools and task-based tools (experimental).
  * @module src/mcp-server/tools/tool-registration
  */
-import {
+import type {
   McpServer,
-  type ToolCallback,
-} from '@modelcontextprotocol/sdk/server/mcp.js';
-import { type DependencyContainer, injectable, injectAll } from 'tsyringe';
-import { ZodObject, type ZodRawShape } from 'zod';
+  ToolCallback,
+} from '@modelcontextprotocol/sdk/server/mcp.js'
+import { type DependencyContainer, injectAll, injectable } from 'tsyringe'
+import type { ZodObject, ZodRawShape } from 'zod'
 
-import { ToolDefinitions } from '@/container/index.js';
-import { JsonRpcErrorCode } from '@/types-global/errors.js';
-import { ErrorHandler, logger, requestContextService } from '@/utils/index.js';
-import { allToolDefinitions } from '@/mcp-server/tools/definitions/index.js';
-import type { ToolDefinition } from '@/mcp-server/tools/utils/index.js';
-import { createMcpToolHandler } from '@/mcp-server/tools/utils/index.js';
+import { ToolDefinitions } from '@/container/index.js'
 import {
-  type TaskToolDefinition,
   isTaskToolDefinition,
-} from '@/mcp-server/tasks/index.js';
+  type TaskToolDefinition,
+} from '@/mcp-server/tasks/index.js'
+import { allToolDefinitions } from '@/mcp-server/tools/definitions/index.js'
+import type { ToolDefinition } from '@/mcp-server/tools/utils/index.js'
+import { createMcpToolHandler } from '@/mcp-server/tools/utils/index.js'
+import { JsonRpcErrorCode } from '@/types-global/errors.js'
+import { ErrorHandler, logger, requestContextService } from '@/utils/index.js'
 
 @injectable()
 export class ToolRegistry {
@@ -40,46 +40,46 @@ export class ToolRegistry {
   public async registerAll(server: McpServer): Promise<void> {
     const context = requestContextService.createRequestContext({
       operation: 'ToolRegistry.registerAll',
-    });
+    })
 
     const regularTools: ToolDefinition<
       ZodObject<ZodRawShape>,
       ZodObject<ZodRawShape>
-    >[] = [];
+    >[] = []
     const taskTools: TaskToolDefinition<
       ZodObject<ZodRawShape>,
       ZodObject<ZodRawShape>
-    >[] = [];
+    >[] = []
 
     // Separate regular tools from task tools
     for (const toolDef of this.toolDefs) {
       if (isTaskToolDefinition(toolDef)) {
-        taskTools.push(toolDef);
+        taskTools.push(toolDef)
       } else {
-        regularTools.push(toolDef);
+        regularTools.push(toolDef)
       }
     }
 
     logger.info(
       `Registering ${regularTools.length} regular tool(s) and ${taskTools.length} task tool(s)...`,
       context,
-    );
+    )
 
     // Register regular tools
     for (const toolDef of regularTools) {
-      await this.registerTool(server, toolDef);
+      await this.registerTool(server, toolDef)
     }
 
     // Register task tools via experimental API
     for (const toolDef of taskTools) {
-      await this.registerTaskTool(server, toolDef);
+      await this.registerTaskTool(server, toolDef)
     }
   }
 
   private deriveTitleFromName(name: string): string {
     return name
       .replace(/_/g, ' ')
-      .replace(/\b\w/g, (char) => char.toUpperCase());
+      .replace(/\b\w/g, (char) => char.toUpperCase())
   }
 
   private async registerTool<
@@ -92,9 +92,9 @@ export class ToolRegistry {
     const registrationContext = requestContextService.createRequestContext({
       operation: 'ToolRegistry.registerTool',
       toolName: tool.name,
-    });
+    })
 
-    logger.debug(`Registering tool: '${tool.name}'`, registrationContext);
+    logger.debug(`Registering tool: '${tool.name}'`, registrationContext)
 
     await ErrorHandler.tryCatch(
       () => {
@@ -105,12 +105,12 @@ export class ToolRegistry {
           ...(tool.responseFormatter && {
             responseFormatter: tool.responseFormatter,
           }),
-        });
+        })
 
         const title =
           tool.title ??
           tool.annotations?.title ??
-          this.deriveTitleFromName(tool.name);
+          this.deriveTitleFromName(tool.name)
 
         // Type assertion required: SDK's conditional types don't resolve with generic constraints
         server.registerTool(
@@ -124,12 +124,12 @@ export class ToolRegistry {
             ...(tool._meta && { _meta: tool._meta }),
           },
           handler as ToolCallback<TInputSchema>,
-        );
+        )
 
         logger.notice(
           `Tool '${tool.name}' registered successfully.`,
           registrationContext,
-        );
+        )
       },
       {
         operation: `RegisteringTool_${tool.name}`,
@@ -137,7 +137,7 @@ export class ToolRegistry {
         errorCode: JsonRpcErrorCode.InitializationFailed,
         critical: true,
       },
-    );
+    )
   }
 
   /**
@@ -156,19 +156,19 @@ export class ToolRegistry {
     const registrationContext = requestContextService.createRequestContext({
       operation: 'ToolRegistry.registerTaskTool',
       toolName: tool.name,
-    });
+    })
 
     logger.debug(
       `Registering task tool: '${tool.name}' (experimental)`,
       registrationContext,
-    );
+    )
 
     await ErrorHandler.tryCatch(
       () => {
         const title =
           tool.title ??
           tool.annotations?.title ??
-          this.deriveTitleFromName(tool.name);
+          this.deriveTitleFromName(tool.name)
 
         // Use the experimental Tasks API to register task-based tools
         server.experimental.tasks.registerToolTask(
@@ -182,12 +182,12 @@ export class ToolRegistry {
             execution: tool.execution,
           },
           tool.taskHandlers,
-        );
+        )
 
         logger.notice(
           `Task tool '${tool.name}' registered successfully (experimental).`,
           registrationContext,
-        );
+        )
       },
       {
         operation: `RegisteringTaskTool_${tool.name}`,
@@ -195,7 +195,7 @@ export class ToolRegistry {
         errorCode: JsonRpcErrorCode.InitializationFailed,
         critical: true,
       },
-    );
+    )
   }
 }
 
@@ -207,6 +207,6 @@ export class ToolRegistry {
  */
 export const registerTools = (container: DependencyContainer): void => {
   for (const tool of allToolDefinitions) {
-    container.register(ToolDefinitions, { useValue: tool });
+    container.register(ToolDefinitions, { useValue: tool })
   }
-};
+}

@@ -10,22 +10,21 @@
  * @experimental These APIs are experimental and may change without notice.
  * @module src/mcp-server/tasks/core/taskManager
  */
-import { inject, injectable } from 'tsyringe';
-
+import { inject, injectable } from 'tsyringe'
+import type { config as configType } from '@/config/index.js'
 import {
   AppConfig,
   StorageService as StorageServiceToken,
-} from '@/container/tokens.js';
-import { type config as configType } from '@/config/index.js';
-import { StorageService } from '@/storage/core/StorageService.js';
-import { logger, type RequestContext } from '@/utils/index.js';
+} from '@/container/tokens.js'
+import type { StorageService } from '@/storage/core/StorageService.js'
+import { logger, type RequestContext } from '@/utils/index.js'
+import { StorageBackedTaskStore } from './storageBackedTaskStore.js'
 import {
-  InMemoryTaskStore,
   InMemoryTaskMessageQueue,
-  type TaskStore,
+  InMemoryTaskStore,
   type TaskMessageQueue,
-} from './taskTypes.js';
-import { StorageBackedTaskStore } from './storageBackedTaskStore.js';
+  type TaskStore,
+} from './taskTypes.js'
 
 /**
  * Singleton service that manages task state and message queues for the MCP server.
@@ -53,27 +52,27 @@ import { StorageBackedTaskStore } from './storageBackedTaskStore.js';
  */
 @injectable()
 export class TaskManager {
-  private readonly taskStore: TaskStore;
-  private readonly inMemoryTaskStore: InMemoryTaskStore | null = null;
-  private readonly messageQueue: InMemoryTaskMessageQueue;
-  private readonly storeType: 'in-memory' | 'storage';
-  private isShuttingDown = false;
+  private readonly taskStore: TaskStore
+  private readonly inMemoryTaskStore: InMemoryTaskStore | null = null
+  private readonly messageQueue: InMemoryTaskMessageQueue
+  private readonly storeType: 'in-memory' | 'storage'
+  private isShuttingDown = false
 
   constructor(
     @inject(AppConfig) config: typeof configType,
     @inject(StorageServiceToken) storageService: StorageService,
   ) {
-    this.storeType = config.tasks.storeType;
-    this.messageQueue = new InMemoryTaskMessageQueue();
+    this.storeType = config.tasks.storeType
+    this.messageQueue = new InMemoryTaskMessageQueue()
 
     if (this.storeType === 'storage') {
       this.taskStore = new StorageBackedTaskStore(storageService, {
         tenantId: config.tasks.tenantId,
         defaultTtl: config.tasks.defaultTtlMs ?? null,
-      });
+      })
     } else {
-      this.inMemoryTaskStore = new InMemoryTaskStore();
-      this.taskStore = this.inMemoryTaskStore;
+      this.inMemoryTaskStore = new InMemoryTaskStore()
+      this.taskStore = this.inMemoryTaskStore
     }
 
     logger.info(`TaskManager initialized with ${this.storeType} task store`, {
@@ -82,7 +81,7 @@ export class TaskManager {
       timestamp: new Date().toISOString(),
       storeType: this.storeType,
       ...(this.storeType === 'storage' && { tenantId: config.tasks.tenantId }),
-    });
+    })
   }
 
   /**
@@ -97,7 +96,7 @@ export class TaskManager {
    * @returns The singleton TaskStore instance
    */
   public getTaskStore(): TaskStore {
-    return this.taskStore;
+    return this.taskStore
   }
 
   /**
@@ -111,7 +110,7 @@ export class TaskManager {
    * @returns The singleton TaskMessageQueue instance
    */
   public getMessageQueue(): TaskMessageQueue {
-    return this.messageQueue;
+    return this.messageQueue
   }
 
   /**
@@ -120,7 +119,7 @@ export class TaskManager {
    * @returns 'in-memory' or 'storage'
    */
   public getStoreType(): 'in-memory' | 'storage' {
-    return this.storeType;
+    return this.storeType
   }
 
   /**
@@ -136,25 +135,25 @@ export class TaskManager {
    */
   public cleanup(context?: RequestContext): void {
     if (this.isShuttingDown) {
-      return;
+      return
     }
 
-    this.isShuttingDown = true;
+    this.isShuttingDown = true
 
     const logContext = context ?? {
       operation: 'TaskManager.cleanup',
       requestId: 'shutdown',
       timestamp: new Date().toISOString(),
-    };
+    }
 
-    logger.info('Cleaning up TaskManager resources...', logContext);
+    logger.info('Cleaning up TaskManager resources...', logContext)
 
     // Only InMemoryTaskStore has cleanup timers
     if (this.inMemoryTaskStore) {
-      this.inMemoryTaskStore.cleanup();
+      this.inMemoryTaskStore.cleanup()
     }
 
-    logger.info('TaskManager cleanup complete', logContext);
+    logger.info('TaskManager cleanup complete', logContext)
   }
 
   /**
@@ -165,10 +164,10 @@ export class TaskManager {
    */
   public getTaskCount(): number | null {
     if (this.inMemoryTaskStore) {
-      return this.inMemoryTaskStore.getAllTasks().length;
+      return this.inMemoryTaskStore.getAllTasks().length
     }
     // Storage-backed store doesn't have getAllTasks - would require listing
-    return null;
+    return null
   }
 
   /**
@@ -177,6 +176,6 @@ export class TaskManager {
    * @returns True if cleanup has been initiated
    */
   public isCleaningUp(): boolean {
-    return this.isShuttingDown;
+    return this.isShuttingDown
   }
 }

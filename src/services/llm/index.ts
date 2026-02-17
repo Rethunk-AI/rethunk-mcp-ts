@@ -8,10 +8,10 @@
 export type {
   ILlmProvider,
   OpenRouterChatParams,
-} from './core/ILlmProvider.js';
+} from './core/ILlmProvider.js'
 
 // Export provider implementations
-export { OpenRouterProvider } from './providers/openrouter.provider.js';
+export { OpenRouterProvider } from './providers/openrouter.provider.js'
 
 // Export types
-export type * from './types.js';
+export type * from './types.js'

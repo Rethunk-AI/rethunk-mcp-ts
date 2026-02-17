@@ -4,19 +4,19 @@
  * @module src/storage/providers/surrealdb/functions/customFunctions
  */
 
-import type Surreal from 'surrealdb';
-import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js';
+import type Surreal from 'surrealdb'
+import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js'
 
 /**
  * Function parameter definition.
  */
 export interface FunctionParameter {
   /** Parameter name */
-  name: string;
+  name: string
   /** Parameter type */
-  type: string;
+  type: string
   /** Default value (optional) */
-  default?: unknown;
+  default?: unknown
 }
 
 /**
@@ -24,17 +24,17 @@ export interface FunctionParameter {
  */
 export interface CustomFunctionConfig {
   /** Function name (e.g., 'calculate_total') */
-  name: string;
+  name: string
   /** Function parameters */
-  parameters: FunctionParameter[];
+  parameters: FunctionParameter[]
   /** Return type */
-  returnType?: string;
+  returnType?: string
   /** Function body (SurrealQL) */
-  body: string;
+  body: string
   /** Optional comment/description */
-  comment?: string;
+  comment?: string
   /** Whether function allows permissions */
-  permissions?: boolean;
+  permissions?: boolean
 }
 
 /**
@@ -42,9 +42,9 @@ export interface CustomFunctionConfig {
  */
 export interface DefineFunctionResult {
   /** Function name */
-  name: string;
+  name: string
   /** Whether definition succeeded */
-  success: boolean;
+  success: boolean
 }
 
 /**
@@ -95,28 +95,28 @@ export class CustomFunctions {
         logger.info(
           `[CustomFunctions] Defining function: fn::${config.name}`,
           context,
-        );
+        )
 
-        const query = this.buildDefineFunctionQuery(config);
+        const query = this.buildDefineFunctionQuery(config)
 
-        await this.client.query(query);
+        await this.client.query(query)
 
         logger.info(
           `[CustomFunctions] Function defined: fn::${config.name}`,
           context,
-        );
+        )
 
         return {
           name: config.name,
           success: true,
-        };
+        }
       },
       {
         operation: 'CustomFunctions.define',
         context,
         input: { name: config.name },
       },
-    );
+    )
   }
 
   /**
@@ -129,25 +129,22 @@ export class CustomFunctions {
   async remove(name: string, context: RequestContext): Promise<boolean> {
     return ErrorHandler.tryCatch(
       async () => {
-        logger.info(
-          `[CustomFunctions] Removing function: fn::${name}`,
-          context,
-        );
+        logger.info(`[CustomFunctions] Removing function: fn::${name}`, context)
 
-        const query = `REMOVE FUNCTION fn::${name}`;
+        const query = `REMOVE FUNCTION fn::${name}`
 
-        await this.client.query(query);
+        await this.client.query(query)
 
-        logger.info(`[CustomFunctions] Function removed: fn::${name}`, context);
+        logger.info(`[CustomFunctions] Function removed: fn::${name}`, context)
 
-        return true;
+        return true
       },
       {
         operation: 'CustomFunctions.remove',
         context,
         input: { name },
       },
-    );
+    )
   }
 
   /**
@@ -160,66 +157,66 @@ export class CustomFunctions {
   async exists(name: string, context: RequestContext): Promise<boolean> {
     return ErrorHandler.tryCatch(
       async () => {
-        const query = 'INFO FOR DATABASE';
+        const query = 'INFO FOR DATABASE'
 
         const result =
           await this.client.query<
             [{ result: { functions: Record<string, unknown> } }]
-          >(query);
+          >(query)
 
-        const functions = result[0]?.result?.functions || {};
-        return `fn::${name}` in functions;
+        const functions = result[0]?.result?.functions || {}
+        return `fn::${name}` in functions
       },
       {
         operation: 'CustomFunctions.exists',
         context,
         input: { name },
       },
-    );
+    )
   }
 
   /**
    * Build DEFINE FUNCTION query.
    */
   private buildDefineFunctionQuery(config: CustomFunctionConfig): string {
-    const parts = [`DEFINE FUNCTION fn::${config.name}(`];
+    const parts = [`DEFINE FUNCTION fn::${config.name}(`]
 
     // Build parameters
     const params = config.parameters
       .map((p) => {
-        let param = `$${p.name}: ${p.type}`;
+        let param = `$${p.name}: ${p.type}`
         if (p.default !== undefined) {
-          param += ` = ${JSON.stringify(p.default)}`;
+          param += ` = ${JSON.stringify(p.default)}`
         }
-        return param;
+        return param
       })
-      .join(', ');
+      .join(', ')
 
-    parts.push(params);
-    parts.push(')');
+    parts.push(params)
+    parts.push(')')
 
     // Add return type if specified
     if (config.returnType) {
-      parts.push(`-> ${config.returnType}`);
+      parts.push(`-> ${config.returnType}`)
     }
 
-    parts.push('{');
+    parts.push('{')
 
     // Add body
-    parts.push(`  ${config.body}`);
+    parts.push(`  ${config.body}`)
 
-    parts.push('}');
+    parts.push('}')
 
     // Add comment if specified
     if (config.comment) {
-      parts.push(`COMMENT "${config.comment}"`);
+      parts.push(`COMMENT "${config.comment}"`)
     }
 
     // Add permissions if specified
     if (config.permissions !== false) {
-      parts.push('PERMISSIONS FULL');
+      parts.push('PERMISSIONS FULL')
     }
 
-    return parts.join(' ');
+    return parts.join(' ')
   }
 }

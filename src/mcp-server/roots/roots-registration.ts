@@ -6,14 +6,14 @@
  * @see {@link https://modelcontextprotocol.io/specification/2025-06-18/basic/roots | MCP Roots}
  * @module src/mcp-server/roots/roots-registration
  */
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { inject, injectable } from 'tsyringe';
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { inject, injectable } from 'tsyringe'
 
-import { Logger } from '@/container/tokens.js';
+import { Logger } from '@/container/tokens.js'
 import {
-  logger as defaultLogger,
+  type logger as defaultLogger,
   requestContextService,
-} from '@/utils/index.js';
+} from '@/utils/index.js'
 
 @injectable()
 export class RootsRegistry {
@@ -28,18 +28,18 @@ export class RootsRegistry {
   registerAll(_server: McpServer): void {
     const context = requestContextService.createRequestContext({
       operation: 'RootsRegistry.registerAll',
-    });
+    })
 
     this.logger.debug(
       'Roots capability enabled (client-provided roots)',
       context,
-    );
+    )
 
     // Note: The MCP SDK handles roots automatically via the client-server protocol.
     // Servers receive roots from clients, not the other way around.
     // This is just a placeholder to demonstrate the capability is enabled.
     // To access roots in your tools, use sdkContext to query the client.
 
-    this.logger.info('Roots capability registered successfully', context);
+    this.logger.info('Roots capability registered successfully', context)
   }
 }

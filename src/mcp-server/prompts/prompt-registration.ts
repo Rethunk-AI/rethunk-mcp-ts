@@ -6,15 +6,15 @@
  * @see {@link https://modelcontextprotocol.io/specification/2025-06-18/basic/prompts | MCP Prompts}
  * @module src/mcp-server/prompts/prompt-registration
  */
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { inject, injectable } from 'tsyringe';
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { inject, injectable } from 'tsyringe'
 
-import { Logger } from '@/container/tokens.js';
-import { allPromptDefinitions } from './definitions/index.js';
+import { Logger } from '@/container/tokens.js'
 import {
-  logger as defaultLogger,
+  type logger as defaultLogger,
   requestContextService,
-} from '@/utils/index.js';
+} from '@/utils/index.js'
+import { allPromptDefinitions } from './definitions/index.js'
 
 @injectable()
 export class PromptRegistry {
@@ -26,17 +26,17 @@ export class PromptRegistry {
   registerAll(server: McpServer): void {
     const context = requestContextService.createRequestContext({
       operation: 'PromptRegistry.registerAll',
-    });
+    })
 
     this.logger.debug(
       `Registering ${allPromptDefinitions.length} prompts...`,
       context,
-    );
+    )
 
     // Register each prompt using the SDK's registerPrompt API
     // Note: allPromptDefinitions is intentionally empty in current configuration
     for (const promptDef of allPromptDefinitions) {
-      this.logger.debug(`Registering prompt: ${promptDef.name}`, context);
+      this.logger.debug(`Registering prompt: ${promptDef.name}`, context)
 
       server.registerPrompt(
         promptDef.name,
@@ -47,17 +47,17 @@ export class PromptRegistry {
           }),
         },
         async (args: Record<string, unknown>) => {
-          const messages = await promptDef.generate(args as never);
-          return { messages };
+          const messages = await promptDef.generate(args as never)
+          return { messages }
         },
-      );
+      )
 
-      this.logger.info(`Registered prompt: ${promptDef.name}`, context);
+      this.logger.info(`Registered prompt: ${promptDef.name}`, context)
     }
 
     this.logger.info(
       `Successfully registered ${allPromptDefinitions.length} prompts`,
       context,
-    );
+    )
   }
 }

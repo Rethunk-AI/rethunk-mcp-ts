@@ -6,39 +6,39 @@
 
 import type {
   JwtAccessConfig,
-  RecordAccessConfig,
   JwtAlgorithm,
-} from './authManager.js';
+  RecordAccessConfig,
+} from './authManager.js'
 
 /**
  * Predefined scope configurations for common use cases.
  */
-export class ScopeDefinitions {
+export const ScopeDefinitions = {
   /**
    * Create a JWT access configuration for API authentication.
    *
-   * @param name - Access method name
    * @param secret - JWT signing secret
+   * @param name - Access method name (default: 'api_access')
    * @param algorithm - JWT algorithm (default: HS512)
    * @returns JWT access configuration
    *
    * @example
    * ```ts
-   * const apiAccess = ScopeDefinitions.apiJwt('api_access', process.env.JWT_SECRET!);
+   * const apiAccess = ScopeDefinitions.apiJwt(process.env.JWT_SECRET!, 'api_access');
    * await authManager.configureJwt(apiAccess, context);
    * ```
    */
-  static apiJwt(
-    name: string = 'api_access',
+  apiJwt(
     secret: string,
+    name = 'api_access',
     algorithm: JwtAlgorithm = 'HS512',
   ): JwtAccessConfig {
     return {
       name,
       algorithm,
       key: secret,
-    };
-  }
+    }
+  },
 
   /**
    * Create a JWT access configuration with issuer/audience validation.
@@ -60,7 +60,7 @@ export class ScopeDefinitions {
    * );
    * ```
    */
-  static validatedJwt(
+  validatedJwt(
     name: string,
     secret: string,
     issuer: string,
@@ -73,8 +73,8 @@ export class ScopeDefinitions {
       key: secret,
       issuer,
       audience,
-    };
-  }
+    }
+  },
 
   /**
    * Create a JWT access configuration using JWKS for third-party auth providers.
@@ -96,7 +96,7 @@ export class ScopeDefinitions {
    * );
    * ```
    */
-  static jwksAuth(
+  jwksAuth(
     name: string,
     jwksUrl: string,
     issuer: string,
@@ -110,30 +110,30 @@ export class ScopeDefinitions {
       jwksUrl,
       issuer,
       audience,
-    };
-  }
+    }
+  },
 
   /**
    * Create a record access configuration for standard user authentication.
    *
+   * @param jwtSecret - JWT secret for session tokens
    * @param name - Access method name (default: 'user_access')
    * @param table - User table name (default: 'user')
-   * @param jwtSecret - JWT secret for session tokens
    * @param duration - Token duration (default: '24h')
    * @param algorithm - JWT algorithm (default: 'HS512')
    * @returns Record access configuration
    *
    * @example
    * ```ts
-   * const userAccess = ScopeDefinitions.userAuth('user_access', 'user', secret);
+   * const userAccess = ScopeDefinitions.userAuth(secret, 'user_access', 'user');
    * await authManager.configureRecord(userAccess, context);
    * ```
    */
-  static userAuth(
-    name: string = 'user_access',
-    table: string = 'user',
+  userAuth(
     jwtSecret: string,
-    duration: string = '24h',
+    name = 'user_access',
+    table = 'user',
+    duration = '24h',
     algorithm: JwtAlgorithm = 'HS512',
   ): RecordAccessConfig {
     return {
@@ -146,8 +146,8 @@ export class ScopeDefinitions {
         key: jwtSecret,
         duration,
       },
-    };
-  }
+    }
+  },
 
   /**
    * Create a record access configuration with custom signin/signup queries.
@@ -170,7 +170,7 @@ export class ScopeDefinitions {
    * );
    * ```
    */
-  static customRecordAuth(
+  customRecordAuth(
     name: string,
     table: string,
     signinQuery: string,
@@ -189,23 +189,23 @@ export class ScopeDefinitions {
         key: jwtSecret,
         duration: '24h',
       },
-    };
-  }
+    }
+  },
 
   /**
    * Create an admin-level record access with extended duration.
    *
+   * @param jwtSecret - JWT secret
    * @param name - Access method name (default: 'admin_access')
    * @param table - Admin table name (default: 'admin')
-   * @param jwtSecret - JWT secret
    * @param duration - Token duration (default: '7d')
    * @returns Record access configuration
    */
-  static adminAuth(
-    name: string = 'admin_access',
-    table: string = 'admin',
+  adminAuth(
     jwtSecret: string,
-    duration: string = '7d',
+    name = 'admin_access',
+    table = 'admin',
+    duration = '7d',
   ): RecordAccessConfig {
     return {
       name,
@@ -217,14 +217,14 @@ export class ScopeDefinitions {
         key: jwtSecret,
         duration,
       },
-    };
-  }
+    }
+  },
 }
 
 /**
  * Common permission patterns for database access control.
  */
-export class PermissionPatterns {
+export const PermissionPatterns = {
   /**
    * Generate a WHERE clause for tenant-scoped access.
    *
@@ -238,12 +238,9 @@ export class PermissionPatterns {
    * FOR create WHERE tenant_id = $token.tid
    * ```
    */
-  static tenantScoped(
-    tokenVar: string = '$token',
-    tenantField: string = 'tenant_id',
-  ): string {
-    return `${tenantField} = ${tokenVar}.tid`;
-  }
+  tenantScoped(tokenVar = '$token', tenantField = 'tenant_id'): string {
+    return `${tenantField} = ${tokenVar}.tid`
+  },
 
   /**
    * Generate a WHERE clause for owner-only access.
@@ -258,18 +255,15 @@ export class PermissionPatterns {
    * FOR update WHERE owner = $token.sub
    * ```
    */
-  static ownerOnly(
-    tokenVar: string = '$token',
-    ownerField: string = 'owner',
-  ): string {
-    return `${ownerField} = ${tokenVar}.sub`;
-  }
+  ownerOnly(tokenVar = '$token', ownerField = 'owner'): string {
+    return `${ownerField} = ${tokenVar}.sub`
+  },
 
   /**
    * Generate a WHERE clause for role-based access.
    *
-   * @param tokenVar - Variable containing the token (default: $token)
    * @param roles - Array of allowed roles
+   * @param tokenVar - Variable containing the token (default: $token)
    * @returns SurrealQL WHERE clause
    *
    * @example
@@ -277,10 +271,10 @@ export class PermissionPatterns {
    * FOR delete WHERE $token.role INSIDE ['admin', 'moderator']
    * ```
    */
-  static roleBasedAccess(roles: string[], tokenVar: string = '$token'): string {
-    const roleList = roles.map((r) => `'${r}'`).join(', ');
-    return `${tokenVar}.role INSIDE [${roleList}]`;
-  }
+  roleBasedAccess(roles: string[], tokenVar = '$token'): string {
+    const roleList = roles.map((r) => `'${r}'`).join(', ')
+    return `${tokenVar}.role INSIDE [${roleList}]`
+  },
 
   /**
    * Generate a WHERE clause combining tenant and owner access.
@@ -290,11 +284,11 @@ export class PermissionPatterns {
    * @param ownerField - Field name for owner ID
    * @returns SurrealQL WHERE clause
    */
-  static tenantAndOwner(
-    tokenVar: string = '$token',
-    tenantField: string = 'tenant_id',
-    ownerField: string = 'owner',
+  tenantAndOwner(
+    tokenVar = '$token',
+    tenantField = 'tenant_id',
+    ownerField = 'owner',
   ): string {
-    return `${tenantField} = ${tokenVar}.tid AND ${ownerField} = ${tokenVar}.sub`;
-  }
+    return `${tenantField} = ${tokenVar}.tid AND ${ownerField} = ${tokenVar}.sub`
+  },
 }

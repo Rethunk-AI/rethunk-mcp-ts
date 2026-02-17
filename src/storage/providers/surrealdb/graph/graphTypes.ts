@@ -8,11 +8,11 @@
  */
 export interface Vertex {
   /** Unique record ID */
-  id: string;
+  id: string
   /** Table name */
-  table: string;
+  table: string
   /** Vertex data/properties */
-  data: Record<string, unknown>;
+  data: Record<string, unknown>
 }
 
 /**
@@ -20,19 +20,19 @@ export interface Vertex {
  */
 export interface Edge {
   /** Unique edge ID */
-  id: string;
+  id: string
   /** Edge table name */
-  table: string;
+  table: string
   /** Source vertex ID (in property) */
-  in: string;
+  in: string
   /** Target vertex ID (out property) */
-  out: string;
+  out: string
   /** Alternate source property */
-  from?: string;
+  from?: string
   /** Alternate target property */
-  to?: string;
+  to?: string
   /** Edge metadata/properties */
-  data?: Record<string, unknown>;
+  data?: Record<string, unknown>
 }
 
 /**
@@ -40,11 +40,11 @@ export interface Edge {
  */
 export interface EdgeOptions {
   /** Edge metadata */
-  data?: Record<string, unknown>;
+  data?: Record<string, unknown>
   /** Whether to allow duplicate edges */
-  allowDuplicates?: boolean;
+  allowDuplicates?: boolean
   /** Whether to create bidirectional edge */
-  bidirectional?: boolean;
+  bidirectional?: boolean
 }
 
 /**
@@ -52,9 +52,9 @@ export interface EdgeOptions {
  */
 export interface GraphQueryResult<T = unknown> {
   /** Query results */
-  result: T;
+  result: T
   /** Query execution time */
-  time?: string;
+  time?: string
   /** Query status */
-  status?: string;
+  status?: string
 }

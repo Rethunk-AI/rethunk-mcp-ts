@@ -9,9 +9,9 @@
  * during application startup.
  * @module src/utils/security/idGenerator
  */
-import { randomUUID as cryptoRandomUUID, randomBytes } from 'crypto';
+import { randomUUID as cryptoRandomUUID, randomBytes } from 'node:crypto'
 
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
 
 // Removed: import { logger, requestContextService } from "../index.js";
 
@@ -20,16 +20,16 @@ import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
  * Keys are entity type names (e.g., "project", "task"), and values are their corresponding ID prefixes (e.g., "PROJ", "TASK").
  */
 export interface EntityPrefixConfig {
-  [key: string]: string;
+  [key: string]: string
 }
 
 /**
  * Defines options for customizing ID generation.
  */
 export interface IdGenerationOptions {
-  length?: number;
-  separator?: string;
-  charset?: string;
+  length?: number
+  separator?: string
+  charset?: string
 }
 
 /**
@@ -41,28 +41,28 @@ export class IdGenerator {
    * Default character set for the random part of the ID.
    * @private
    */
-  private static DEFAULT_CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  private static DEFAULT_CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
   /**
    * Default separator character between prefix and random part.
    * @private
    */
-  private static DEFAULT_SEPARATOR = '_';
+  private static DEFAULT_SEPARATOR = '_'
   /**
    * Default length for the random part of the ID.
    * @private
    */
-  private static DEFAULT_LENGTH = 6;
+  private static DEFAULT_LENGTH = 6
 
   /**
    * Stores the mapping of entity types to their prefixes.
    * @private
    */
-  private entityPrefixes: EntityPrefixConfig = {};
+  private entityPrefixes: EntityPrefixConfig = {}
   /**
    * Stores a reverse mapping from prefixes (case-insensitive) to entity types.
    * @private
    */
-  private prefixToEntityType: Record<string, string> = {};
+  private prefixToEntityType: Record<string, string> = {}
 
   /**
    * Constructs an `IdGenerator` instance.
@@ -70,7 +70,7 @@ export class IdGenerator {
    */
   constructor(entityPrefixes: EntityPrefixConfig = {}) {
     // Logging removed to prevent circular dependency with requestContextService.
-    this.setEntityPrefixes(entityPrefixes);
+    this.setEntityPrefixes(entityPrefixes)
   }
 
   /**
@@ -79,15 +79,15 @@ export class IdGenerator {
    */
   public setEntityPrefixes(entityPrefixes: EntityPrefixConfig): void {
     // Logging removed.
-    this.entityPrefixes = { ...entityPrefixes };
+    this.entityPrefixes = { ...entityPrefixes }
 
     this.prefixToEntityType = Object.entries(this.entityPrefixes).reduce(
       (acc, [type, prefix]) => {
-        acc[prefix.toLowerCase()] = type; // Store lowercase for case-insensitive lookup
-        return acc;
+        acc[prefix.toLowerCase()] = type // Store lowercase for case-insensitive lookup
+        return acc
       },
       {} as Record<string, string>,
-    );
+    )
   }
 
   /**
@@ -95,7 +95,7 @@ export class IdGenerator {
    * @returns The current entity prefix configuration.
    */
   public getEntityPrefixes(): EntityPrefixConfig {
-    return { ...this.entityPrefixes };
+    return { ...this.entityPrefixes }
   }
 
   /**
@@ -108,26 +108,26 @@ export class IdGenerator {
     length: number = IdGenerator.DEFAULT_LENGTH,
     charset: string = IdGenerator.DEFAULT_CHARSET,
   ): string {
-    let result = '';
+    let result = ''
     // Determine the largest multiple of charset.length that is less than or equal to 256
     // This is the threshold for rejection sampling to avoid bias.
-    const maxValidByteValue = Math.floor(256 / charset.length) * charset.length;
+    const maxValidByteValue = Math.floor(256 / charset.length) * charset.length
 
     while (result.length < length) {
-      const byteBuffer = randomBytes(1); // Get one random byte
-      const byte = byteBuffer[0];
+      const byteBuffer = randomBytes(1) // Get one random byte
+      const byte = byteBuffer[0]
 
       // If the byte is within the valid range (i.e., it won't introduce bias),
       // use it to select a character from the charset. Otherwise, discard and try again.
       if (byte !== undefined && byte < maxValidByteValue) {
-        const charIndex = byte % charset.length;
-        const char = charset[charIndex];
+        const charIndex = byte % charset.length
+        const char = charset[charIndex]
         if (char) {
-          result += char;
+          result += char
         }
       }
     }
-    return result;
+    return result
   }
 
   /**
@@ -142,13 +142,13 @@ export class IdGenerator {
       length = IdGenerator.DEFAULT_LENGTH,
       separator = IdGenerator.DEFAULT_SEPARATOR,
       charset = IdGenerator.DEFAULT_CHARSET,
-    } = options;
+    } = options
 
-    const randomPart = this.generateRandomString(length, charset);
+    const randomPart = this.generateRandomString(length, charset)
     const generatedId = prefix
       ? `${prefix}${separator}${randomPart}`
-      : randomPart;
-    return generatedId;
+      : randomPart
+    return generatedId
   }
 
   /**
@@ -162,14 +162,14 @@ export class IdGenerator {
     entityType: string,
     options: IdGenerationOptions = {},
   ): string {
-    const prefix = this.entityPrefixes[entityType];
+    const prefix = this.entityPrefixes[entityType]
     if (!prefix) {
       throw new McpError(
         JsonRpcErrorCode.ValidationError,
         `Unknown entity type: ${entityType}. No prefix registered.`,
-      );
+      )
     }
-    return this.generate(prefix, options);
+    return this.generate(prefix, options)
   }
 
   /**
@@ -185,26 +185,26 @@ export class IdGenerator {
     entityType: string,
     options: IdGenerationOptions = {},
   ): boolean {
-    const prefix = this.entityPrefixes[entityType];
+    const prefix = this.entityPrefixes[entityType]
     const {
       length = IdGenerator.DEFAULT_LENGTH,
       separator = IdGenerator.DEFAULT_SEPARATOR,
       charset = IdGenerator.DEFAULT_CHARSET, // Use charset from options or default
-    } = options;
+    } = options
 
     if (!prefix) {
-      return false;
+      return false
     }
 
     // Build regex character class from the charset
     // Escape characters that have special meaning inside a regex character class `[]`
-    const escapedCharsetForClass = charset.replace(/[[\]\\^-]/g, '\\$&');
-    const charsetRegexPart = `[${escapedCharsetForClass}]`;
+    const escapedCharsetForClass = charset.replace(/[[\]\\^-]/g, '\\$&')
+    const charsetRegexPart = `[${escapedCharsetForClass}]`
 
     const pattern = new RegExp(
       `^${this.escapeRegex(prefix)}${this.escapeRegex(separator)}${charsetRegexPart}{${length}}$`,
-    );
-    return pattern.test(id);
+    )
+    return pattern.test(id)
   }
 
   /**
@@ -214,7 +214,7 @@ export class IdGenerator {
    * @private
    */
   private escapeRegex(str: string): string {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   }
 
   /**
@@ -227,8 +227,8 @@ export class IdGenerator {
     id: string,
     separator: string = IdGenerator.DEFAULT_SEPARATOR,
   ): string {
-    const parts = id.split(separator);
-    return parts.length > 1 ? parts.slice(1).join(separator) : id; // Handle separators in random part
+    const parts = id.split(separator)
+    return parts.length > 1 ? parts.slice(1).join(separator) : id // Handle separators in random part
   }
 
   /**
@@ -242,24 +242,24 @@ export class IdGenerator {
     id: string,
     separator: string = IdGenerator.DEFAULT_SEPARATOR,
   ): string {
-    const parts = id.split(separator);
+    const parts = id.split(separator)
     if (parts.length < 2 || !parts[0]) {
       throw new McpError(
         JsonRpcErrorCode.ValidationError,
         `Invalid ID format: ${id}. Expected format like: PREFIX${separator}RANDOMLPART`,
-      );
+      )
     }
 
-    const prefix = parts[0];
-    const entityType = this.prefixToEntityType[prefix.toLowerCase()];
+    const prefix = parts[0]
+    const entityType = this.prefixToEntityType[prefix.toLowerCase()]
 
     if (!entityType) {
       throw new McpError(
         JsonRpcErrorCode.ValidationError,
         `Unknown entity type for prefix: ${prefix}`,
-      );
+      )
     }
-    return entityType;
+    return entityType
   }
 
   /**
@@ -276,14 +276,14 @@ export class IdGenerator {
     id: string,
     separator: string = IdGenerator.DEFAULT_SEPARATOR,
   ): string {
-    const entityType = this.getEntityType(id, separator);
-    const registeredPrefix = this.entityPrefixes[entityType];
-    const idParts = id.split(separator);
-    const randomPart = idParts.slice(1).join(separator);
+    const entityType = this.getEntityType(id, separator)
+    const registeredPrefix = this.entityPrefixes[entityType]
+    const idParts = id.split(separator)
+    const randomPart = idParts.slice(1).join(separator)
 
     // Consider if randomPart.toUpperCase() is always correct for custom charsets.
     // For now, maintaining existing behavior.
-    return `${registeredPrefix}${separator}${randomPart.toUpperCase()}`;
+    return `${registeredPrefix}${separator}${randomPart.toUpperCase()}`
   }
 }
 
@@ -291,7 +291,7 @@ export class IdGenerator {
  * Default singleton instance of the `IdGenerator`.
  * Initialize with `idGenerator.setEntityPrefixes({})` to configure.
  */
-export const idGenerator = new IdGenerator();
+export const idGenerator = new IdGenerator()
 
 /**
  * Generates a standard Version 4 UUID (Universally Unique Identifier).
@@ -299,8 +299,8 @@ export const idGenerator = new IdGenerator();
  * @returns A new UUID string.
  */
 export const generateUUID = (): string => {
-  return cryptoRandomUUID();
-};
+  return cryptoRandomUUID()
+}
 
 /**
  * Generates a unique 10-character alphanumeric ID with a hyphen in the middle (e.g., `ABCDE-FGHIJ`).
@@ -319,26 +319,26 @@ export const generateRequestContextId = (): string => {
     length: number,
     charset: string,
   ): string => {
-    let result = '';
-    const maxValidByteValue = Math.floor(256 / charset.length) * charset.length;
+    let result = ''
+    const maxValidByteValue = Math.floor(256 / charset.length) * charset.length
 
     while (result.length < length) {
-      const byteBuffer = randomBytes(1);
-      const byte = byteBuffer[0];
+      const byteBuffer = randomBytes(1)
+      const byte = byteBuffer[0]
 
       if (byte !== undefined && byte < maxValidByteValue) {
-        const charIndex = byte % charset.length;
-        const char = charset[charIndex];
+        const charIndex = byte % charset.length
+        const char = charset[charIndex]
         if (char) {
-          result += char;
+          result += char
         }
       }
     }
-    return result;
-  };
+    return result
+  }
 
-  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  const part1 = generateSecureRandomString(5, charset);
-  const part2 = generateSecureRandomString(5, charset);
-  return `${part1}-${part2}`;
-};
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  const part1 = generateSecureRandomString(5, charset)
+  const part2 = generateSecureRandomString(5, charset)
+  return `${part1}-${part2}`
+}

@@ -4,26 +4,26 @@
  * @module src/storage/providers/surrealdb/auth/permissionHelpers
  */
 
-import type Surreal from 'surrealdb';
-import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js';
+import type Surreal from 'surrealdb'
+import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js'
 
 /**
  * Permission operation types.
  */
-export type PermissionOp = 'select' | 'create' | 'update' | 'delete';
+export type PermissionOp = 'select' | 'create' | 'update' | 'delete'
 
 /**
  * Permission configuration for a single operation.
  */
 export interface PermissionRule {
   /** The operation this rule applies to */
-  operation: PermissionOp;
+  operation: PermissionOp
   /** WHERE clause for the permission (empty = FULL) */
-  where?: string;
+  where?: string
   /** Whether to allow the operation unconditionally */
-  full?: boolean;
+  full?: boolean
   /** Whether to deny the operation unconditionally */
-  none?: boolean;
+  none?: boolean
 }
 
 /**
@@ -31,9 +31,9 @@ export interface PermissionRule {
  */
 export interface TablePermissions {
   /** Table name */
-  table: string;
+  table: string
   /** Permission rules for each operation */
-  rules: PermissionRule[];
+  rules: PermissionRule[]
 }
 
 /**
@@ -76,45 +76,45 @@ export class PermissionHelper {
         logger.info(
           `[PermissionHelper] Applying permissions to table: ${permissions.table}`,
           context,
-        );
+        )
 
-        const query = this.buildPermissionsQuery(permissions);
-        await this.client.query(query);
+        const query = this.buildPermissionsQuery(permissions)
+        await this.client.query(query)
 
-        logger.info('[PermissionHelper] Permissions applied', context);
+        logger.info('[PermissionHelper] Permissions applied', context)
       },
       {
         operation: 'PermissionHelper.applyPermissions',
         context,
         input: { table: permissions.table },
       },
-    );
+    )
   }
 
   /**
    * Build DEFINE TABLE permissions query.
    */
   private buildPermissionsQuery(permissions: TablePermissions): string {
-    const parts = [`DEFINE TABLE ${permissions.table} SCHEMAFULL`];
+    const parts = [`DEFINE TABLE ${permissions.table} SCHEMAFULL`]
 
-    const permissionClauses: string[] = [];
+    const permissionClauses: string[] = []
 
     for (const rule of permissions.rules) {
       if (rule.full) {
-        permissionClauses.push(`FOR ${rule.operation} FULL`);
+        permissionClauses.push(`FOR ${rule.operation} FULL`)
       } else if (rule.none) {
-        permissionClauses.push(`FOR ${rule.operation} NONE`);
+        permissionClauses.push(`FOR ${rule.operation} NONE`)
       } else if (rule.where) {
-        permissionClauses.push(`FOR ${rule.operation} WHERE ${rule.where}`);
+        permissionClauses.push(`FOR ${rule.operation} WHERE ${rule.where}`)
       }
     }
 
     if (permissionClauses.length > 0) {
-      parts.push('PERMISSIONS');
-      parts.push(permissionClauses.join('\n  '));
+      parts.push('PERMISSIONS')
+      parts.push(permissionClauses.join('\n  '))
     }
 
-    return parts.join('\n  ');
+    return parts.join('\n  ')
   }
 
   /**
@@ -124,7 +124,7 @@ export class PermissionHelper {
    * @returns Permission builder instance
    */
   static builder(tableName: string): PermissionBuilder {
-    return new PermissionBuilder(tableName);
+    return new PermissionBuilder(tableName)
   }
 
   /**
@@ -140,7 +140,7 @@ export class PermissionHelper {
     tenantField: string = 'tenant_id',
     tokenVar: string = '$token',
   ): TablePermissions {
-    const where = `${tenantField} = ${tokenVar}.tid`;
+    const where = `${tenantField} = ${tokenVar}.tid`
     return {
       table: tableName,
       rules: [
@@ -149,7 +149,7 @@ export class PermissionHelper {
         { operation: 'update', where },
         { operation: 'delete', where },
       ],
-    };
+    }
   }
 
   /**
@@ -165,7 +165,7 @@ export class PermissionHelper {
     ownerField: string = 'owner',
     tokenVar: string = '$token',
   ): TablePermissions {
-    const where = `${ownerField} = ${tokenVar}.sub`;
+    const where = `${ownerField} = ${tokenVar}.sub`
     return {
       table: tableName,
       rules: [
@@ -174,7 +174,7 @@ export class PermissionHelper {
         { operation: 'update', where },
         { operation: 'delete', where },
       ],
-    };
+    }
   }
 
   /**
@@ -192,7 +192,7 @@ export class PermissionHelper {
         { operation: 'update', where: '$token != NONE' },
         { operation: 'delete', where: '$token != NONE' },
       ],
-    };
+    }
   }
 }
 
@@ -200,7 +200,7 @@ export class PermissionHelper {
  * Fluent builder for table permissions.
  */
 export class PermissionBuilder {
-  private rules: PermissionRule[] = [];
+  private rules: PermissionRule[] = []
 
   constructor(private readonly tableName: string) {}
 
@@ -209,11 +209,11 @@ export class PermissionBuilder {
    */
   select(where?: string): this {
     if (where) {
-      this.rules.push({ operation: 'select', where });
+      this.rules.push({ operation: 'select', where })
     } else {
-      this.rules.push({ operation: 'select', full: true });
+      this.rules.push({ operation: 'select', full: true })
     }
-    return this;
+    return this
   }
 
   /**
@@ -221,11 +221,11 @@ export class PermissionBuilder {
    */
   create(where?: string): this {
     if (where) {
-      this.rules.push({ operation: 'create', where });
+      this.rules.push({ operation: 'create', where })
     } else {
-      this.rules.push({ operation: 'create', full: true });
+      this.rules.push({ operation: 'create', full: true })
     }
-    return this;
+    return this
   }
 
   /**
@@ -233,11 +233,11 @@ export class PermissionBuilder {
    */
   update(where?: string): this {
     if (where) {
-      this.rules.push({ operation: 'update', where });
+      this.rules.push({ operation: 'update', where })
     } else {
-      this.rules.push({ operation: 'update', full: true });
+      this.rules.push({ operation: 'update', full: true })
     }
-    return this;
+    return this
   }
 
   /**
@@ -245,11 +245,11 @@ export class PermissionBuilder {
    */
   delete(where?: string): this {
     if (where) {
-      this.rules.push({ operation: 'delete', where });
+      this.rules.push({ operation: 'delete', where })
     } else {
-      this.rules.push({ operation: 'delete', full: true });
+      this.rules.push({ operation: 'delete', full: true })
     }
-    return this;
+    return this
   }
 
   /**
@@ -259,8 +259,8 @@ export class PermissionBuilder {
     this.rules.push({
       operation: 'select',
       none: true,
-    });
-    return this;
+    })
+    return this
   }
 
   /**
@@ -270,8 +270,8 @@ export class PermissionBuilder {
     this.rules.push({
       operation: 'create',
       none: true,
-    });
-    return this;
+    })
+    return this
   }
 
   /**
@@ -281,8 +281,8 @@ export class PermissionBuilder {
     this.rules.push({
       operation: 'update',
       none: true,
-    });
-    return this;
+    })
+    return this
   }
 
   /**
@@ -292,8 +292,8 @@ export class PermissionBuilder {
     this.rules.push({
       operation: 'delete',
       none: true,
-    });
-    return this;
+    })
+    return this
   }
 
   /**
@@ -303,6 +303,6 @@ export class PermissionBuilder {
     return {
       table: this.tableName,
       rules: this.rules,
-    };
+    }
   }
 }

@@ -5,26 +5,25 @@
  * it for the Cloudflare Workers runtime with support for bindings (KV, R2, D1, AI).
  * @module src/worker
  */
-import 'reflect-metadata';
+import 'reflect-metadata'
 
 import type {
-  R2Bucket,
-  KVNamespace,
-  D1Database,
   Ai,
-  ScheduledController,
   IncomingRequestCfProperties as CfProperties,
-} from '@cloudflare/workers-types';
-
-import { composeContainer } from '@/container/index.js';
-import { createMcpServerInstance } from '@/mcp-server/server.js';
-import { createHttpApp } from '@/mcp-server/transports/http/httpTransport.js';
+  D1Database,
+  KVNamespace,
+  R2Bucket,
+  ScheduledController,
+} from '@cloudflare/workers-types'
+import type { Hono } from 'hono'
+import { composeContainer } from '@/container/index.js'
+import { createMcpServerInstance } from '@/mcp-server/server.js'
+import { createHttpApp } from '@/mcp-server/transports/http/httpTransport.js'
 import {
   initializePerformance_Hrt,
   requestContextService,
-} from '@/utils/index.js';
-import { logger } from '@/utils/internal/logger.js';
-import { Hono } from 'hono';
+} from '@/utils/index.js'
+import { logger } from '@/utils/internal/logger.js'
 
 /**
  * Define Cloudflare Worker Bindings with proper type safety.
@@ -32,40 +31,40 @@ import { Hono } from 'hono';
  */
 export interface CloudflareBindings {
   // KV Namespace for fast key-value storage
-  KV_NAMESPACE?: KVNamespace;
+  KV_NAMESPACE?: KVNamespace
 
   // R2 Bucket for object storage
-  R2_BUCKET?: R2Bucket;
+  R2_BUCKET?: R2Bucket
 
   // D1 Database for relational data
-  DB?: D1Database;
+  DB?: D1Database
 
   // Cloudflare AI for inference
-  AI?: Ai;
+  AI?: Ai
 
   // Environment variables (secrets)
-  ENVIRONMENT?: string;
-  LOG_LEVEL?: string;
-  MCP_AUTH_SECRET_KEY?: string;
-  OPENROUTER_API_KEY?: string;
-  SUPABASE_URL?: string;
-  SUPABASE_ANON_KEY?: string;
-  SUPABASE_SERVICE_ROLE_KEY?: string;
-  STORAGE_PROVIDER_TYPE?: string;
-  OAUTH_ISSUER_URL?: string;
-  OAUTH_AUDIENCE?: string;
-  OAUTH_JWKS_URI?: string;
-  MCP_ALLOWED_ORIGINS?: string;
-  SPEECH_TTS_ENABLED?: string;
-  SPEECH_TTS_API_KEY?: string;
-  SPEECH_STT_ENABLED?: string;
-  SPEECH_STT_API_KEY?: string;
-  OTEL_ENABLED?: string;
-  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT?: string;
-  OTEL_EXPORTER_OTLP_METRICS_ENDPOINT?: string;
+  ENVIRONMENT?: string
+  LOG_LEVEL?: string
+  MCP_AUTH_SECRET_KEY?: string
+  OPENROUTER_API_KEY?: string
+  SUPABASE_URL?: string
+  SUPABASE_ANON_KEY?: string
+  SUPABASE_SERVICE_ROLE_KEY?: string
+  STORAGE_PROVIDER_TYPE?: string
+  OAUTH_ISSUER_URL?: string
+  OAUTH_AUDIENCE?: string
+  OAUTH_JWKS_URI?: string
+  MCP_ALLOWED_ORIGINS?: string
+  SPEECH_TTS_ENABLED?: string
+  SPEECH_TTS_API_KEY?: string
+  SPEECH_STT_ENABLED?: string
+  SPEECH_STT_API_KEY?: string
+  OTEL_ENABLED?: string
+  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT?: string
+  OTEL_EXPORTER_OTLP_METRICS_ENDPOINT?: string
 
   // Allow additional string-based bindings
-  [key: string]: unknown;
+  [key: string]: unknown
 }
 
 /**
@@ -73,11 +72,11 @@ export interface CloudflareBindings {
  * This type is used to configure the Hono app with Cloudflare-specific bindings.
  */
 type WorkerEnv = {
-  Bindings: CloudflareBindings;
-};
+  Bindings: CloudflareBindings
+}
 
 // Use a Promise to ensure the app is only initialized once per worker instance.
-let appPromise: Promise<Hono<WorkerEnv>> | null = null;
+let appPromise: Promise<Hono<WorkerEnv>> | null = null
 
 /**
  * Injects Cloudflare environment variables into process.env for consumption
@@ -86,7 +85,7 @@ let appPromise: Promise<Hono<WorkerEnv>> | null = null;
  */
 function injectEnvVars(env: CloudflareBindings): void {
   if (typeof process === 'undefined') {
-    return; // No process in pure Workers runtime
+    return // No process in pure Workers runtime
   }
 
   const envMappings: Array<[keyof CloudflareBindings, string]> = [
@@ -115,12 +114,12 @@ function injectEnvVars(env: CloudflareBindings): void {
       'OTEL_EXPORTER_OTLP_METRICS_ENDPOINT',
       'OTEL_EXPORTER_OTLP_METRICS_ENDPOINT',
     ],
-  ];
+  ]
 
   for (const [bindingKey, processKey] of envMappings) {
-    const value = env[bindingKey];
+    const value = env[bindingKey]
     if (typeof value === 'string' && value.trim() !== '') {
-      process.env[processKey] = value;
+      process.env[processKey] = value
     }
   }
 }
@@ -131,16 +130,16 @@ function injectEnvVars(env: CloudflareBindings): void {
  */
 function storeBindings(env: CloudflareBindings): void {
   if (env.KV_NAMESPACE) {
-    Object.assign(globalThis, { KV_NAMESPACE: env.KV_NAMESPACE });
+    Object.assign(globalThis, { KV_NAMESPACE: env.KV_NAMESPACE })
   }
   if (env.R2_BUCKET) {
-    Object.assign(globalThis, { R2_BUCKET: env.R2_BUCKET });
+    Object.assign(globalThis, { R2_BUCKET: env.R2_BUCKET })
   }
   if (env.DB) {
-    Object.assign(globalThis, { DB: env.DB });
+    Object.assign(globalThis, { DB: env.DB })
   }
   if (env.AI) {
-    Object.assign(globalThis, { AI: env.AI });
+    Object.assign(globalThis, { AI: env.AI })
   }
 }
 
@@ -150,27 +149,27 @@ function storeBindings(env: CloudflareBindings): void {
  */
 function initializeApp(env: CloudflareBindings): Promise<Hono<WorkerEnv>> {
   if (appPromise) {
-    return appPromise;
+    return appPromise
   }
 
   appPromise = (async () => {
-    const initStartTime = Date.now();
+    const initStartTime = Date.now()
 
     try {
       // Set a process-level flag to indicate a serverless environment.
       if (typeof process !== 'undefined' && process.env) {
-        process.env.IS_SERVERLESS = 'true';
+        process.env.IS_SERVERLESS = 'true'
       } else {
-        Object.assign(globalThis, { IS_SERVERLESS: true });
+        Object.assign(globalThis, { IS_SERVERLESS: true })
       }
 
       // Initialize core services lazily.
-      composeContainer();
-      await initializePerformance_Hrt();
+      composeContainer()
+      await initializePerformance_Hrt()
 
       // Initialize logger with level from env or default to 'info'
       // Workers always use HTTP transport (no STDIO support)
-      const logLevel = env.LOG_LEVEL?.toLowerCase() ?? 'info';
+      const logLevel = env.LOG_LEVEL?.toLowerCase() ?? 'info'
       // Validate log level is one of the supported values
       type ValidLogLevel =
         | 'debug'
@@ -180,7 +179,7 @@ function initializeApp(env: CloudflareBindings): Promise<Hono<WorkerEnv>> {
         | 'error'
         | 'crit'
         | 'alert'
-        | 'emerg';
+        | 'emerg'
       const validLogLevels: ValidLogLevel[] = [
         'debug',
         'info',
@@ -190,25 +189,25 @@ function initializeApp(env: CloudflareBindings): Promise<Hono<WorkerEnv>> {
         'crit',
         'alert',
         'emerg',
-      ];
+      ]
       const validatedLogLevel = validLogLevels.includes(
         logLevel as ValidLogLevel,
       )
         ? (logLevel as ValidLogLevel)
-        : 'info';
-      await logger.initialize(validatedLogLevel, 'http');
+        : 'info'
+      await logger.initialize(validatedLogLevel, 'http')
 
       // Create a root context for the worker's lifecycle.
       const workerContext = requestContextService.createRequestContext({
         operation: 'WorkerInitialization',
         isServerless: true,
-      });
+      })
 
       logger.info('Cloudflare Worker initializing...', {
         ...workerContext,
         environment: env.ENVIRONMENT ?? 'production',
         storageProvider: env.STORAGE_PROVIDER_TYPE ?? 'in-memory',
-      });
+      })
 
       // Create the Hono application with Cloudflare Worker bindings.
       // Pass server factory so each request gets a fresh McpServer+transport pair
@@ -216,39 +215,39 @@ function initializeApp(env: CloudflareBindings): Promise<Hono<WorkerEnv>> {
       const app = createHttpApp<CloudflareBindings>(
         createMcpServerInstance,
         workerContext,
-      );
+      )
 
-      const initDuration = Date.now() - initStartTime;
+      const initDuration = Date.now() - initStartTime
       logger.info('Cloudflare Worker initialized successfully.', {
         ...workerContext,
         initDurationMs: initDuration,
-      });
+      })
 
-      return app;
+      return app
     } catch (error: unknown) {
-      const initDuration = Date.now() - initStartTime;
+      const initDuration = Date.now() - initStartTime
       const errorContext = requestContextService.createRequestContext({
         operation: 'WorkerInitialization',
         isServerless: true,
         initDurationMs: initDuration,
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
-      });
+      })
 
       logger.crit(
         'Failed to initialize Cloudflare Worker.',
         error instanceof Error ? error : new Error(String(error)),
         errorContext,
-      );
+      )
 
       // Reset appPromise to allow retry on next request
-      appPromise = null;
+      appPromise = null
 
-      throw error;
+      throw error
     }
-  })();
+  })()
 
-  return appPromise;
+  return appPromise
 }
 
 /**
@@ -268,16 +267,16 @@ export default {
     try {
       // Refresh bindings on every request — Cloudflare may rotate
       // binding references between requests within the same isolate.
-      injectEnvVars(env);
-      storeBindings(env);
+      injectEnvVars(env)
+      storeBindings(env)
 
-      const app = await initializeApp(env);
+      const app = await initializeApp(env)
 
       // Extract Cloudflare-specific request metadata
       // TypeScript doesn't know about the cf property, but it's added by Cloudflare runtime
-      type RequestWithCf = Request & { cf?: CfProperties };
-      const cfProperties = (request as RequestWithCf).cf;
-      const requestId = request.headers.get('cf-ray') ?? crypto.randomUUID();
+      type RequestWithCf = Request & { cf?: CfProperties }
+      const cfProperties = (request as RequestWithCf).cf
+      const requestId = request.headers.get('cf-ray') ?? crypto.randomUUID()
 
       // Create enhanced request context with Worker metadata
       const requestContext = requestContextService.createRequestContext({
@@ -290,34 +289,34 @@ export default {
           country: cfProperties.country,
           city: cfProperties.city,
         }),
-      });
+      })
 
       logger.debug('Processing Worker fetch request.', {
         ...requestContext,
         method: request.method,
         url: request.url,
         colo: cfProperties?.colo,
-      });
+      })
 
       // Use ctx.waitUntil for background tasks (future enhancement)
       // Example: ctx.waitUntil(someBackgroundTask());
 
-      return await app.fetch(request, env, ctx);
+      return await app.fetch(request, env, ctx)
     } catch (error: unknown) {
-      const requestId = request.headers.get('cf-ray');
+      const requestId = request.headers.get('cf-ray')
       const errorContext = requestContextService.createRequestContext({
         operation: 'WorkerFetch',
         isServerless: true,
         method: request.method,
         url: request.url,
         ...(requestId && { requestId }),
-      });
+      })
 
       logger.error(
         'Worker fetch handler error.',
         error instanceof Error ? error : new Error(String(error)),
         errorContext,
-      );
+      )
 
       // Return a user-friendly error response
       return new Response(
@@ -332,7 +331,7 @@ export default {
           status: 500,
           headers: { 'Content-Type': 'application/json' },
         },
-      );
+      )
     }
   },
 
@@ -350,44 +349,44 @@ export default {
   ): Promise<void> {
     try {
       // Refresh bindings on every invocation
-      injectEnvVars(env);
-      storeBindings(env);
+      injectEnvVars(env)
+      storeBindings(env)
 
       // Initialize app to ensure services are ready
-      await initializeApp(env);
+      await initializeApp(env)
 
       const scheduledContext = requestContextService.createRequestContext({
         operation: 'WorkerScheduled',
         isServerless: true,
         cron: controller.cron,
-      });
+      })
 
       logger.info('Processing scheduled event.', {
         ...scheduledContext,
         cron: controller.cron,
         scheduledTime: new Date(controller.scheduledTime).toISOString(),
-      });
+      })
 
       // Add your scheduled task logic here
       // Example: Cleanup expired sessions, send reports, etc.
       // Use _ctx.waitUntil() for background operations if needed
 
-      logger.info('Scheduled event completed.', scheduledContext);
+      logger.info('Scheduled event completed.', scheduledContext)
     } catch (error: unknown) {
       const errorContext = requestContextService.createRequestContext({
         operation: 'WorkerScheduled',
         isServerless: true,
         cron: controller.cron,
-      });
+      })
 
       logger.error(
         'Worker scheduled handler error.',
         error instanceof Error ? error : new Error(String(error)),
         errorContext,
-      );
+      )
 
       // Errors in scheduled handlers don't return responses
       // but should be logged for monitoring
     }
   },
-};
+}

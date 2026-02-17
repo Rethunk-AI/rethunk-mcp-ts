@@ -21,7 +21,7 @@
  * ```
  */
 export function isObject(value: unknown): value is object {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 /**
@@ -39,7 +39,7 @@ export function isObject(value: unknown): value is object {
  * ```
  */
 export function isRecord(value: unknown): value is Record<string, unknown> {
-  return isObject(value);
+  return isObject(value)
 }
 
 /**
@@ -61,7 +61,7 @@ export function hasProperty<K extends PropertyKey>(
   obj: unknown,
   key: K,
 ): obj is Record<K, unknown> {
-  return isObject(obj) && key in obj;
+  return isObject(obj) && key in obj
 }
 
 /**
@@ -85,7 +85,7 @@ export function hasPropertyOfType<K extends PropertyKey, T>(
   key: K,
   typeGuard: (value: unknown) => value is T,
 ): obj is Record<K, T> {
-  return hasProperty(obj, key) && typeGuard(obj[key]);
+  return hasProperty(obj, key) && typeGuard(obj[key])
 }
 
 /**
@@ -95,7 +95,7 @@ export function hasPropertyOfType<K extends PropertyKey, T>(
  * @returns True if value is a string
  */
 export function isString(value: unknown): value is string {
-  return typeof value === 'string';
+  return typeof value === 'string'
 }
 
 /**
@@ -105,7 +105,7 @@ export function isString(value: unknown): value is string {
  * @returns True if value is a number (excluding NaN)
  */
 export function isNumber(value: unknown): value is number {
-  return typeof value === 'number' && !Number.isNaN(value);
+  return typeof value === 'number' && !Number.isNaN(value)
 }
 
 /**
@@ -132,7 +132,7 @@ export function isAggregateError(
     error instanceof Error &&
     hasProperty(error, 'errors') &&
     Array.isArray(error.errors)
-  );
+  )
 }
 
 /**
@@ -151,7 +151,7 @@ export function isAggregateError(
 export function isErrorWithCode(
   error: unknown,
 ): error is Error & { code: unknown } {
-  return error instanceof Error && hasProperty(error, 'code');
+  return error instanceof Error && hasProperty(error, 'code')
 }
 
 /**
@@ -170,7 +170,7 @@ export function isErrorWithCode(
 export function isErrorWithStatus(
   error: unknown,
 ): error is Error & { status: unknown } {
-  return error instanceof Error && hasProperty(error, 'status');
+  return error instanceof Error && hasProperty(error, 'status')
 }
 
 /**
@@ -190,7 +190,7 @@ export function getProperty<K extends PropertyKey>(
   obj: unknown,
   key: K,
 ): unknown {
-  return hasProperty(obj, key) ? obj[key] : undefined;
+  return hasProperty(obj, key) ? obj[key] : undefined
 }
 
 /**
@@ -213,8 +213,8 @@ export function getStringProperty<K extends PropertyKey>(
   obj: unknown,
   key: K,
 ): string | undefined {
-  const value = getProperty(obj, key);
-  return isString(value) ? value : undefined;
+  const value = getProperty(obj, key)
+  return isString(value) ? value : undefined
 }
 
 /**
@@ -228,6 +228,6 @@ export function getNumberProperty<K extends PropertyKey>(
   obj: unknown,
   key: K,
 ): number | undefined {
-  const value = getProperty(obj, key);
-  return isNumber(value) ? value : undefined;
+  const value = getProperty(obj, key)
+  return isNumber(value) ? value : undefined
 }

@@ -2,9 +2,9 @@
  * @fileoverview Utilities for generating and validating cryptographically secure session IDs.
  * @module src/mcp-server/transports/http/sessionIdUtils
  */
-import { randomBytes } from 'crypto';
+import { randomBytes } from 'node:crypto'
 
-import { runtimeCaps } from '@/utils/internal/runtime.js';
+import { runtimeCaps } from '@/utils/internal/runtime.js'
 
 /**
  * Generates a cryptographically secure session ID.
@@ -23,13 +23,13 @@ import { runtimeCaps } from '@/utils/internal/runtime.js';
 export function generateSecureSessionId(): string {
   if (runtimeCaps.isNode && runtimeCaps.hasBuffer) {
     // Node.js environment - use crypto.randomBytes
-    const bytes = randomBytes(32); // 256 bits
-    return bytes.toString('hex');
+    const bytes = randomBytes(32) // 256 bits
+    return bytes.toString('hex')
   } else {
     // Worker/Browser environment - use Web Crypto API
-    const bytes = new Uint8Array(32);
-    crypto.getRandomValues(bytes);
-    return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    const bytes = new Uint8Array(32)
+    crypto.getRandomValues(bytes)
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
   }
 }
 
@@ -51,5 +51,5 @@ export function generateSecureSessionId(): string {
  */
 export function validateSessionIdFormat(sessionId: string): boolean {
   // Must be exactly 64 hexadecimal characters (32 bytes)
-  return /^[a-f0-9]{64}$/.test(sessionId);
+  return /^[a-f0-9]{64}$/.test(sessionId)
 }

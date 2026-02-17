@@ -24,7 +24,7 @@
  * ```
  */
 export class MarkdownBuilder {
-  private sections: string[] = [];
+  private sections: string[] = []
 
   /**
    * Add a level 1 heading.
@@ -33,9 +33,9 @@ export class MarkdownBuilder {
    * @returns this builder for chaining
    */
   h1(text: string, emoji?: string): this {
-    const prefix = emoji ? `${emoji} ` : '';
-    this.sections.push(`# ${prefix}${text}\n\n`);
-    return this;
+    const prefix = emoji ? `${emoji} ` : ''
+    this.sections.push(`# ${prefix}${text}\n\n`)
+    return this
   }
 
   /**
@@ -45,9 +45,9 @@ export class MarkdownBuilder {
    * @returns this builder for chaining
    */
   h2(text: string, emoji?: string): this {
-    const prefix = emoji ? `${emoji} ` : '';
-    this.sections.push(`## ${prefix}${text}\n\n`);
-    return this;
+    const prefix = emoji ? `${emoji} ` : ''
+    this.sections.push(`## ${prefix}${text}\n\n`)
+    return this
   }
 
   /**
@@ -57,9 +57,9 @@ export class MarkdownBuilder {
    * @returns this builder for chaining
    */
   h3(text: string, emoji?: string): this {
-    const prefix = emoji ? `${emoji} ` : '';
-    this.sections.push(`### ${prefix}${text}\n\n`);
-    return this;
+    const prefix = emoji ? `${emoji} ` : ''
+    this.sections.push(`### ${prefix}${text}\n\n`)
+    return this
   }
 
   /**
@@ -68,8 +68,8 @@ export class MarkdownBuilder {
    * @returns this builder for chaining
    */
   h4(text: string): this {
-    this.sections.push(`#### ${text}\n\n`);
-    return this;
+    this.sections.push(`#### ${text}\n\n`)
+    return this
   }
 
   /**
@@ -79,9 +79,9 @@ export class MarkdownBuilder {
    * @returns this builder for chaining
    */
   keyValue(key: string, value: string | number | boolean | null): this {
-    const displayValue = value === null ? 'null' : String(value);
-    this.sections.push(`**${key}:** ${displayValue}\n`);
-    return this;
+    const displayValue = value === null ? 'null' : String(value)
+    this.sections.push(`**${key}:** ${displayValue}\n`)
+    return this
   }
 
   /**
@@ -91,9 +91,9 @@ export class MarkdownBuilder {
    * @returns this builder for chaining
    */
   keyValuePlain(key: string, value: string | number | boolean | null): this {
-    const displayValue = value === null ? 'null' : String(value);
-    this.sections.push(`${key}: ${displayValue}\n`);
-    return this;
+    const displayValue = value === null ? 'null' : String(value)
+    this.sections.push(`${key}: ${displayValue}\n`)
+    return this
   }
 
   /**
@@ -103,13 +103,13 @@ export class MarkdownBuilder {
    * @returns this builder for chaining
    */
   list(items: string[], ordered = false): this {
-    if (items.length === 0) return this;
+    if (items.length === 0) return this
 
-    const marker = ordered ? (i: number) => `${i + 1}.` : () => '-';
+    const marker = ordered ? (i: number) => `${i + 1}.` : () => '-'
     this.sections.push(
-      items.map((item, i) => `${marker(i)} ${item}`).join('\n') + '\n\n',
-    );
-    return this;
+      `${items.map((item, i) => `${marker(i)} ${item}`).join('\n')}\n\n`,
+    )
+    return this
   }
 
   /**
@@ -119,8 +119,8 @@ export class MarkdownBuilder {
    * @returns this builder for chaining
    */
   codeBlock(content: string, language = ''): this {
-    this.sections.push(`\`\`\`${language}\n${content}\n\`\`\`\n\n`);
-    return this;
+    this.sections.push(`\`\`\`${language}\n${content}\n\`\`\`\n\n`)
+    return this
   }
 
   /**
@@ -129,8 +129,8 @@ export class MarkdownBuilder {
    * @returns this builder for chaining
    */
   inlineCode(code: string): this {
-    this.sections.push(`\`${code}\``);
-    return this;
+    this.sections.push(`\`${code}\``)
+    return this
   }
 
   /**
@@ -139,8 +139,8 @@ export class MarkdownBuilder {
    * @returns this builder for chaining
    */
   paragraph(text: string): this {
-    this.sections.push(`${text}\n\n`);
-    return this;
+    this.sections.push(`${text}\n\n`)
+    return this
   }
 
   /**
@@ -149,10 +149,10 @@ export class MarkdownBuilder {
    * @returns this builder for chaining
    */
   blockquote(text: string): this {
-    const lines = text.split('\n');
-    const quoted = lines.map((line) => `> ${line}`).join('\n');
-    this.sections.push(`${quoted}\n\n`);
-    return this;
+    const lines = text.split('\n')
+    const quoted = lines.map((line) => `> ${line}`).join('\n')
+    this.sections.push(`${quoted}\n\n`)
+    return this
   }
 
   /**
@@ -160,8 +160,8 @@ export class MarkdownBuilder {
    * @returns this builder for chaining
    */
   hr(): this {
-    this.sections.push('---\n\n');
-    return this;
+    this.sections.push('---\n\n')
+    return this
   }
 
   /**
@@ -171,8 +171,8 @@ export class MarkdownBuilder {
    * @returns this builder for chaining
    */
   link(text: string, url: string): this {
-    this.sections.push(`[${text}](${url})`);
-    return this;
+    this.sections.push(`[${text}](${url})`)
+    return this
   }
 
   /**
@@ -182,21 +182,21 @@ export class MarkdownBuilder {
    * @returns this builder for chaining
    */
   table(headers: string[], rows: string[][]): this {
-    if (headers.length === 0 || rows.length === 0) return this;
+    if (headers.length === 0 || rows.length === 0) return this
 
     // Header row
-    this.sections.push(`| ${headers.join(' | ')} |\n`);
+    this.sections.push(`| ${headers.join(' | ')} |\n`)
 
     // Separator row
-    this.sections.push(`| ${headers.map(() => '---').join(' | ')} |\n`);
+    this.sections.push(`| ${headers.map(() => '---').join(' | ')} |\n`)
 
     // Data rows
     rows.forEach((row) => {
-      this.sections.push(`| ${row.join(' | ')} |\n`);
-    });
+      this.sections.push(`| ${row.join(' | ')} |\n`)
+    })
 
-    this.sections.push('\n');
-    return this;
+    this.sections.push('\n')
+    return this
   }
 
   /**
@@ -220,22 +220,24 @@ export class MarkdownBuilder {
     levelOrContent: 2 | 3 | 4 | (() => void),
     content?: () => void,
   ): this {
-    const level = typeof levelOrContent === 'function' ? 2 : levelOrContent;
+    const level = typeof levelOrContent === 'function' ? 2 : levelOrContent
     const callback =
-      typeof levelOrContent === 'function' ? levelOrContent : content!;
+      typeof levelOrContent === 'function'
+        ? levelOrContent
+        : (content ?? (() => {}))
     switch (level) {
       case 2:
-        this.h2(title);
-        break;
+        this.h2(title)
+        break
       case 3:
-        this.h3(title);
-        break;
+        this.h3(title)
+        break
       case 4:
-        this.h4(title);
-        break;
+        this.h4(title)
+        break
     }
-    callback();
-    return this;
+    callback()
+    return this
   }
 
   /**
@@ -247,10 +249,10 @@ export class MarkdownBuilder {
    * @returns this builder for chaining
    */
   details(summary: string, details: string): this {
-    this.sections.push(`<details>\n<summary>${summary}</summary>\n\n`);
-    this.sections.push(`${details}\n\n`);
-    this.sections.push(`</details>\n\n`);
-    return this;
+    this.sections.push(`<details>\n<summary>${summary}</summary>\n\n`)
+    this.sections.push(`${details}\n\n`)
+    this.sections.push(`</details>\n\n`)
+    return this
   }
 
   /**
@@ -279,14 +281,14 @@ export class MarkdownBuilder {
     type: 'note' | 'tip' | 'important' | 'warning' | 'caution',
     content: string,
   ): this {
-    const typeUpper = type.toUpperCase();
-    const lines = content.split('\n');
-    this.sections.push(`> [!${typeUpper}]\n`);
+    const typeUpper = type.toUpperCase()
+    const lines = content.split('\n')
+    this.sections.push(`> [!${typeUpper}]\n`)
     lines.forEach((line) => {
-      this.sections.push(`> ${line}\n`);
-    });
-    this.sections.push('\n');
-    return this;
+      this.sections.push(`> ${line}\n`)
+    })
+    this.sections.push('\n')
+    return this
   }
 
   /**
@@ -306,14 +308,14 @@ export class MarkdownBuilder {
    * ```
    */
   taskList(items: Array<{ checked: boolean; text: string }>): this {
-    if (items.length === 0) return this;
+    if (items.length === 0) return this
 
     this.sections.push(
-      items
+      `${items
         .map((item) => `- [${item.checked ? 'x' : ' '}] ${item.text}`)
-        .join('\n') + '\n\n',
-    );
-    return this;
+        .join('\n')}\n\n`,
+    )
+    return this
   }
 
   /**
@@ -331,9 +333,9 @@ export class MarkdownBuilder {
    * ```
    */
   image(altText: string, url: string, title?: string): this {
-    const titlePart = title ? ` "${title}"` : '';
-    this.sections.push(`![${altText}](${url}${titlePart})\n\n`);
-    return this;
+    const titlePart = title ? ` "${title}"` : ''
+    this.sections.push(`![${altText}](${url}${titlePart})\n\n`)
+    return this
   }
 
   /**
@@ -349,8 +351,8 @@ export class MarkdownBuilder {
    * ```
    */
   strikethrough(text: string): this {
-    this.sections.push(`~~${text}~~`);
-    return this;
+    this.sections.push(`~~${text}~~`)
+    return this
   }
 
   /**
@@ -371,32 +373,32 @@ export class MarkdownBuilder {
    * ```
    */
   diff(changes: {
-    additions?: string[];
-    deletions?: string[];
-    context?: string[];
+    additions?: string[]
+    deletions?: string[]
+    context?: string[]
   }): this {
-    const lines: string[] = [];
+    const lines: string[] = []
 
     // Context lines (no prefix)
     if (changes.context) {
-      lines.push(...changes.context.map((line) => `  ${line}`));
+      lines.push(...changes.context.map((line) => `  ${line}`))
     }
 
     // Deletions (- prefix)
     if (changes.deletions) {
-      lines.push(...changes.deletions.map((line) => `- ${line}`));
+      lines.push(...changes.deletions.map((line) => `- ${line}`))
     }
 
     // Additions (+ prefix)
     if (changes.additions) {
-      lines.push(...changes.additions.map((line) => `+ ${line}`));
+      lines.push(...changes.additions.map((line) => `+ ${line}`))
     }
 
     if (lines.length > 0) {
-      this.codeBlock(lines.join('\n'), 'diff');
+      this.codeBlock(lines.join('\n'), 'diff')
     }
 
-    return this;
+    return this
   }
 
   /**
@@ -414,11 +416,11 @@ export class MarkdownBuilder {
    * ```
    */
   badge(label: string, message: string, color = 'blue'): this {
-    const encodedLabel = encodeURIComponent(label);
-    const encodedMessage = encodeURIComponent(message);
-    const url = `https://img.shields.io/badge/${encodedLabel}-${encodedMessage}-${color}`;
-    this.sections.push(`![${label}: ${message}](${url})`);
-    return this;
+    const encodedLabel = encodeURIComponent(label)
+    const encodedMessage = encodeURIComponent(message)
+    const url = `https://img.shields.io/badge/${encodedLabel}-${encodedMessage}-${color}`
+    this.sections.push(`![${label}: ${message}](${url})`)
+    return this
   }
 
   /**
@@ -434,8 +436,8 @@ export class MarkdownBuilder {
    * ```
    */
   bold(text: string): this {
-    this.sections.push(`**${text}**`);
-    return this;
+    this.sections.push(`**${text}**`)
+    return this
   }
 
   /**
@@ -451,8 +453,8 @@ export class MarkdownBuilder {
    * ```
    */
   italic(text: string): this {
-    this.sections.push(`*${text}*`);
-    return this;
+    this.sections.push(`*${text}*`)
+    return this
   }
 
   /**
@@ -468,8 +470,8 @@ export class MarkdownBuilder {
    * ```
    */
   boldItalic(text: string): this {
-    this.sections.push(`***${text}***`);
-    return this;
+    this.sections.push(`***${text}***`)
+    return this
   }
 
   /**
@@ -480,8 +482,8 @@ export class MarkdownBuilder {
    * @returns this builder for chaining
    */
   raw(markdown: string): this {
-    this.sections.push(markdown);
-    return this;
+    this.sections.push(markdown)
+    return this
   }
 
   /**
@@ -489,8 +491,8 @@ export class MarkdownBuilder {
    * @returns this builder for chaining
    */
   blankLine(): this {
-    this.sections.push('\n');
-    return this;
+    this.sections.push('\n')
+    return this
   }
 
   /**
@@ -501,8 +503,8 @@ export class MarkdownBuilder {
    * @returns this builder for chaining
    */
   text(text: string): this {
-    this.sections.push(text);
-    return this;
+    this.sections.push(text)
+    return this
   }
 
   /**
@@ -521,9 +523,9 @@ export class MarkdownBuilder {
    */
   when(condition: boolean, content: () => void): this {
     if (condition) {
-      content();
+      content()
     }
-    return this;
+    return this
   }
 
   /**
@@ -533,7 +535,7 @@ export class MarkdownBuilder {
    * @returns The complete markdown document as a string
    */
   build(): string {
-    return this.sections.join('').trim();
+    return this.sections.join('').trim()
   }
 
   /**
@@ -541,8 +543,8 @@ export class MarkdownBuilder {
    * @returns this builder for chaining
    */
   reset(): this {
-    this.sections = [];
-    return this;
+    this.sections = []
+    return this
   }
 }
 
@@ -553,5 +555,5 @@ export class MarkdownBuilder {
  * @returns A new MarkdownBuilder instance
  */
 export function markdown(): MarkdownBuilder {
-  return new MarkdownBuilder();
+  return new MarkdownBuilder()
 }

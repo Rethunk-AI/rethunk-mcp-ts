@@ -4,35 +4,35 @@
  * @module src/mcp-server/tools/definitions/check-typescript-project-problems
  */
 
-import type { ContentBlock } from '@modelcontextprotocol/sdk/types.js';
-import { z } from 'zod';
+import type { ContentBlock } from '@modelcontextprotocol/sdk/types.js'
+import { z } from 'zod'
 
 import type {
   SdkContext,
   ToolAnnotations,
   ToolDefinition,
-} from '@/mcp-server/tools/utils/index.js';
-import {
-  detectProjectPackageManager,
-  mapScriptArgsToRunner,
-} from '@/mcp-server/tools/utils/signal.js';
+} from '@/mcp-server/tools/utils/index.js'
 import {
   processRunner,
   type SpawnConfig,
-} from '@/mcp-server/tools/utils/process-runner.js';
-import { withToolAuth } from '@/mcp-server/transports/auth/lib/withAuth.js';
-import { type RequestContext, logger } from '@/utils/index.js';
+} from '@/mcp-server/tools/utils/process-runner.js'
+import {
+  detectProjectPackageManager,
+  mapScriptArgsToRunner,
+} from '@/mcp-server/tools/utils/signal.js'
+import { withToolAuth } from '@/mcp-server/transports/auth/lib/withAuth.js'
+import { logger, type RequestContext } from '@/utils/index.js'
 
-const TOOL_NAME = 'check_typescript_project_for_problems';
-const TOOL_TITLE = 'Check TypeScript Project for Problems';
+const TOOL_NAME = 'check_typescript_project_for_problems'
+const TOOL_TITLE = 'Check TypeScript Project for Problems'
 const TOOL_DESCRIPTION =
-  'Runs quick local quality checks including lint fixing (which modifies files) and type checking. Optionally scopes checks to specific files or overrides timeout. Runs lint:fix first to avoid file race conditions. Returns combined output in machine-parseable JSON format.';
-const ALLOWED_COMMANDS = new Set(['yarn', 'bun', 'pnpm']);
+  'Runs quick local quality checks including lint fixing (which modifies files) and type checking. Optionally scopes checks to specific files or overrides timeout. Runs lint:fix first to avoid file race conditions. Returns combined output in machine-parseable JSON format.'
+const ALLOWED_COMMANDS = new Set(['yarn', 'bun', 'pnpm'])
 
 const TOOL_ANNOTATIONS: ToolAnnotations = {
   readOnlyHint: false,
   openWorldHint: false,
-};
+}
 
 const InputSchema = z.object({
   files: z
@@ -61,7 +61,7 @@ const InputSchema = z.object({
     .describe(
       'If true, returns only exit codes and success status per check, omitting stdout/stderr. Useful for reducing output verbosity.',
     ),
-});
+})
 
 const CheckResultSchema = z.object({
   name: z.string(),
@@ -71,14 +71,14 @@ const CheckResultSchema = z.object({
   stdout: z.string(),
   stderr: z.string(),
   duration: z.number().int().min(0).describe('Execution time in milliseconds'),
-});
+})
 
 const OutputSchema = z.object({
   hasProblems: z.boolean(),
   checks: z.array(CheckResultSchema),
-});
+})
 
-type TypeScriptProjectCheckResponse = z.infer<typeof OutputSchema>;
+type TypeScriptProjectCheckResponse = z.infer<typeof OutputSchema>
 
 const QUICK_CHECKS = [
   {
@@ -93,7 +93,7 @@ const QUICK_CHECKS = [
     name: 'typecheck:scripts',
     args: ['-s', 'typecheck:scripts', '--pretty', 'false'],
   },
-] as const;
+] as const
 
 /**
  * Strips stdout and stderr from a check result, keeping only metadata and duration.
@@ -105,7 +105,7 @@ function stripOutputFields(
     ...result,
     stdout: '',
     stderr: '',
-  };
+  }
 }
 
 /**
@@ -118,30 +118,30 @@ async function executeChecksWithFileLocking(
   sdkContext: SdkContext,
   summaryOnly?: boolean,
 ): Promise<Array<z.infer<typeof CheckResultSchema>>> {
-  const results: Array<z.infer<typeof CheckResultSchema>> = [];
+  const results: Array<z.infer<typeof CheckResultSchema>> = []
 
   // Separate lint:fix from other checks
-  const lintCheck = checks.find((c) => c.name === 'lint:fix');
-  const otherChecks = checks.filter((c) => c.name !== 'lint:fix');
+  const lintCheck = checks.find((c) => c.name === 'lint:fix')
+  const otherChecks = checks.filter((c) => c.name !== 'lint:fix')
 
   // Run lint:fix first to avoid file modifications affecting other checks
   if (lintCheck) {
-    const pm = detectProjectPackageManager(process.cwd());
-    const effectiveArgs = mapScriptArgsToRunner(pm, lintCheck.args);
+    const pm = detectProjectPackageManager(process.cwd())
+    const effectiveArgs = mapScriptArgsToRunner(pm, lintCheck.args)
 
     const spawnConfig: SpawnConfig = {
       command: pm,
       args: effectiveArgs,
       allowedCommands: ALLOWED_COMMANDS,
       stdinMode: 'ignore',
-    };
+    }
 
     const result = await processRunner.run(
       spawnConfig,
       sdkContext,
       appContext,
       lintCheck.name,
-    );
+    )
 
     const lintResult: z.infer<typeof CheckResultSchema> = {
       name: lintCheck.name,
@@ -151,34 +151,34 @@ async function executeChecksWithFileLocking(
       stdout: result.stdout,
       stderr: result.stderr,
       duration: result.duration,
-    };
+    }
 
     if (summaryOnly) {
-      results.push(stripOutputFields(lintResult));
+      results.push(stripOutputFields(lintResult))
     } else {
-      results.push(lintResult);
+      results.push(lintResult)
     }
   }
 
   // Run remaining checks in parallel
   const parallelResults = await Promise.all(
     otherChecks.map(async (check) => {
-      const pm = detectProjectPackageManager(process.cwd());
-      const effectiveArgs = mapScriptArgsToRunner(pm, check.args);
+      const pm = detectProjectPackageManager(process.cwd())
+      const effectiveArgs = mapScriptArgsToRunner(pm, check.args)
 
       const spawnConfig: SpawnConfig = {
         command: pm,
         args: effectiveArgs,
         allowedCommands: ALLOWED_COMMANDS,
         stdinMode: 'ignore',
-      };
+      }
 
       const result = await processRunner.run(
         spawnConfig,
         sdkContext,
         appContext,
         check.name,
-      );
+      )
 
       const checkResult: z.infer<typeof CheckResultSchema> = {
         name: check.name,
@@ -188,14 +188,14 @@ async function executeChecksWithFileLocking(
         stdout: result.stdout,
         stderr: result.stderr,
         duration: result.duration,
-      };
+      }
 
-      return summaryOnly ? stripOutputFields(checkResult) : checkResult;
+      return summaryOnly ? stripOutputFields(checkResult) : checkResult
     }),
-  );
+  )
 
-  results.push(...parallelResults);
-  return results;
+  results.push(...parallelResults)
+  return results
 }
 
 /**
@@ -206,7 +206,7 @@ async function checkTypeScriptProjectLogic(
   appContext: RequestContext,
   sdkContext: SdkContext,
 ): Promise<TypeScriptProjectCheckResponse> {
-  logger.info('Running quick TypeScript project checks.', appContext);
+  logger.info('Running quick TypeScript project checks.', appContext)
 
   // Determine which checks to run (default to all)
   const checksToUse =
@@ -214,28 +214,27 @@ async function checkTypeScriptProjectLogic(
       ? QUICK_CHECKS.filter((check) =>
           (input.checks as string[]).includes(check.name),
         )
-      : QUICK_CHECKS;
+      : QUICK_CHECKS
 
   // Build check configurations, optionally scoped to specific files
-  const scopedFiles =
-    input.files && input.files.length > 0 ? input.files : null;
+  const scopedFiles = input.files && input.files.length > 0 ? input.files : null
   const checksToRun: Array<{ name: string; args: readonly string[] }> =
     scopedFiles
       ? checksToUse.map((check) => ({
           name: check.name,
           args: [...check.args, ...scopedFiles] as readonly string[],
         }))
-      : [...checksToUse];
+      : [...checksToUse]
 
   if (checksToUse.length < QUICK_CHECKS.length) {
     logger.info(
       `Running ${checksToUse.length} of ${QUICK_CHECKS.length} available checks`,
       appContext,
-    );
+    )
   }
 
   if (scopedFiles) {
-    logger.info(`Scoping checks to ${scopedFiles.length} file(s)`, appContext);
+    logger.info(`Scoping checks to ${scopedFiles.length} file(s)`, appContext)
   }
 
   const checks = await executeChecksWithFileLocking(
@@ -243,12 +242,12 @@ async function checkTypeScriptProjectLogic(
     appContext,
     sdkContext,
     input.summaryOnly,
-  );
+  )
 
   return {
     hasProblems: checks.some((check) => !check.success),
     checks,
-  };
+  }
 }
 
 /**
@@ -262,7 +261,7 @@ function responseFormatter(
       type: 'text',
       text: JSON.stringify(result, null, 2),
     },
-  ];
+  ]
 }
 
 export const checkTypeScriptProjectProblemsTool: ToolDefinition<
@@ -278,8 +277,8 @@ export const checkTypeScriptProjectProblemsTool: ToolDefinition<
   logic: withToolAuth(
     ['tool:typescript-project:check'],
     async (input, ctx, sdk) => {
-      return checkTypeScriptProjectLogic(input, ctx, sdk);
+      return checkTypeScriptProjectLogic(input, ctx, sdk)
     },
   ),
   responseFormatter,
-};
+}

@@ -4,76 +4,76 @@
  * @module src/utils/git/diff-parser
  */
 
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
 
 /**
  * Line range specification (start and end line numbers).
  */
 export type LineRange = {
-  startLine: number;
-  endLine: number;
-};
+  startLine: number
+  endLine: number
+}
 
 /**
  * Parsed diff block representing a contiguous change.
  */
 export type DiffBlock = {
-  oldStart: number;
-  newStart: number;
-  deletedLines: string[];
-  addedLines: string[];
-  patchLines: string[];
-};
+  oldStart: number
+  newStart: number
+  deletedLines: string[]
+  addedLines: string[]
+  patchLines: string[]
+}
 
 /**
  * Single hunk from a unified diff.
  */
 export type DiffHunk = {
-  header: string;
-  lines: string[];
-};
+  header: string
+  lines: string[]
+}
 
 /**
  * Parses a unified diff hunk header (e.g., `@@ -10,5 +15,7 @@`) to extract line numbers.
  */
 export function parseHunkHeader(header: string): {
-  oldStart: number;
-  oldCount: number;
-  newStart: number;
-  newCount: number;
+  oldStart: number
+  oldCount: number
+  newStart: number
+  newCount: number
 } {
   const match = /^@@\s+-(\d+)(?:,(\d+))?\s+\+(\d+)(?:,(\d+))?\s+@@/u.exec(
     header,
-  );
+  )
   if (!match) {
     throw new McpError(
       JsonRpcErrorCode.ValidationError,
       `Invalid git hunk header: ${header}`,
       { header },
-    );
+    )
   }
 
-  const oldStartRaw = match[1];
-  const newStartRaw = match[3];
+  const oldStartRaw = match[1]
+  const newStartRaw = match[3]
   if (!oldStartRaw || !newStartRaw) {
     throw new McpError(
       JsonRpcErrorCode.ValidationError,
       `Invalid git hunk header: ${header}`,
       { header },
-    );
+    )
   }
 
-  const oldStart = Number.parseInt(oldStartRaw, 10);
-  const oldCount = Number.parseInt(match[2] ?? '1', 10);
-  const newStart = Number.parseInt(newStartRaw, 10);
-  const newCount = Number.parseInt(match[4] ?? '1', 10);
+  const oldStart = Number.parseInt(oldStartRaw, 10)
+  const oldCount = Number.parseInt(match[2] ?? '1', 10)
+  const newStart = Number.parseInt(newStartRaw, 10)
+  const newCount = Number.parseInt(match[4] ?? '1', 10)
 
   return {
     oldStart,
     oldCount,
     newStart,
     newCount,
-  };
+  }
 }
 
 /**
@@ -84,15 +84,15 @@ export function getLine(
   index: number,
   filePath: string,
 ): string {
-  const value = lines[index];
+  const value = lines[index]
   if (value === undefined) {
     throw new McpError(
       JsonRpcErrorCode.ValidationError,
       `Unexpected end of diff while processing ${filePath}.`,
       { index, filePath },
-    );
+    )
   }
-  return value;
+  return value
 }
 
 /**
@@ -104,19 +104,19 @@ export function collectPrefixedLines(
   prefix: '-' | '+',
   filePath: string,
 ): { collected: string[]; nextIndex: number } {
-  const collected: string[] = [];
-  let index = startIndex;
+  const collected: string[] = []
+  let index = startIndex
 
   while (index < lines.length) {
-    const line = getLine(lines, index, filePath);
+    const line = getLine(lines, index, filePath)
     if (!line.startsWith(prefix)) {
-      break;
+      break
     }
-    collected.push(line);
-    index += 1;
+    collected.push(line)
+    index += 1
   }
 
-  return { collected, nextIndex: index };
+  return { collected, nextIndex: index }
 }
 
 /**
@@ -127,27 +127,27 @@ export function parseDiffBlocks(
   hunkLines: string[],
   filePath: string,
 ): DiffBlock[] {
-  const parsedHeader = parseHunkHeader(hunkHeader);
-  let oldLine = parsedHeader.oldStart;
-  let newLine = parsedHeader.newStart;
-  const blocks: DiffBlock[] = [];
-  let lineIndex = 0;
+  const parsedHeader = parseHunkHeader(hunkHeader)
+  let oldLine = parsedHeader.oldStart
+  let newLine = parsedHeader.newStart
+  const blocks: DiffBlock[] = []
+  let lineIndex = 0
 
   while (lineIndex < hunkLines.length) {
-    const currentLine = getLine(hunkLines, lineIndex, filePath);
+    const currentLine = getLine(hunkLines, lineIndex, filePath)
 
     if (!currentLine) {
-      lineIndex += 1;
-      continue;
+      lineIndex += 1
+      continue
     }
 
     if (currentLine.startsWith('\\')) {
-      const previousBlock = blocks.at(-1);
+      const previousBlock = blocks.at(-1)
       if (previousBlock) {
-        previousBlock.patchLines.push(currentLine);
+        previousBlock.patchLines.push(currentLine)
       }
-      lineIndex += 1;
-      continue;
+      lineIndex += 1
+      continue
     }
 
     if (!currentLine.startsWith('-') && !currentLine.startsWith('+')) {
@@ -155,39 +155,39 @@ export function parseDiffBlocks(
         JsonRpcErrorCode.ValidationError,
         `Unsupported diff line while staging range for ${filePath}.`,
         { filePath, line: currentLine },
-      );
+      )
     }
 
-    const blockStartOld = oldLine;
-    const blockStartNew = newLine;
+    const blockStartOld = oldLine
+    const blockStartNew = newLine
     const deletedResult = collectPrefixedLines(
       hunkLines,
       lineIndex,
       '-',
       filePath,
-    );
-    const deletedLines = deletedResult.collected;
-    lineIndex = deletedResult.nextIndex;
-    oldLine += deletedLines.length;
+    )
+    const deletedLines = deletedResult.collected
+    lineIndex = deletedResult.nextIndex
+    oldLine += deletedLines.length
 
     const addedResult = collectPrefixedLines(
       hunkLines,
       lineIndex,
       '+',
       filePath,
-    );
-    const addedLines = addedResult.collected;
-    lineIndex = addedResult.nextIndex;
-    newLine += addedLines.length;
+    )
+    const addedLines = addedResult.collected
+    lineIndex = addedResult.nextIndex
+    newLine += addedLines.length
 
-    const patchLines = [...deletedLines, ...addedLines];
+    const patchLines = [...deletedLines, ...addedLines]
 
     if (deletedLines.length === 0 && addedLines.length === 0) {
       throw new McpError(
         JsonRpcErrorCode.ValidationError,
         `Failed to parse diff block while staging range for ${filePath}.`,
         { filePath, hunkHeader },
-      );
+      )
     }
 
     blocks.push({
@@ -196,10 +196,10 @@ export function parseDiffBlocks(
       deletedLines,
       addedLines,
       patchLines,
-    });
+    })
   }
 
-  return blocks;
+  return blocks
 }
 
 /**
@@ -209,33 +209,33 @@ export function collectDiffHunks(
   diffLines: string[],
   filePath: string,
 ): DiffHunk[] {
-  const hunks: DiffHunk[] = [];
-  let index = 0;
+  const hunks: DiffHunk[] = []
+  let index = 0
 
   while (index < diffLines.length) {
-    const line = getLine(diffLines, index, filePath);
+    const line = getLine(diffLines, index, filePath)
     if (!line.startsWith('@@')) {
-      index += 1;
-      continue;
+      index += 1
+      continue
     }
 
-    const header = line;
-    index += 1;
-    const hunkLines: string[] = [];
+    const header = line
+    index += 1
+    const hunkLines: string[] = []
 
     while (index < diffLines.length) {
-      const hunkLine = getLine(diffLines, index, filePath);
+      const hunkLine = getLine(diffLines, index, filePath)
       if (hunkLine.startsWith('@@')) {
-        break;
+        break
       }
-      hunkLines.push(hunkLine);
-      index += 1;
+      hunkLines.push(hunkLine)
+      index += 1
     }
 
-    hunks.push({ header, lines: hunkLines });
+    hunks.push({ header, lines: hunkLines })
   }
 
-  return hunks;
+  return hunks
 }
 
 /**
@@ -245,16 +245,15 @@ export function blockIntersectsRange(
   block: DiffBlock,
   ranges: LineRange[],
 ): boolean {
-  const affectedStart = block.newStart;
+  const affectedStart = block.newStart
   const affectedEnd =
     block.addedLines.length > 0
       ? block.newStart + block.addedLines.length - 1
-      : block.newStart;
+      : block.newStart
 
   return ranges.some(
-    (range) =>
-      range.startLine <= affectedEnd && range.endLine >= affectedStart,
-  );
+    (range) => range.startLine <= affectedEnd && range.endLine >= affectedStart,
+  )
 }
 
 /**
@@ -264,16 +263,15 @@ export function blockIsContainedByAnyRange(
   block: DiffBlock,
   ranges: LineRange[],
 ): boolean {
-  const affectedStart = block.newStart;
+  const affectedStart = block.newStart
   const affectedEnd =
     block.addedLines.length > 0
       ? block.newStart + block.addedLines.length - 1
-      : block.newStart;
+      : block.newStart
 
   return ranges.some(
-    (range) =>
-      range.startLine <= affectedStart && range.endLine >= affectedEnd,
-  );
+    (range) => range.startLine <= affectedStart && range.endLine >= affectedEnd,
+  )
 }
 
 /**
@@ -286,7 +284,7 @@ export function ensureBlockFullyContained(
   filePath: string,
 ): void {
   if (blockIsContainedByAnyRange(block, ranges)) {
-    return;
+    return
   }
 
   throw new McpError(
@@ -301,7 +299,7 @@ export function ensureBlockFullyContained(
           ? block.newStart + block.addedLines.length - 1
           : block.newStart,
     },
-  );
+  )
 }
 
 /**
@@ -322,22 +320,22 @@ export function buildCachedPatchForRanges(
       JsonRpcErrorCode.ValidationError,
       `No unstaged changes found for range staging in ${filePath}.`,
       { filePath, ranges },
-    );
+    )
   }
 
-  const diffLines = unifiedDiff.split(/\r?\n/u);
-  const selectedBlocks: DiffBlock[] = [];
+  const diffLines = unifiedDiff.split(/\r?\n/u)
+  const selectedBlocks: DiffBlock[] = []
 
-  const hunks = collectDiffHunks(diffLines, filePath);
+  const hunks = collectDiffHunks(diffLines, filePath)
   for (const hunk of hunks) {
-    const blocks = parseDiffBlocks(hunk.header, hunk.lines, filePath);
+    const blocks = parseDiffBlocks(hunk.header, hunk.lines, filePath)
     for (const block of blocks) {
       if (!blockIntersectsRange(block, ranges)) {
-        continue;
+        continue
       }
 
-      ensureBlockFullyContained(block, ranges, filePath);
-      selectedBlocks.push(block);
+      ensureBlockFullyContained(block, ranges, filePath)
+      selectedBlocks.push(block)
     }
   }
 
@@ -346,23 +344,23 @@ export function buildCachedPatchForRanges(
       JsonRpcErrorCode.ValidationError,
       `Requested ranges do not overlap changed lines in ${filePath}.`,
       { filePath, ranges },
-    );
+    )
   }
 
   const patchLines = [
     `diff --git a/${filePath} b/${filePath}`,
     `--- a/${filePath}`,
     `+++ b/${filePath}`,
-  ];
+  ]
 
   for (const block of selectedBlocks) {
-    const oldCount = block.deletedLines.length;
-    const newCount = block.addedLines.length;
+    const oldCount = block.deletedLines.length
+    const newCount = block.addedLines.length
     patchLines.push(
       `@@ -${block.oldStart},${oldCount} +${block.newStart},${newCount} @@`,
       ...block.patchLines,
-    );
+    )
   }
 
-  return `${patchLines.join('\n')}\n`;
+  return `${patchLines.join('\n')}\n`
 }

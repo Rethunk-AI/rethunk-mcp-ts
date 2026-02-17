@@ -18,10 +18,10 @@
  *
  * @module src/storage/core/storageValidation
  */
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
-import type { RequestContext } from '@/utils/index.js';
-import { stringToBase64, base64ToString } from '@/utils/internal/encoding.js';
-import type { StorageOptions, ListOptions } from './IStorageProvider.js';
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
+import type { RequestContext } from '@/utils/index.js'
+import { base64ToString, stringToBase64 } from '@/utils/internal/encoding.js'
+import type { ListOptions, StorageOptions } from './IStorageProvider.js'
 
 /**
  * Maximum length for tenant IDs and keys to prevent abuse.
@@ -33,14 +33,14 @@ import type { StorageOptions, ListOptions } from './IStorageProvider.js';
  * - MAX_PREFIX_LENGTH (512): Half of key length, enough for namespace prefixes
  * - MAX_LIST_LIMIT (10000): Prevents memory exhaustion while allowing bulk operations
  */
-const MAX_TENANT_ID_LENGTH = 128 as const;
-const MAX_KEY_LENGTH = 1024 as const;
-const MAX_PREFIX_LENGTH = 512 as const;
+const MAX_TENANT_ID_LENGTH = 128 as const
+const MAX_KEY_LENGTH = 1024 as const
+const MAX_PREFIX_LENGTH = 512 as const
 
 /**
  * Maximum page size to prevent memory exhaustion attacks.
  */
-const MAX_LIST_LIMIT = 10000 as const;
+const MAX_LIST_LIMIT = 10000 as const
 
 /**
  * Pattern for valid tenant IDs (alphanumeric, hyphens, underscores, dots).
@@ -50,13 +50,13 @@ const MAX_LIST_LIMIT = 10000 as const;
  * @readonly
  */
 const VALID_TENANT_ID_PATTERN =
-  /^[a-zA-Z0-9]$|^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$/;
+  /^[a-zA-Z0-9]$|^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$/
 
 /**
  * Pattern for valid keys and prefixes (alphanumeric, hyphens, underscores, dots, slashes).
  * @readonly
  */
-const VALID_KEY_PATTERN = /^[a-zA-Z0-9_.\-/]+$/;
+const VALID_KEY_PATTERN = /^[a-zA-Z0-9_.\-/]+$/
 
 /**
  * Validates a tenant ID for storage operations.
@@ -81,17 +81,17 @@ export function validateTenantId(
       JsonRpcErrorCode.InvalidParams,
       'Tenant ID must be a string.',
       { ...context, tenantId },
-    );
+    )
   }
 
-  const trimmedTenantId = tenantId.trim();
+  const trimmedTenantId = tenantId.trim()
 
   if (trimmedTenantId.length === 0) {
     throw new McpError(
       JsonRpcErrorCode.InvalidParams,
       'Tenant ID cannot be an empty string.',
       { ...context, tenantId },
-    );
+    )
   }
 
   if (trimmedTenantId.length > MAX_TENANT_ID_LENGTH) {
@@ -99,7 +99,7 @@ export function validateTenantId(
       JsonRpcErrorCode.InvalidParams,
       `Tenant ID exceeds maximum length of ${MAX_TENANT_ID_LENGTH} characters.`,
       { ...context, tenantIdLength: trimmedTenantId.length },
-    );
+    )
   }
 
   if (!VALID_TENANT_ID_PATTERN.test(trimmedTenantId)) {
@@ -107,7 +107,7 @@ export function validateTenantId(
       JsonRpcErrorCode.InvalidParams,
       'Tenant ID contains invalid characters. Only alphanumeric characters, hyphens, underscores, and dots are allowed. Must start and end with alphanumeric characters.',
       { ...context, tenantId: trimmedTenantId },
-    );
+    )
   }
 
   if (trimmedTenantId.includes('..')) {
@@ -115,7 +115,7 @@ export function validateTenantId(
       JsonRpcErrorCode.InvalidParams,
       'Tenant ID contains consecutive dots, which are not allowed.',
       { ...context, tenantId: trimmedTenantId },
-    );
+    )
   }
 
   if (trimmedTenantId.includes('../') || trimmedTenantId.includes('..\\')) {
@@ -123,7 +123,7 @@ export function validateTenantId(
       JsonRpcErrorCode.InvalidParams,
       'Tenant ID contains path traversal sequences, which are not allowed.',
       { ...context, tenantId: trimmedTenantId },
-    );
+    )
   }
 }
 
@@ -139,15 +139,15 @@ export function validateKey(key: string, context: RequestContext): void {
       JsonRpcErrorCode.ValidationError,
       'Key must be a non-empty string.',
       { ...context, key },
-    );
+    )
   }
 
   if (key.length > MAX_KEY_LENGTH) {
     throw new McpError(
       JsonRpcErrorCode.ValidationError,
       `Key exceeds maximum length of ${MAX_KEY_LENGTH} characters.`,
-      { ...context, key: key.substring(0, 50) + '...' },
-    );
+      { ...context, key: `${key.substring(0, 50)}...` },
+    )
   }
 
   if (!VALID_KEY_PATTERN.test(key)) {
@@ -155,7 +155,7 @@ export function validateKey(key: string, context: RequestContext): void {
       JsonRpcErrorCode.ValidationError,
       'Key contains invalid characters. Only alphanumeric, hyphens, underscores, dots, and slashes are allowed.',
       { ...context, key },
-    );
+    )
   }
 
   if (key.includes('..')) {
@@ -163,7 +163,7 @@ export function validateKey(key: string, context: RequestContext): void {
       JsonRpcErrorCode.ValidationError,
       'Key must not contain ".." (path traversal attempt).',
       { ...context, key },
-    );
+    )
   }
 }
 
@@ -186,12 +186,12 @@ export function validatePrefix(prefix: string, context: RequestContext): void {
       JsonRpcErrorCode.ValidationError,
       'Prefix must be a string.',
       { ...context, operation: 'validatePrefix', prefix },
-    );
+    )
   }
 
   // Empty prefix is valid (matches all keys)
   if (prefix === '') {
-    return;
+    return
   }
 
   if (prefix.length > MAX_PREFIX_LENGTH) {
@@ -201,9 +201,9 @@ export function validatePrefix(prefix: string, context: RequestContext): void {
       {
         ...context,
         operation: 'validatePrefix',
-        prefix: prefix.substring(0, 50) + '...',
+        prefix: `${prefix.substring(0, 50)}...`,
       },
-    );
+    )
   }
 
   // Only validate pattern if non-empty
@@ -214,9 +214,9 @@ export function validatePrefix(prefix: string, context: RequestContext): void {
       {
         ...context,
         operation: 'validatePrefix',
-        prefix: prefix.length > 50 ? prefix.substring(0, 50) + '...' : prefix,
+        prefix: prefix.length > 50 ? `${prefix.substring(0, 50)}...` : prefix,
       },
-    );
+    )
   }
 
   if (prefix.includes('..')) {
@@ -224,7 +224,7 @@ export function validatePrefix(prefix: string, context: RequestContext): void {
       JsonRpcErrorCode.ValidationError,
       'Prefix must not contain ".." (path traversal attempt).',
       { ...context, operation: 'validatePrefix', prefix },
-    );
+    )
   }
 }
 
@@ -239,7 +239,7 @@ export function validateStorageOptions(
   context: RequestContext,
 ): void {
   if (!options) {
-    return;
+    return
   }
 
   if (options.ttl !== undefined) {
@@ -248,7 +248,7 @@ export function validateStorageOptions(
         JsonRpcErrorCode.ValidationError,
         'TTL must be a number (seconds).',
         { ...context, ttl: options.ttl },
-      );
+      )
     }
 
     if (options.ttl < 0) {
@@ -256,7 +256,7 @@ export function validateStorageOptions(
         JsonRpcErrorCode.ValidationError,
         'TTL must be a non-negative number. Use 0 for immediate expiration.',
         { ...context, ttl: options.ttl },
-      );
+      )
     }
 
     if (!Number.isFinite(options.ttl)) {
@@ -264,7 +264,7 @@ export function validateStorageOptions(
         JsonRpcErrorCode.ValidationError,
         'TTL must be a finite number.',
         { ...context, ttl: options.ttl },
-      );
+      )
     }
   }
 }
@@ -286,7 +286,7 @@ export function validateListOptions(
   context: RequestContext,
 ): void {
   if (!options) {
-    return;
+    return
   }
 
   if (options.limit !== undefined) {
@@ -295,7 +295,7 @@ export function validateListOptions(
         JsonRpcErrorCode.ValidationError,
         'List limit must be a number.',
         { ...context, operation: 'validateListOptions', limit: options.limit },
-      );
+      )
     }
 
     if (!Number.isInteger(options.limit)) {
@@ -303,7 +303,7 @@ export function validateListOptions(
         JsonRpcErrorCode.ValidationError,
         'List limit must be an integer.',
         { ...context, operation: 'validateListOptions', limit: options.limit },
-      );
+      )
     }
 
     if (options.limit < 1) {
@@ -311,7 +311,7 @@ export function validateListOptions(
         JsonRpcErrorCode.ValidationError,
         'List limit must be at least 1.',
         { ...context, operation: 'validateListOptions', limit: options.limit },
-      );
+      )
     }
 
     if (options.limit > MAX_LIST_LIMIT) {
@@ -319,7 +319,7 @@ export function validateListOptions(
         JsonRpcErrorCode.ValidationError,
         `List limit exceeds maximum of ${MAX_LIST_LIMIT}.`,
         { ...context, operation: 'validateListOptions', limit: options.limit },
-      );
+      )
     }
 
     if (!Number.isFinite(options.limit)) {
@@ -327,7 +327,7 @@ export function validateListOptions(
         JsonRpcErrorCode.ValidationError,
         'List limit must be a finite number.',
         { ...context, operation: 'validateListOptions', limit: options.limit },
-      );
+      )
     }
   }
 
@@ -337,7 +337,7 @@ export function validateListOptions(
         JsonRpcErrorCode.ValidationError,
         'Cursor must be a string.',
         { ...context, operation: 'validateListOptions' },
-      );
+      )
     }
 
     if (options.cursor.trim() === '') {
@@ -345,7 +345,7 @@ export function validateListOptions(
         JsonRpcErrorCode.ValidationError,
         'Cursor must not be an empty string.',
         { ...context, operation: 'validateListOptions' },
-      );
+      )
     }
 
     // Basic base64 validation (more thorough check happens in decodeCursor)
@@ -354,7 +354,7 @@ export function validateListOptions(
         JsonRpcErrorCode.ValidationError,
         'Cursor contains invalid characters for base64.',
         { ...context, operation: 'validateListOptions' },
-      );
+      )
     }
   }
 }
@@ -366,9 +366,9 @@ export function validateListOptions(
 
 interface CursorData {
   /** The last key from the previous page */
-  k: string;
+  k: string
   /** The tenant ID for validation */
-  t: string;
+  t: string
 }
 
 /**
@@ -379,8 +379,8 @@ interface CursorData {
  * @returns An opaque cursor string.
  */
 export function encodeCursor(lastKey: string, tenantId: string): string {
-  const data: CursorData = { k: lastKey, t: tenantId };
-  return stringToBase64(JSON.stringify(data));
+  const data: CursorData = { k: lastKey, t: tenantId }
+  return stringToBase64(JSON.stringify(data))
 }
 
 /**
@@ -398,15 +398,15 @@ export function decodeCursor(
   context: RequestContext,
 ): string {
   try {
-    const decoded = base64ToString(cursor);
-    const data = JSON.parse(decoded) as CursorData;
+    const decoded = base64ToString(cursor)
+    const data = JSON.parse(decoded) as CursorData
 
     if (!data || typeof data !== 'object' || !('k' in data) || !('t' in data)) {
       throw new McpError(
         JsonRpcErrorCode.InvalidParams,
         'Invalid cursor format.',
         { ...context, operation: 'decodeCursor' },
-      );
+      )
     }
 
     if (data.t !== tenantId) {
@@ -414,13 +414,13 @@ export function decodeCursor(
         JsonRpcErrorCode.InvalidParams,
         'Cursor tenant ID mismatch. Cursor may have been tampered with.',
         { ...context, operation: 'decodeCursor' },
-      );
+      )
     }
 
-    return data.k;
+    return data.k
   } catch (error: unknown) {
     if (error instanceof McpError) {
-      throw error;
+      throw error
     }
     throw new McpError(
       JsonRpcErrorCode.InvalidParams,
@@ -430,6 +430,6 @@ export function decodeCursor(
         operation: 'decodeCursor',
         rawError: error instanceof Error ? error.stack : String(error),
       },
-    );
+    )
   }
 }

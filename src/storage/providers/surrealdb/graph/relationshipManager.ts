@@ -4,10 +4,10 @@
  * @module src/storage/providers/surrealdb/graph/relationshipManager
  */
 
-import type Surreal from 'surrealdb';
-import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js';
-import { McpError, JsonRpcErrorCode } from '@/types-global/errors.js';
-import type { Edge, EdgeOptions } from './graphTypes.js';
+import type Surreal from 'surrealdb'
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
+import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js'
+import type { Edge, EdgeOptions } from './graphTypes.js'
 
 /**
  * Manages relationships (edges) in the graph.
@@ -43,13 +43,13 @@ export class RelationshipManager {
       async () => {
         // Check for duplicates if not allowed
         if (!options?.allowDuplicates) {
-          const exists = await this.exists(from, edgeTable, to, context);
+          const exists = await this.exists(from, edgeTable, to, context)
           if (exists) {
             throw new McpError(
               JsonRpcErrorCode.InvalidParams,
               `Relationship already exists: ${from} -[${edgeTable}]-> ${to}`,
               context,
-            );
+            )
           }
         }
 
@@ -57,51 +57,51 @@ export class RelationshipManager {
           ? `SET ${Object.keys(options.data)
               .map((key) => `${key} = $data.${key}`)
               .join(', ')}`
-          : '';
+          : ''
 
         const query = `
           RELATE $from->${edgeTable}->$to
           ${setClause}
           RETURN AFTER
-        `;
+        `
 
         const result = await this.client.query<[{ result: Edge[] }]>(query, {
           from,
           to,
           data: options?.data || {},
-        });
+        })
 
-        const edge = result[0]?.result?.[0];
+        const edge = result[0]?.result?.[0]
 
         if (!edge) {
           throw new McpError(
             JsonRpcErrorCode.InternalError,
             'Failed to create relationship',
             context,
-          );
+          )
         }
 
-        logger.debug(`[RelationshipManager] Created edge: ${edge.id}`, context);
+        logger.debug(`[RelationshipManager] Created edge: ${edge.id}`, context)
 
         // Create bidirectional if requested
         if (options?.bidirectional) {
           const reverseOptions: EdgeOptions = {
             allowDuplicates: true, // Already checked above
-          };
-          if (options.data) {
-            reverseOptions.data = options.data;
           }
-          await this.create(to, edgeTable, from, context, reverseOptions);
+          if (options.data) {
+            reverseOptions.data = options.data
+          }
+          await this.create(to, edgeTable, from, context, reverseOptions)
         }
 
-        return edge;
+        return edge
       },
       {
         operation: 'RelationshipManager.create',
         context,
         input: { from, edgeTable, to },
       },
-    );
+    )
   }
 
   /**
@@ -125,21 +125,21 @@ export class RelationshipManager {
           SELECT count() as count
           FROM ${edgeTable}
           WHERE in = $from AND out = $to
-        `;
+        `
 
         const result = await this.client.query<
           [{ result: Array<{ count: number }> }]
-        >(query, { from, to });
+        >(query, { from, to })
 
-        const count = result[0]?.result?.[0]?.count ?? 0;
-        return count > 0;
+        const count = result[0]?.result?.[0]?.count ?? 0
+        return count > 0
       },
       {
         operation: 'RelationshipManager.exists',
         context,
         input: { from, edgeTable, to },
       },
-    );
+    )
   }
 
   /**
@@ -159,37 +159,37 @@ export class RelationshipManager {
       async () => {
         const setClause = Object.keys(data)
           .map((key) => `${key} = $data.${key}`)
-          .join(', ');
+          .join(', ')
 
         const query = `
           UPDATE $edgeId
           SET ${setClause}
           RETURN AFTER
-        `;
+        `
 
         const result = await this.client.query<[{ result: Edge[] }]>(query, {
           edgeId,
           data,
-        });
+        })
 
-        const edge = result[0]?.result?.[0];
+        const edge = result[0]?.result?.[0]
 
         if (!edge) {
           throw new McpError(
             JsonRpcErrorCode.InvalidParams,
             `Edge not found: ${edgeId}`,
             context,
-          );
+          )
         }
 
-        return edge;
+        return edge
       },
       {
         operation: 'RelationshipManager.updateMetadata',
         context,
         input: { edgeId },
       },
-    );
+    )
   }
 
   /**
@@ -202,20 +202,20 @@ export class RelationshipManager {
   async delete(edgeId: string, context: RequestContext): Promise<boolean> {
     return ErrorHandler.tryCatch(
       async () => {
-        const query = 'DELETE $edgeId RETURN BEFORE';
+        const query = 'DELETE $edgeId RETURN BEFORE'
 
         const result = await this.client.query<[{ result: Edge[] }]>(query, {
           edgeId,
-        });
+        })
 
-        return (result[0]?.result?.length ?? 0) > 0;
+        return (result[0]?.result?.length ?? 0) > 0
       },
       {
         operation: 'RelationshipManager.delete',
         context,
         input: { edgeId },
       },
-    );
+    )
   }
 
   /**
@@ -233,19 +233,19 @@ export class RelationshipManager {
   ): Promise<Edge[]> {
     return ErrorHandler.tryCatch(
       async () => {
-        const query = `SELECT * FROM ${edgeTable} LIMIT $limit`;
+        const query = `SELECT * FROM ${edgeTable} LIMIT $limit`
 
         const result = await this.client.query<[{ result: Edge[] }]>(query, {
           limit,
-        });
+        })
 
-        return result[0]?.result ?? [];
+        return result[0]?.result ?? []
       },
       {
         operation: 'RelationshipManager.getAllOfType',
         context,
         input: { edgeTable, limit },
       },
-    );
+    )
   }
 }

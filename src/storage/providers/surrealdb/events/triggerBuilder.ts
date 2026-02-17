@@ -1,9 +1,11 @@
+/** biome-ignore-all lint/suspicious/noThenProperty: We use this as a variable in test cases and Surreal events. */
+
 /**
  * @fileoverview Fluent API for building SurrealDB event triggers.
  * @module src/storage/providers/surrealdb/events/triggerBuilder
  */
 
-import type { EventConfig } from './eventTypes.js';
+import type { EventConfig } from './eventTypes.js'
 
 /**
  * Fluent builder for table event triggers.
@@ -27,25 +29,25 @@ export class TriggerBuilder {
   private config: Partial<EventConfig> = {
     triggers: [],
     then: '',
-  };
+  }
 
   private constructor(table: string) {
-    this.config.table = table;
+    this.config.table = table
   }
 
   /**
    * Create a new trigger builder for a table.
    */
   static for(table: string): TriggerBuilder {
-    return new TriggerBuilder(table);
+    return new TriggerBuilder(table)
   }
 
   /**
    * Set the event name.
    */
   named(name: string): this {
-    this.config.name = name;
-    return this;
+    this.config.name = name
+    return this
   }
 
   /**
@@ -53,9 +55,9 @@ export class TriggerBuilder {
    */
   onCreate(): this {
     if (!this.config.triggers?.includes('CREATE')) {
-      this.config.triggers?.push('CREATE');
+      this.config.triggers?.push('CREATE')
     }
-    return this;
+    return this
   }
 
   /**
@@ -63,9 +65,9 @@ export class TriggerBuilder {
    */
   onUpdate(): this {
     if (!this.config.triggers?.includes('UPDATE')) {
-      this.config.triggers?.push('UPDATE');
+      this.config.triggers?.push('UPDATE')
     }
-    return this;
+    return this
   }
 
   /**
@@ -73,17 +75,17 @@ export class TriggerBuilder {
    */
   onDelete(): this {
     if (!this.config.triggers?.includes('DELETE')) {
-      this.config.triggers?.push('DELETE');
+      this.config.triggers?.push('DELETE')
     }
-    return this;
+    return this
   }
 
   /**
    * Trigger on any operation.
    */
   onAny(): this {
-    this.config.triggers = ['CREATE', 'UPDATE', 'DELETE'];
-    return this;
+    this.config.triggers = ['CREATE', 'UPDATE', 'DELETE']
+    return this
   }
 
   /**
@@ -92,8 +94,8 @@ export class TriggerBuilder {
    * @param condition - SurrealQL condition expression
    */
   when(condition: string): this {
-    this.config.when = condition;
-    return this;
+    this.config.when = condition
+    return this
   }
 
   /**
@@ -102,8 +104,8 @@ export class TriggerBuilder {
    * @param actions - SurrealQL statements to execute
    */
   then(actions: string): this {
-    this.config.then = actions;
-    return this;
+    this.config.then = actions
+    return this
   }
 
   /**
@@ -113,22 +115,22 @@ export class TriggerBuilder {
    */
   build(): EventConfig {
     if (!this.config.table) {
-      throw new Error('Table name is required');
+      throw new Error('Table name is required')
     }
 
     if (!this.config.name) {
-      throw new Error('Event name is required');
+      throw new Error('Event name is required')
     }
 
     if (!this.config.triggers || this.config.triggers.length === 0) {
-      throw new Error('At least one trigger type is required');
+      throw new Error('At least one trigger type is required')
     }
 
     if (!this.config.then) {
-      throw new Error('THEN clause is required');
+      throw new Error('THEN clause is required')
     }
 
-    return this.config as EventConfig;
+    return this.config as EventConfig
   }
 
   /**
@@ -155,7 +157,7 @@ export class TriggerBuilder {
           after_state = $after,
           changed_at = time::now()`,
       )
-      .build();
+      .build()
   }
 
   /**
@@ -177,7 +179,7 @@ export class TriggerBuilder {
           WHERE expires_at != NONE
           AND expires_at < time::now()`,
       )
-      .build();
+      .build()
   }
 
   /**
@@ -201,7 +203,7 @@ export class TriggerBuilder {
         `DELETE FROM ${childTable}
           WHERE ${foreignKey} = $before.id`,
       )
-      .build();
+      .build()
   }
 
   /**
@@ -229,6 +231,6 @@ export class TriggerBuilder {
           timestamp: time::now()
         })`,
       )
-      .build();
+      .build()
   }
 }

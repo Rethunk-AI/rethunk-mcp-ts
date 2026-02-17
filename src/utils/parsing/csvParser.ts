@@ -4,21 +4,21 @@
  * optional <think>...</think> blocks often found at the beginning of LLM outputs.
  * @module src/utils/parsing/csvParser
  */
-import Papa from 'papaparse';
+import Papa from 'papaparse'
 
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
 import {
-  type RequestContext,
   logger,
+  type RequestContext,
   requestContextService,
-} from '@/utils/index.js';
+} from '@/utils/index.js'
 
 /**
  * Regular expression to find a <think> block at the start of a string.
  * Captures content within <think>...</think> (Group 1) and the rest of the string (Group 2).
  * @private
  */
-const thinkBlockRegex = /^<think>([\s\S]*?)<\/think>\s*([\s\S]*)$/;
+const thinkBlockRegex = /^<think>([\s\S]*?)<\/think>\s*([\s\S]*)$/
 
 /**
  * Utility class for parsing CSV strings.
@@ -43,52 +43,52 @@ export class CsvParser {
     options?: Papa.ParseConfig,
     context?: RequestContext,
   ): Papa.ParseResult<T> {
-    let stringToParse = csvString;
-    const match = csvString.match(thinkBlockRegex);
+    let stringToParse = csvString
+    const match = csvString.match(thinkBlockRegex)
 
     if (match) {
-      const thinkContent = match[1]?.trim() ?? '';
-      const restOfString = match[2] ?? '';
+      const thinkContent = match[1]?.trim() ?? ''
+      const restOfString = match[2] ?? ''
 
       const logContext =
         context ||
         requestContextService.createRequestContext({
           operation: 'CsvParser.thinkBlock',
-        });
+        })
       if (thinkContent) {
         logger.debug('LLM <think> block detected and logged.', {
           ...logContext,
           thinkContent,
-        });
+        })
       } else {
-        logger.debug('Empty LLM <think> block detected.', logContext);
+        logger.debug('Empty LLM <think> block detected.', logContext)
       }
-      stringToParse = restOfString;
+      stringToParse = restOfString
     }
 
-    stringToParse = stringToParse.trim();
+    stringToParse = stringToParse.trim()
 
     if (!stringToParse) {
       throw new McpError(
         JsonRpcErrorCode.ValidationError,
         'CSV string is empty after removing <think> block and trimming.',
         context,
-      );
+      )
     }
 
-    const result = Papa.parse<T>(stringToParse, options);
+    const result = Papa.parse<T>(stringToParse, options)
 
     if (result.errors.length > 0) {
       const errorLogContext =
         context ||
         requestContextService.createRequestContext({
           operation: 'CsvParser.parseError',
-        });
+        })
       logger.error('Failed to parse CSV content.', {
         ...errorLogContext,
         errors: result.errors,
         contentAttempted: stringToParse.substring(0, 200),
-      });
+      })
 
       throw new McpError(
         JsonRpcErrorCode.ValidationError,
@@ -100,10 +100,10 @@ export class CsvParser {
             stringToParse.substring(0, 200) +
             (stringToParse.length > 200 ? '...' : ''),
         },
-      );
+      )
     }
 
-    return result;
+    return result
   }
 }
 
@@ -124,4 +124,4 @@ export class CsvParser {
  * console.log(parsedWithThink.data); // Output: [ { a: '1', b: '2', c: '3' } ]
  * ```
  */
-export const csvParser = new CsvParser();
+export const csvParser = new CsvParser()

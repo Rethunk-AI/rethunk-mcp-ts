@@ -4,29 +4,29 @@
  */
 
 export type {
-  Vertex,
   Edge,
   GraphPath,
-  TraversalResult,
-  TraversalDirection,
-  RelateOptions,
-  TraversalOptions,
   PathOptions,
-} from './core/IGraphProvider.js';
+  RelateOptions,
+  TraversalDirection,
+  TraversalOptions,
+  TraversalResult,
+  Vertex,
+} from './core/IGraphProvider.js'
 
 /**
  * Graph provider type identifier.
  */
-export type GraphProviderType = 'surrealdb' | 'mock';
+export type GraphProviderType = 'surrealdb' | 'mock'
 
 /**
  * Configuration for graph service.
  */
 export interface GraphServiceConfig {
   /** Provider type to use */
-  provider: GraphProviderType;
+  provider: GraphProviderType
   /** Additional provider-specific configuration */
-  config?: Record<string, unknown>;
+  config?: Record<string, unknown>
 }
 
 /**
@@ -34,15 +34,15 @@ export interface GraphServiceConfig {
  */
 export interface GraphStats {
   /** Total number of vertices */
-  vertexCount: number;
+  vertexCount: number
   /** Total number of edges */
-  edgeCount: number;
+  edgeCount: number
   /** Average degree (edges per vertex) */
-  avgDegree: number;
+  avgDegree: number
   /** Vertex types and their counts */
-  vertexTypes: Record<string, number>;
+  vertexTypes: Record<string, number>
   /** Edge types and their counts */
-  edgeTypes: Record<string, number>;
+  edgeTypes: Record<string, number>
 }
 
 /**
@@ -50,9 +50,9 @@ export interface GraphStats {
  */
 export interface GraphPattern {
   /** Pattern string (e.g., "(person)-[knows]->(person)") */
-  pattern: string;
+  pattern: string
   /** Parameters for the pattern */
-  params?: Record<string, unknown>;
+  params?: Record<string, unknown>
 }
 
 /**
@@ -63,21 +63,21 @@ export interface PatternMatchResult {
   matches: Array<{
     /** Vertices in the matched path */
     vertices: Array<{
-      id: string;
-      table: string;
-      data: Record<string, unknown>;
-    }>;
+      id: string
+      table: string
+      data: Record<string, unknown>
+    }>
     /** Edges in the matched path */
     edges: Array<{
-      id: string;
-      table: string;
-      from: string;
-      to: string;
-      data: Record<string, unknown>;
-    }>;
+      id: string
+      table: string
+      from: string
+      to: string
+      data: Record<string, unknown>
+    }>
     /** Path weight */
-    weight?: number;
-  }>;
+    weight?: number
+  }>
   /** Total number of matches */
-  count: number;
+  count: number
 }

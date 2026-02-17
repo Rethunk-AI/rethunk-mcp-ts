@@ -7,28 +7,28 @@
  * @see {@link https://modelcontextprotocol.io/specification/2025-06-18/basic/sampling | MCP Sampling}
  * @module src/mcp-server/tools/definitions/template-code-review-sampling.tool
  */
-import type { ContentBlock } from '@modelcontextprotocol/sdk/types.js';
-import { z } from 'zod';
+import type { ContentBlock } from '@modelcontextprotocol/sdk/types.js'
+import { z } from 'zod'
 
 import type {
   SdkContext,
   ToolAnnotations,
   ToolDefinition,
-} from '@/mcp-server/tools/utils/index.js';
-import { withToolAuth } from '@/mcp-server/transports/auth/lib/withAuth.js';
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
-import { type RequestContext, logger } from '@/utils/index.js';
+} from '@/mcp-server/tools/utils/index.js'
+import { withToolAuth } from '@/mcp-server/transports/auth/lib/withAuth.js'
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
+import { logger, type RequestContext } from '@/utils/index.js'
 
-const TOOL_NAME = 'template_code_review_sampling';
-const TOOL_TITLE = 'Code Review with Sampling';
+const TOOL_NAME = 'template_code_review_sampling'
+const TOOL_TITLE = 'Code Review with Sampling'
 const TOOL_DESCRIPTION =
-  "Demonstrates MCP sampling by requesting an LLM to review code snippets. The tool uses the client's LLM to generate a code review summary.";
+  "Demonstrates MCP sampling by requesting an LLM to review code snippets. The tool uses the client's LLM to generate a code review summary."
 
 const TOOL_ANNOTATIONS: ToolAnnotations = {
   readOnlyHint: true,
   idempotentHint: false,
   openWorldHint: true, // Uses external LLM via client
-};
+}
 
 // --- Schemas ---
 const InputSchema = z
@@ -56,7 +56,7 @@ const InputSchema = z
       .default(500)
       .describe('Maximum tokens for the LLM response.'),
   })
-  .describe('Request an LLM-powered code review via sampling.');
+  .describe('Request an LLM-powered code review via sampling.')
 
 const OutputSchema = z
   .object({
@@ -75,36 +75,36 @@ const OutputSchema = z
       .optional()
       .describe('Token usage information.'),
   })
-  .describe('Code review tool response payload.');
+  .describe('Code review tool response payload.')
 
-type CodeReviewToolInput = z.infer<typeof InputSchema>;
-type CodeReviewToolResponse = z.infer<typeof OutputSchema>;
+type CodeReviewToolInput = z.infer<typeof InputSchema>
+type CodeReviewToolResponse = z.infer<typeof OutputSchema>
 
 // --- Sampling Helper ---
 type SamplingSdkContext = SdkContext & {
   createMessage: (args: {
     messages: Array<{
-      role: 'user' | 'assistant';
-      content: { type: 'text'; text: string };
-    }>;
-    maxTokens?: number;
-    temperature?: number;
+      role: 'user' | 'assistant'
+      content: { type: 'text'; text: string }
+    }>
+    maxTokens?: number
+    temperature?: number
     modelPreferences?: {
-      hints?: Array<{ name: string }>;
-      costPriority?: number;
-      speedPriority?: number;
-      intelligencePriority?: number;
-    };
+      hints?: Array<{ name: string }>
+      costPriority?: number
+      speedPriority?: number
+      intelligencePriority?: number
+    }
   }) => Promise<{
-    role: 'assistant';
-    content: { type: 'text'; text: string };
-    model: string;
-    stopReason?: string;
-  }>;
-};
+    role: 'assistant'
+    content: { type: 'text'; text: string }
+    model: string
+    stopReason?: string
+  }>
+}
 
 function hasSamplingCapability(ctx: SdkContext): ctx is SamplingSdkContext {
-  return typeof (ctx as SamplingSdkContext)?.createMessage === 'function';
+  return typeof (ctx as SamplingSdkContext)?.createMessage === 'function'
 }
 
 // --- Pure business logic ---
@@ -116,14 +116,14 @@ async function codeReviewToolLogic(
   logger.debug('Processing code review with sampling.', {
     ...appContext,
     toolInput: { ...input, code: `${input.code.substring(0, 100)}...` },
-  });
+  })
 
   if (!hasSamplingCapability(sdkContext)) {
     throw new McpError(
       JsonRpcErrorCode.InvalidRequest,
       'Sampling capability is not available. The client does not support MCP sampling.',
       { requestId: appContext.requestId, operation: 'codeReview.sample' },
-    );
+    )
   }
 
   // Build the prompt for the LLM
@@ -136,7 +136,7 @@ async function codeReviewToolLogic(
       'Focus on code style, readability, naming conventions, and best practices.',
     general:
       'Provide a comprehensive review covering security, performance, and code quality.',
-  };
+  }
 
   const prompt = `You are an expert code reviewer. Please review the following ${input.language || 'code'} snippet.
 
@@ -152,13 +152,13 @@ Code to review:
 ${input.code}
 \`\`\`
 
-Your review:`;
+Your review:`
 
   logger.debug('Requesting LLM completion via sampling...', {
     ...appContext,
     maxTokens: input.maxTokens,
     focus: input.focus,
-  });
+  })
 
   const samplingResult = await sdkContext.createMessage({
     messages: [
@@ -177,13 +177,13 @@ Your review:`;
       intelligencePriority: 0.8,
       speedPriority: 0.2,
     },
-  });
+  })
 
   logger.info('Sampling completed successfully.', {
     ...appContext,
     model: samplingResult.model,
     stopReason: samplingResult.stopReason,
-  });
+  })
 
   return {
     code: input.code,
@@ -194,7 +194,7 @@ Your review:`;
       requested: input.maxTokens,
       // Note: actual token usage might not be available from all clients
     },
-  };
+  }
 }
 
 // --- Response Formatter ---
@@ -204,7 +204,7 @@ function responseFormatter(result: CodeReviewToolResponse): ContentBlock[] {
       type: 'text',
       text: `# Code Review (${result.focus})\n\n${result.review}`,
     },
-  ];
+  ]
 }
 
 // --- Tool Definition ---
@@ -220,4 +220,4 @@ export const codeReviewSamplingTool: ToolDefinition<
   annotations: TOOL_ANNOTATIONS,
   logic: withToolAuth(['tool:code-review:use'], codeReviewToolLogic),
   responseFormatter,
-};
+}

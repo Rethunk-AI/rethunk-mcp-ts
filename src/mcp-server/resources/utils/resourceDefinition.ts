@@ -4,26 +4,26 @@
  * architecture for MCP resources, separating pure logic from handler concerns.
  * @module src/mcp-server/resources/utils/resourceDefinition
  */
-import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
 import type {
   ListResourcesResult,
   ReadResourceResult,
   ServerNotification,
   ServerRequest,
-} from '@modelcontextprotocol/sdk/types.js';
-import type { ZodObject, ZodRawShape, z } from 'zod';
+} from '@modelcontextprotocol/sdk/types.js'
+import type { ZodObject, ZodRawShape, z } from 'zod'
 
-import type { RequestContext } from '@/utils/index.js';
+import type { RequestContext } from '@/utils/index.js'
 
 /**
  * Optional UI/display hints for resources.
  */
 export interface ResourceAnnotations {
-  [key: string]: unknown;
+  [key: string]: unknown
   /** A hint indicating the resource is read-only. */
-  readOnlyHint?: boolean;
+  readOnlyHint?: boolean
   /** A hint indicating the resource may call external dynamic systems. */
-  openWorldHint?: boolean;
+  openWorldHint?: boolean
 }
 
 /**
@@ -34,23 +34,23 @@ export interface ResourceDefinition<
   TOutputSchema extends ZodObject<ZodRawShape> | undefined = undefined,
 > {
   /** The programmatic, unique name for the resource (e.g., 'echo-resource'). */
-  name: string;
+  name: string
   /** Optional, human-readable title for display in UIs. */
-  title?: string;
+  title?: string
   /** A concise description of what the resource returns. */
-  description: string;
+  description: string
   /** The URI template used to register the resource (e.g., 'echo://{message}'). */
-  uriTemplate: string;
+  uriTemplate: string
   /** Zod schema validating the route/template params received by the handler. */
-  paramsSchema: TParamsSchema;
+  paramsSchema: TParamsSchema
   /** Optional Zod schema describing the successful output payload. */
-  outputSchema?: TOutputSchema;
+  outputSchema?: TOutputSchema
   /** Default mime type for the response content. */
-  mimeType?: string;
+  mimeType?: string
   /** Optional examples to improve discoverability. */
-  examples?: { name: string; uri: string }[];
+  examples?: { name: string; uri: string }[]
   /** Optional display/behavior hints. */
-  annotations?: ResourceAnnotations;
+  annotations?: ResourceAnnotations
   /**
    * Optional provider for list results. If provided, it's used for resource discovery.
    * The `extra` parameter provides access to request metadata including pagination cursor
@@ -84,7 +84,7 @@ export interface ResourceDefinition<
    */
   list?: (
     extra: RequestHandlerExtra<ServerRequest, ServerNotification>,
-  ) => ListResourcesResult | Promise<ListResourcesResult>;
+  ) => ListResourcesResult | Promise<ListResourcesResult>
   /**
    * The pure, stateless core logic for the resource read operation.
    * MUST NOT contain try/catch. Throw McpError on failure.
@@ -93,7 +93,7 @@ export interface ResourceDefinition<
     uri: URL,
     params: z.infer<TParamsSchema>,
     context: RequestContext,
-  ) => unknown;
+  ) => unknown
   /**
    * Optional formatter mapping the logic result into MCP ReadResourceResult.contents entries.
    * If omitted, a default JSON formatter is applied using `mimeType`.
@@ -101,5 +101,5 @@ export interface ResourceDefinition<
   responseFormatter?: (
     result: unknown,
     meta: { uri: URL; mimeType: string },
-  ) => ReadResourceResult['contents'];
+  ) => ReadResourceResult['contents']
 }

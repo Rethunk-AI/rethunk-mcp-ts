@@ -5,13 +5,13 @@
  * the configured container and all DI tokens.
  * @module src/container
  */
-import 'reflect-metadata';
-import { container } from 'tsyringe';
+import 'reflect-metadata'
+import { container } from 'tsyringe'
 
-import { registerCoreServices } from '@/container/registrations/core.js';
-import { registerMcpServices } from '@/container/registrations/mcp.js';
+import { registerCoreServices } from '@/container/registrations/core.js'
+import { registerMcpServices } from '@/container/registrations/mcp.js'
 
-let isContainerComposed = false;
+let isContainerComposed = false
 
 /**
  * Composes the DI container by registering all services.
@@ -19,15 +19,15 @@ let isContainerComposed = false;
  */
 export function composeContainer(): void {
   if (isContainerComposed) {
-    return;
+    return
   }
 
-  registerCoreServices();
-  registerMcpServices();
+  registerCoreServices()
+  registerMcpServices()
 
-  isContainerComposed = true;
+  isContainerComposed = true
 }
 
 // --- Export DI tokens and the container instance ---
-export * from '@/container/tokens.js';
-export default container;
+export * from '@/container/tokens.js'
+export default container

@@ -5,24 +5,24 @@
  * @module utils/formatting
  */
 
-export { MarkdownBuilder, markdown } from './markdownBuilder.js';
 export {
-  tableFormatter,
+  type DiffFormat,
+  DiffFormatter,
+  type DiffFormatterOptions,
+  diffFormatter,
+} from './diffFormatter.js'
+export { MarkdownBuilder, markdown } from './markdownBuilder.js'
+export {
+  type Alignment,
   TableFormatter,
   type TableFormatterOptions,
   type TableStyle,
-  type Alignment,
-} from './tableFormatter.js';
+  tableFormatter,
+} from './tableFormatter.js'
 export {
-  diffFormatter,
-  DiffFormatter,
-  type DiffFormatterOptions,
-  type DiffFormat,
-} from './diffFormatter.js';
-export {
-  treeFormatter,
   TreeFormatter,
   type TreeFormatterOptions,
   type TreeNode,
   type TreeStyle,
-} from './treeFormatter.js';
+  treeFormatter,
+} from './treeFormatter.js'

@@ -7,16 +7,16 @@
  *
  * @module src/mcp-server/transports/auth/core/authContext
  */
-import { AsyncLocalStorage } from 'async_hooks';
+import { AsyncLocalStorage } from 'node:async_hooks'
 
-import type { AuthInfo } from './authTypes.js';
+import type { AuthInfo } from './authTypes.js'
 
 /**
  * Defines the structure of the store used within the AsyncLocalStorage.
  * It holds the authentication information for the current request context.
  */
 interface AuthStore {
-  authInfo: AuthInfo;
+  authInfo: AuthInfo
 }
 
 /**
@@ -32,4 +32,4 @@ interface AuthStore {
  * const store = authContext.getStore();
  * const scopes = store?.authInfo.scopes;
  */
-export const authContext = new AsyncLocalStorage<AuthStore>();
+export const authContext = new AsyncLocalStorage<AuthStore>()

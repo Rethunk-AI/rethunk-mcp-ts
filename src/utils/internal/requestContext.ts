@@ -5,12 +5,12 @@
  * propagation for distributed tracing.
  * @module src/utils/internal/requestContext
  */
-import { trace } from '@opentelemetry/api';
+import { trace } from '@opentelemetry/api'
 
-import { authContext as alsAuthContext } from '@/mcp-server/transports/auth/lib/authContext.js';
-import type { AuthInfo } from '@/mcp-server/transports/auth/lib/authTypes.js';
-import { generateRequestContextId } from '@/utils/index.js';
-import { logger } from '@/utils/internal/logger.js';
+import { authContext as alsAuthContext } from '@/mcp-server/transports/auth/lib/authContext.js'
+import type { AuthInfo } from '@/mcp-server/transports/auth/lib/authTypes.js'
+import { generateRequestContextId } from '@/utils/index.js'
+import { logger } from '@/utils/internal/logger.js'
 
 /**
  * Defines the structure of the authentication-related context, typically
@@ -21,17 +21,17 @@ import { logger } from '@/utils/internal/logger.js';
  */
 export interface AuthContext {
   /** The subject (user) identifier. */
-  sub: string;
+  sub: string
   /** An array of granted permissions (scopes). */
-  scopes: string[];
+  scopes: string[]
   /** The client identifier from the token (cid or client_id claim). */
-  clientId: string;
+  clientId: string
   /** The original JWT/OAuth token string. */
-  token: string;
+  token: string
   /** Optional tenant identifier for multi-tenancy support. */
-  tenantId?: string;
+  tenantId?: string
   /** Other properties from the token payload. */
-  [key: string]: unknown;
+  [key: string]: unknown
 }
 
 /**
@@ -43,30 +43,30 @@ export interface RequestContext {
    * Unique ID for the context instance.
    * Used for log correlation and request tracing.
    */
-  requestId: string;
+  requestId: string
 
   /**
    * ISO 8601 timestamp indicating when the context was created.
    */
-  timestamp: string;
+  timestamp: string
 
   /**
    * The unique identifier for the tenant making the request.
    * This is essential for multi-tenancy and data isolation.
    */
-  tenantId?: string;
+  tenantId?: string
 
   /**
    * Optional authentication context, present if the request was authenticated.
    */
-  auth?: AuthContext;
+  auth?: AuthContext
 
   /**
    * Allows arbitrary key-value pairs for specific context needs.
    * Using `unknown` promotes type-safe access.
    * Consumers must type-check/assert when accessing extended properties.
    */
-  [key: string]: unknown;
+  [key: string]: unknown
 }
 
 /**
@@ -75,7 +75,7 @@ export interface RequestContext {
  */
 export interface ContextConfig {
   /** Custom configuration properties. Allows for arbitrary key-value pairs. */
-  [key: string]: unknown;
+  [key: string]: unknown
 }
 
 /**
@@ -85,10 +85,10 @@ export interface ContextConfig {
  */
 export interface OperationContext {
   /** Optional base request context data, adhering to the `RequestContext` structure. */
-  requestContext?: RequestContext;
+  requestContext?: RequestContext
 
   /** Allows for additional, custom properties specific to the operation. */
-  [key: string]: unknown;
+  [key: string]: unknown
 }
 
 /**
@@ -99,19 +99,19 @@ export interface CreateRequestContextParams {
    * An optional parent context to inherit properties from, such as `requestId`.
    * This is key for propagating context in distributed systems.
    */
-  parentContext?: Record<string, unknown> | RequestContext;
+  parentContext?: Record<string, unknown> | RequestContext
 
   /**
    * An optional record of key-value pairs to be merged into the new context.
    * These will override any properties inherited from the parent context.
    */
-  additionalContext?: Record<string, unknown>;
+  additionalContext?: Record<string, unknown>
 
   /**
    * A descriptive name for the operation creating this context.
    * Useful for debugging and tracing.
    */
-  operation?: string;
+  operation?: string
 }
 
 /**
@@ -135,13 +135,13 @@ const requestContextServiceInstance = {
     this.config = {
       ...this.config,
       ...config,
-    };
+    }
     const logContext = this.createRequestContext({
       operation: 'RequestContextService.configure',
       additionalContext: { newConfigState: { ...this.config } },
-    });
-    logger.debug('RequestContextService configuration updated', logContext);
-    return { ...this.config };
+    })
+    logger.debug('RequestContextService configuration updated', logContext)
+    return { ...this.config }
   },
 
   /**
@@ -151,7 +151,7 @@ const requestContextServiceInstance = {
    * @returns A shallow copy of the current `ContextConfig`.
    */
   getConfig(): ContextConfig {
-    return { ...this.config };
+    return { ...this.config }
   },
 
   /**
@@ -172,50 +172,50 @@ const requestContextServiceInstance = {
     // The 'rest' object will contain all properties that are NOT the special keys,
     // effectively capturing the direct context object when passed.
     const { parentContext, additionalContext, operation, ...rest } =
-      params as CreateRequestContextParams;
+      params as CreateRequestContextParams
 
     const inheritedContext =
       parentContext && typeof parentContext === 'object'
         ? { ...parentContext }
-        : {};
+        : {}
 
-    let inheritedTenantId: string | undefined;
+    let inheritedTenantId: string | undefined
     if (
       inheritedContext &&
       typeof inheritedContext === 'object' &&
       'tenantId' in inheritedContext &&
       typeof (inheritedContext as { tenantId?: unknown }).tenantId === 'string'
     ) {
-      inheritedTenantId = (inheritedContext as { tenantId: string }).tenantId;
+      inheritedTenantId = (inheritedContext as { tenantId: string }).tenantId
     }
 
-    const authStore = alsAuthContext.getStore();
-    const tenantIdFromAuth = authStore?.authInfo?.tenantId;
+    const authStore = alsAuthContext.getStore()
+    const tenantIdFromAuth = authStore?.authInfo?.tenantId
 
     const requestId =
       typeof inheritedContext.requestId === 'string' &&
       inheritedContext.requestId
         ? inheritedContext.requestId
-        : generateRequestContextId();
-    const timestamp = new Date().toISOString();
+        : generateRequestContextId()
+    const timestamp = new Date().toISOString()
 
     const restTenantId =
       typeof (rest as { tenantId?: unknown }).tenantId === 'string'
         ? (rest as { tenantId: string }).tenantId
-        : undefined;
+        : undefined
 
     const additionalTenantId =
       additionalContext &&
       typeof additionalContext === 'object' &&
       typeof (additionalContext as { tenantId?: unknown }).tenantId === 'string'
         ? (additionalContext as { tenantId: string }).tenantId
-        : undefined;
+        : undefined
 
     const resolvedTenantId =
       additionalTenantId ??
       restTenantId ??
       inheritedTenantId ??
-      tenantIdFromAuth;
+      tenantIdFromAuth
 
     const context: RequestContext = {
       ...inheritedContext,
@@ -227,20 +227,20 @@ const requestContextServiceInstance = {
         ? additionalContext
         : {}),
       ...(operation && typeof operation === 'string' ? { operation } : {}),
-    };
+    }
 
     // --- OpenTelemetry Integration ---
-    const activeSpan = trace.getActiveSpan();
+    const activeSpan = trace.getActiveSpan()
     if (activeSpan && typeof activeSpan.spanContext === 'function') {
-      const spanContext = activeSpan.spanContext();
+      const spanContext = activeSpan.spanContext()
       if (spanContext) {
-        context.traceId = spanContext.traceId;
-        context.spanId = spanContext.spanId;
+        context.traceId = spanContext.traceId
+        context.spanId = spanContext.spanId
       }
     }
     // --- End OpenTelemetry Integration ---
 
-    return context;
+    return context
   },
 
   /**
@@ -272,7 +272,7 @@ const requestContextServiceInstance = {
       additionalContext: {
         tenantId: authInfo.tenantId,
       },
-    });
+    })
 
     // Populate auth property with structured authentication context
     const authContext: AuthContext = {
@@ -281,18 +281,18 @@ const requestContextServiceInstance = {
       clientId: authInfo.clientId,
       token: authInfo.token,
       ...(authInfo.tenantId ? { tenantId: authInfo.tenantId } : {}),
-    };
+    }
 
     return {
       ...baseContext,
       auth: authContext,
-    };
+    }
   },
-};
+}
 
 /**
  * Primary export for request context functionalities.
  * This service provides methods to create and manage {@link RequestContext} instances,
  * which are essential for logging, tracing, and correlating operations.
  */
-export const requestContextService = requestContextServiceInstance;
+export const requestContextService = requestContextServiceInstance

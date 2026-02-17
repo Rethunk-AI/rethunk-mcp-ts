@@ -1,7 +1,7 @@
-import { HttpResponse, http } from 'msw';
+import { HttpResponse, http } from 'msw'
 
-const mockCatImage = Buffer.from('mock-cat-image-data');
-const HTTPBIN_BASE = 'https://httpbin.org';
+const mockCatImage = Buffer.from('mock-cat-image-data')
+const HTTPBIN_BASE = 'https://httpbin.org'
 
 export const handlers = [
   // Mock for successful cat image fetch
@@ -12,7 +12,7 @@ export const handlers = [
         'Content-Type': 'image/jpeg',
         'Content-Length': mockCatImage.length.toString(),
       },
-    });
+    })
   }),
 
   // Mock for successful chat completion
@@ -37,12 +37,12 @@ export const handlers = [
         completion_tokens: 12,
         total_tokens: 21,
       },
-    });
+    })
   }),
 
   // Mock for fetchWithTimeout test
   http.get('https://api.example.com/data', () => {
-    return HttpResponse.json({ data: 'test' });
+    return HttpResponse.json({ data: 'test' })
   }),
 
   // Mocks for httpbin.org endpoints
@@ -57,33 +57,33 @@ export const handlers = [
         ],
         title: 'Sample Slide Show',
       },
-    });
+    })
   }),
 
   http.get(`${HTTPBIN_BASE}/delay/:duration`, async ({ params }) => {
-    const duration = Number(params.duration) * 1000;
-    await new Promise((resolve) => setTimeout(resolve, duration));
-    return HttpResponse.json({ delayed: true });
+    const duration = Number(params.duration) * 1000
+    await new Promise((resolve) => setTimeout(resolve, duration))
+    return HttpResponse.json({ delayed: true })
   }),
 
   http.get(`${HTTPBIN_BASE}/status/:code`, ({ params }) => {
-    const code = Number(params.code);
-    return new HttpResponse(null, { status: code });
+    const code = Number(params.code)
+    return new HttpResponse(null, { status: code })
   }),
 
   http.post(`${HTTPBIN_BASE}/post`, async ({ request }) => {
-    const body = await request.json();
+    const body = await request.json()
     return HttpResponse.json({
       json: body,
       headers: { 'Content-Type': 'application/json' },
-    });
+    })
   }),
 
   // Mock for network error
   http.get('https://invalid-domain-that-does-not-exist.com/', () => {
-    return HttpResponse.error();
+    return HttpResponse.error()
   }),
-];
+]
 
 export const errorHandlers = {
   unauthorized: http.post(
@@ -95,7 +95,7 @@ export const errorHandlers = {
           status: 401,
           headers: { 'Content-Type': 'application/json' },
         },
-      );
+      )
     },
   ),
   rateLimited: http.post(
@@ -107,7 +107,7 @@ export const errorHandlers = {
           status: 429,
           headers: { 'Content-Type': 'application/json' },
         },
-      );
+      )
     },
   ),
   internalError: http.post(
@@ -119,16 +119,16 @@ export const errorHandlers = {
           status: 500,
           headers: { 'Content-Type': 'application/json' },
         },
-      );
+      )
     },
   ),
-};
+}
 
 export const catImageErrorHandlers = {
   internalError: http.get('https://cataas.com/cat', () => {
     return new HttpResponse(null, {
       status: 500,
       statusText: 'Internal Server Error',
-    });
+    })
   }),
-};
+}

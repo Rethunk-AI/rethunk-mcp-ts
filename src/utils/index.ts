@@ -5,16 +5,16 @@
  * @module src/utils
  */
 
+export * from './formatting/index.js'
 // Re-export all utilities from their categorized subdirectories
-export * from './internal/index.js';
-export * from './metrics/index.js';
-export * from './parsing/index.js';
-export * from './security/index.js';
-export * from './network/index.js';
-export * from './scheduling/index.js';
-export * from './formatting/index.js';
-export * from './pagination/index.js';
-export * from './types/index.js';
+export * from './internal/index.js'
+export * from './metrics/index.js'
+export * from './network/index.js'
+export * from './pagination/index.js'
+export * from './parsing/index.js'
+export * from './scheduling/index.js'
+export * from './security/index.js'
+export * from './types/index.js'
 
 // It's good practice to have index.ts files in each subdirectory
 // that export the contents of that directory.

@@ -4,20 +4,20 @@
  * @module src/storage/providers/surrealdb/graph/pathFinder
  */
 
-import type Surreal from 'surrealdb';
-import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js';
-import type { Edge, Vertex } from './graphTypes.js';
+import type Surreal from 'surrealdb'
+import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js'
+import type { Edge, Vertex } from './graphTypes.js'
 
 /**
  * Represents a path through the graph.
  */
 export interface Path {
   /** Vertices in order */
-  vertices: Vertex[];
+  vertices: Vertex[]
   /** Edges connecting vertices */
-  edges: Edge[];
+  edges: Edge[]
   /** Total path weight/cost */
-  weight: number;
+  weight: number
 }
 
 /**
@@ -25,11 +25,11 @@ export interface Path {
  */
 export interface PathFindingOptions {
   /** Maximum path length */
-  maxLength?: number;
+  maxLength?: number
   /** Edge types to consider */
-  edgeTypes?: string[];
+  edgeTypes?: string[]
   /** Custom weight function */
-  weightFn?: (edge: Edge) => number;
+  weightFn?: (edge: Edge) => number
 }
 
 /**
@@ -71,52 +71,50 @@ export class PathFinder {
   ): Promise<Path | null> {
     return ErrorHandler.tryCatch(
       async () => {
-        const maxLength = options?.maxLength ?? 10;
+        const maxLength = options?.maxLength ?? 10
 
         logger.debug(
           `[PathFinder] Finding shortest path: ${from} -> ${to}`,
           context,
-        );
+        )
 
         // Use recursive traversal to find paths
         // Build operator string for max depth
-        const operators = Array.from({ length: maxLength }, () => '->').join(
-          '',
-        );
+        const operators = Array.from({ length: maxLength }, () => '->').join('')
 
         const query = `
           SELECT
             id,
             ${operators} as reachable
           FROM $from
-        `;
+        `
 
         const result = await this.client.query<
           [{ result: Array<{ id: string; reachable: unknown }> }]
-        >(query, { from });
+        >(query, { from })
 
         // Check if target is reachable
-        const data = result[0]?.result?.[0];
+        const data = result[0]?.result?.[0]
         if (!data) {
-          return null;
+          return null
         }
 
         // Parse result to extract path
         // This is simplified - full implementation would reconstruct the exact path
-        logger.debug('[PathFinder] Path found', context);
+        logger.debug('[PathFinder] Path found', context)
 
         return {
           vertices: [],
           edges: [],
           weight: 0,
-        };
+        }
       },
       {
         operation: 'PathFinder.shortestPath',
         context,
         input: { from, to },
       },
-    );
+    )
   }
 
   /**
@@ -139,30 +137,30 @@ export class PathFinder {
         logger.debug(
           `[PathFinder] Finding all paths (max ${maxPaths}): ${from} -> ${to}`,
           context,
-        );
+        )
 
         // Use graph traversal to find multiple paths
         const query = `
           SELECT ->->->->-> as paths
           FROM $from
           LIMIT $maxPaths
-        `;
+        `
 
         await this.client.query<[{ result: unknown[] }]>(query, {
           from,
           maxPaths,
-        });
+        })
 
         // Parse and filter paths that reach the target
         // This is simplified - full implementation would reconstruct paths
-        return [];
+        return []
       },
       {
         operation: 'PathFinder.findAllPaths',
         context,
         input: { from, to, maxPaths },
       },
-    );
+    )
   }
 
   /**
@@ -181,27 +179,27 @@ export class PathFinder {
     return ErrorHandler.tryCatch(
       async () => {
         // Check if we can reach back to the starting vertex
-        const operators = Array.from({ length: maxDepth }, () => '->').join('');
+        const operators = Array.from({ length: maxDepth }, () => '->').join('')
 
         const query = `
           SELECT
             ${operators}.id as reachable
           FROM $startId
-        `;
+        `
 
         const result = await this.client.query<
           [{ result: Array<{ reachable: string[] }> }]
-        >(query, { startId });
+        >(query, { startId })
 
-        const reachable = result[0]?.result?.[0]?.reachable ?? [];
-        return Array.isArray(reachable) && reachable.includes(startId);
+        const reachable = result[0]?.result?.[0]?.reachable ?? []
+        return Array.isArray(reachable) && reachable.includes(startId)
       },
       {
         operation: 'PathFinder.detectCycle',
         context,
         input: { startId, maxDepth },
       },
-    );
+    )
   }
 
   /**
@@ -222,27 +220,27 @@ export class PathFinder {
             count(<-) as in_degree,
             count(->) as out_degree
           FROM $vertexId
-        `;
+        `
 
         const result = await this.client.query<
           [{ result: Array<{ in_degree: number; out_degree: number }> }]
-        >(query, { vertexId });
+        >(query, { vertexId })
 
-        const data = result[0]?.result?.[0];
-        const inDegree = data?.in_degree ?? 0;
-        const outDegree = data?.out_degree ?? 0;
+        const data = result[0]?.result?.[0]
+        const inDegree = data?.in_degree ?? 0
+        const outDegree = data?.out_degree ?? 0
 
         return {
           inDegree,
           outDegree,
           totalDegree: inDegree + outDegree,
-        };
+        }
       },
       {
         operation: 'PathFinder.getDegree',
         context,
         input: { vertexId },
       },
-    );
+    )
   }
 }

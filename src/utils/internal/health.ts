@@ -4,24 +4,24 @@
  * @module src/utils/internal/health
  */
 
-import { config } from '@/config/index.js';
-import { logger } from '@/utils/internal/logger.js';
-import { runtimeCaps } from '@/utils/internal/runtime.js';
+import { config } from '@/config/index.js'
+import { logger } from '@/utils/internal/logger.js'
+import { runtimeCaps } from '@/utils/internal/runtime.js'
 
 export interface HealthSnapshot {
-  app: { name: string; version: string; environment: string };
+  app: { name: string; version: string; environment: string }
   runtime: {
-    isNode: boolean;
-    isWorkerLike: boolean;
-    isBrowserLike: boolean;
-  };
+    isNode: boolean
+    isWorkerLike: boolean
+    isBrowserLike: boolean
+  }
   telemetry: {
-    enabled: boolean;
-    diagLevel: string | undefined;
-  };
+    enabled: boolean
+    diagLevel: string | undefined
+  }
   logging: {
-    initialized: boolean;
-  };
+    initialized: boolean
+  }
 }
 
 export function getHealthSnapshot(): HealthSnapshot {
@@ -43,5 +43,5 @@ export function getHealthSnapshot(): HealthSnapshot {
     logging: {
       initialized: logger.isInitialized(),
     },
-  };
+  }
 }

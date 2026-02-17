@@ -4,14 +4,14 @@
  * @module src/storage/providers/surrealdb/core/transactionManager
  */
 
-import type Surreal from 'surrealdb';
-import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js';
-import type { TransactionOptions } from '../types.js';
+import type Surreal from 'surrealdb'
+import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js'
+import type { TransactionOptions } from '../types.js'
 
 /**
  * Callback function type for transaction operations.
  */
-export type TransactionCallback<T> = (client: Surreal) => Promise<T>;
+export type TransactionCallback<T> = (client: Surreal) => Promise<T>
 
 /**
  * Manages transactions for SurrealDB operations.
@@ -51,34 +51,34 @@ export class TransactionManager {
   ): Promise<T> {
     return ErrorHandler.tryCatch(
       async () => {
-        logger.debug('[TransactionManager] Starting transaction', context);
+        logger.debug('[TransactionManager] Starting transaction', context)
 
         // Begin transaction
-        await this.client.query('BEGIN TRANSACTION');
+        await this.client.query('BEGIN TRANSACTION')
 
         try {
           // Execute callback operations
           const result = await Promise.race([
             callback(this.client),
             this.createTimeout(options?.timeout),
-          ]);
+          ])
 
           // Commit transaction
-          await this.client.query('COMMIT TRANSACTION');
+          await this.client.query('COMMIT TRANSACTION')
 
-          logger.debug('[TransactionManager] Transaction committed', context);
+          logger.debug('[TransactionManager] Transaction committed', context)
 
-          return result as T;
+          return result as T
         } catch (error: unknown) {
           // Cancel transaction on error
           logger.warning(
             '[TransactionManager] Transaction failed, cancelling',
             context,
-          );
+          )
 
-          await this.client.query('CANCEL TRANSACTION');
+          await this.client.query('CANCEL TRANSACTION')
 
-          throw error;
+          throw error
         }
       },
       {
@@ -86,7 +86,7 @@ export class TransactionManager {
         context,
         input: { timeout: options?.timeout },
       },
-    );
+    )
   }
 
   /**
@@ -101,15 +101,15 @@ export class TransactionManager {
     context: RequestContext,
   ): Promise<T[]> {
     return this.executeInTransaction(async (client) => {
-      const results: T[] = [];
+      const results: T[] = []
 
       for (const { query, params } of queries) {
-        const result = await client.query<[{ result: T }]>(query, params ?? {});
-        results.push(result[0]?.result);
+        const result = await client.query<[{ result: T }]>(query, params ?? {})
+        results.push(result[0]?.result)
       }
 
-      return results;
-    }, context);
+      return results
+    }, context)
   }
 
   /**
@@ -119,13 +119,13 @@ export class TransactionManager {
     if (!timeout) {
       return new Promise(() => {
         /* never resolves */
-      });
+      })
     }
 
     return new Promise((_, reject) => {
       setTimeout(() => {
-        reject(new Error(`Transaction timeout after ${timeout}ms`));
-      }, timeout);
-    });
+        reject(new Error(`Transaction timeout after ${timeout}ms`))
+      }, timeout)
+    })
   }
 }

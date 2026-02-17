@@ -9,11 +9,11 @@
  */
 export interface ForLoopConfig {
   /** Variable name for iteration */
-  variable: string;
+  variable: string
   /** Source to iterate over (array, query, range) */
-  source: string;
+  source: string
   /** Body statements to execute */
-  body: string[];
+  body: string[]
 }
 
 /**
@@ -38,9 +38,9 @@ export interface ForLoopConfig {
  * ```
  */
 export class ForLoopBuilder {
-  private variable: string = '';
-  private source: string = '';
-  private body: string[] = [];
+  private variable: string = ''
+  private source: string = ''
+  private body: string[] = []
 
   private constructor() {}
 
@@ -50,9 +50,9 @@ export class ForLoopBuilder {
    * @param variable - Variable name for iteration (without $)
    */
   static create(variable: string): ForLoopBuilder {
-    const builder = new ForLoopBuilder();
-    builder.variable = variable;
-    return builder;
+    const builder = new ForLoopBuilder()
+    builder.variable = variable
+    return builder
   }
 
   /**
@@ -61,8 +61,8 @@ export class ForLoopBuilder {
    * @param source - Array, query, or range expression
    */
   in(source: string): this {
-    this.source = source;
-    return this;
+    this.source = source
+    return this
   }
 
   /**
@@ -71,8 +71,8 @@ export class ForLoopBuilder {
    * @param statement - SurrealQL statement
    */
   do(statement: string): this {
-    this.body.push(statement);
-    return this;
+    this.body.push(statement)
+    return this
   }
 
   /**
@@ -81,8 +81,8 @@ export class ForLoopBuilder {
    * @param statements - Array of SurrealQL statements
    */
   doAll(statements: string[]): this {
-    this.body.push(...statements);
-    return this;
+    this.body.push(...statements)
+    return this
   }
 
   /**
@@ -90,23 +90,23 @@ export class ForLoopBuilder {
    */
   build(): string {
     if (!this.variable) {
-      throw new Error('Variable name is required');
+      throw new Error('Variable name is required')
     }
 
     if (!this.source) {
-      throw new Error('Source is required');
+      throw new Error('Source is required')
     }
 
     if (this.body.length === 0) {
-      throw new Error('At least one statement in body is required');
+      throw new Error('At least one statement in body is required')
     }
 
     const bodyStr =
       this.body.length === 1
         ? this.body[0]
-        : this.body.map((s) => `  ${s}`).join(';\n');
+        : this.body.map((s) => `  ${s}`).join(';\n')
 
-    return `FOR $${this.variable} IN ${this.source} {\n${bodyStr}\n}`;
+    return `FOR $${this.variable} IN ${this.source} {\n${bodyStr}\n}`
   }
 
   /**
@@ -133,7 +133,7 @@ export class ForLoopBuilder {
     return ForLoopBuilder.create(variable)
       .in(`${start}..${end}`)
       .doAll(Array.isArray(body) ? body : [body])
-      .build();
+      .build()
   }
 
   /**
@@ -152,7 +152,7 @@ export class ForLoopBuilder {
     return ForLoopBuilder.create(variable)
       .in(arrayField)
       .doAll(Array.isArray(body) ? body : [body])
-      .build();
+      .build()
   }
 
   /**
@@ -180,7 +180,7 @@ export class ForLoopBuilder {
     return ForLoopBuilder.create(variable)
       .in(query)
       .doAll(Array.isArray(body) ? body : [body])
-      .build();
+      .build()
   }
 
   /**
@@ -199,37 +199,37 @@ export class ForLoopBuilder {
    */
   static nested(configs: ForLoopConfig[]): string {
     if (configs.length === 0) {
-      throw new Error('At least one loop configuration required');
+      throw new Error('At least one loop configuration required')
     }
 
-    let result = '';
-    let indent = 0;
+    let result = ''
+    let indent = 0
 
     for (let i = 0; i < configs.length; i++) {
-      const config = configs[i];
-      if (!config) continue;
+      const config = configs[i]
+      if (!config) continue
 
-      const isLast = i === configs.length - 1;
-      const spacing = '  '.repeat(indent);
+      const isLast = i === configs.length - 1
+      const spacing = '  '.repeat(indent)
 
-      result += `${spacing}FOR $${config.variable} IN ${config.source} {\n`;
+      result += `${spacing}FOR $${config.variable} IN ${config.source} {\n`
 
       if (isLast && config.body && config.body.length > 0) {
         config.body.forEach((stmt) => {
-          result += `${spacing}  ${stmt};\n`;
-        });
+          result += `${spacing}  ${stmt};\n`
+        })
       }
 
-      indent++;
+      indent++
     }
 
     // Close all loops
     for (let i = configs.length - 1; i >= 0; i--) {
-      indent--;
-      result += '  '.repeat(indent) + '}\n';
+      indent--
+      result += `${'  '.repeat(indent)}}\n`
     }
 
-    return result.trim();
+    return result.trim()
   }
 }
 
@@ -237,5 +237,5 @@ export class ForLoopBuilder {
  * Helper function to create a subquery builder.
  */
 export function forLoop(variable: string): ForLoopBuilder {
-  return ForLoopBuilder.create(variable);
+  return ForLoopBuilder.create(variable)
 }

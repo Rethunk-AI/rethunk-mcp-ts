@@ -10,7 +10,7 @@ import type {
   TextToSpeechOptions,
   TextToSpeechResult,
   Voice,
-} from '../types.js';
+} from '../types.js'
 
 /**
  * Main interface for speech service providers.
@@ -20,41 +20,41 @@ export interface ISpeechProvider {
   /**
    * Provider name for identification.
    */
-  readonly name: string;
+  readonly name: string
 
   /**
    * Whether this provider supports text-to-speech.
    */
-  readonly supportsTTS: boolean;
+  readonly supportsTTS: boolean
 
   /**
    * Whether this provider supports speech-to-text.
    */
-  readonly supportsSTT: boolean;
+  readonly supportsSTT: boolean
 
   /**
    * Convert text to speech audio.
    * @throws {McpError} if TTS is not supported or operation fails
    */
-  textToSpeech(options: TextToSpeechOptions): Promise<TextToSpeechResult>;
+  textToSpeech(options: TextToSpeechOptions): Promise<TextToSpeechResult>
 
   /**
    * Convert speech audio to text.
    * @throws {McpError} if STT is not supported or operation fails
    */
-  speechToText(options: SpeechToTextOptions): Promise<SpeechToTextResult>;
+  speechToText(options: SpeechToTextOptions): Promise<SpeechToTextResult>
 
   /**
    * Get available voices (for TTS providers).
    * @throws {McpError} if operation fails or not supported
    */
-  getVoices(): Promise<Voice[]>;
+  getVoices(): Promise<Voice[]>
 
   /**
    * Health check for the provider.
    * @returns true if provider is healthy and configured correctly
    */
-  healthCheck(): Promise<boolean>;
+  healthCheck(): Promise<boolean>
 }
 
 /**
@@ -63,7 +63,7 @@ export interface ISpeechProvider {
 export function supportsTTS(
   provider: ISpeechProvider,
 ): provider is ISpeechProvider {
-  return provider.supportsTTS;
+  return provider.supportsTTS
 }
 
 /**
@@ -72,5 +72,5 @@ export function supportsTTS(
 export function supportsSTT(
   provider: ISpeechProvider,
 ): provider is ISpeechProvider {
-  return provider.supportsSTT;
+  return provider.supportsSTT
 }

@@ -7,25 +7,25 @@
 import {
   context as otContext,
   propagation,
-  trace,
-  SpanStatusCode,
   type Span,
-} from '@opentelemetry/api';
+  SpanStatusCode,
+  trace,
+} from '@opentelemetry/api'
 
-import { config } from '@/config/index.js';
-import { requestContextService } from '@/utils/internal/requestContext.js';
-import type { RequestContext } from '@/utils/internal/requestContext.js';
+import { config } from '@/config/index.js'
+import type { RequestContext } from '@/utils/internal/requestContext.js'
+import { requestContextService } from '@/utils/internal/requestContext.js'
 
 /**
  * Represents parsed W3C traceparent header data.
  */
 export interface TraceparentInfo {
   /** W3C trace ID (32 hex characters) */
-  traceId: string;
+  traceId: string
   /** W3C span ID (16 hex characters) */
-  spanId: string;
+  spanId: string
   /** Whether the trace is sampled */
-  sampled: boolean;
+  sampled: boolean
 }
 
 /**
@@ -46,13 +46,13 @@ export interface TraceparentInfo {
 export function buildTraceparent(ctx?: RequestContext): string | undefined {
   const traceId =
     (ctx?.traceId as string | undefined) ??
-    trace.getActiveSpan()?.spanContext().traceId;
+    trace.getActiveSpan()?.spanContext().traceId
   const spanId =
     (ctx?.spanId as string | undefined) ??
-    trace.getActiveSpan()?.spanContext().spanId;
-  if (!traceId || !spanId) return undefined;
+    trace.getActiveSpan()?.spanContext().spanId
+  if (!traceId || !spanId) return undefined
   // We do not currently read flags reliably from context; assume sampled
-  return `00-${traceId}-${spanId}-01`;
+  return `00-${traceId}-${spanId}-01`
 }
 
 /**
@@ -80,21 +80,21 @@ export function extractTraceparent(
   const headerValue =
     headers instanceof Headers
       ? headers.get('traceparent')
-      : headers['traceparent'];
+      : headers.traceparent
 
-  if (!headerValue) return undefined;
+  if (!headerValue) return undefined
 
   // W3C traceparent format: 00-{traceId}-{spanId}-{flags}
   const match = /^00-([0-9a-f]{32})-([0-9a-f]{16})-([0-9a-f]{2})$/.exec(
     headerValue,
-  );
-  if (!match || !match[1] || !match[2] || !match[3]) return undefined;
+  )
+  if (!match || !match[1] || !match[2] || !match[3]) return undefined
 
   return {
     traceId: match[1],
     spanId: match[2],
     sampled: match[3] === '01',
-  };
+  }
 }
 
 /**
@@ -119,14 +119,14 @@ export function createContextWithParentTrace(
   parentHeaders: Headers | Record<string, string | undefined>,
   operation: string,
 ): RequestContext {
-  const traceInfo = extractTraceparent(parentHeaders);
+  const traceInfo = extractTraceparent(parentHeaders)
   return requestContextService.createRequestContext({
     operation,
     ...(traceInfo && {
       traceId: traceInfo.traceId,
       parentSpanId: traceInfo.spanId,
     }),
-  });
+  })
 }
 
 /**
@@ -147,8 +147,8 @@ export function createContextWithParentTrace(
 export function injectCurrentContextInto<T extends Record<string, unknown>>(
   carrier: T,
 ): T {
-  propagation.inject(otContext.active(), carrier);
-  return carrier;
+  propagation.inject(otContext.active(), carrier)
+  return carrier
 }
 
 /**
@@ -179,30 +179,30 @@ export async function withSpan<T>(
   const tracer = trace.getTracer(
     config.openTelemetry.serviceName,
     config.openTelemetry.serviceVersion,
-  );
+  )
 
   return tracer.startActiveSpan(operationName, async (span) => {
     if (attributes) {
-      span.setAttributes(attributes);
+      span.setAttributes(attributes)
     }
 
     try {
-      const result = await fn(span);
-      span.setStatus({ code: SpanStatusCode.OK });
-      return result;
+      const result = await fn(span)
+      span.setStatus({ code: SpanStatusCode.OK })
+      return result
     } catch (error: unknown) {
       span.recordException(
         error instanceof Error ? error : new Error(String(error)),
-      );
+      )
       span.setStatus({
         code: SpanStatusCode.ERROR,
         message: error instanceof Error ? error.message : String(error),
-      });
-      throw error;
+      })
+      throw error
     } finally {
-      span.end();
+      span.end()
     }
-  });
+  })
 }
 
 /**
@@ -230,11 +230,11 @@ export function runInContext<T>(
 ): T {
   // If no trace context, run directly
   if (!ctx?.traceId || !ctx?.spanId) {
-    return fn();
+    return fn()
   }
 
   // Execute within the active context
   // Note: Full context restoration would require span recreation
   // This simplified version maintains execution but doesn't create new spans
-  return otContext.with(otContext.active(), fn);
+  return otContext.with(otContext.active(), fn)
 }

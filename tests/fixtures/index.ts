@@ -3,10 +3,9 @@
  * Consolidates common test setup patterns used across the suite.
  * @module tests/fixtures
  */
-import { vi } from 'vitest';
-
-import { requestContextService, type RequestContext } from '@/utils/index.js';
-import type { SdkContext } from '@/mcp-server/tools/utils/toolDefinition.js';
+import { vi } from 'vitest'
+import type { SdkContext } from '@/mcp-server/tools/utils/toolDefinition.js'
+import { type RequestContext, requestContextService } from '@/utils/index.js'
 
 /**
  * Create a test RequestContext with sensible defaults.
@@ -19,7 +18,7 @@ export function createTestAppContext(
     operation: 'test-operation',
     tenantId: 'test-tenant',
     ...overrides,
-  });
+  })
 }
 
 /**
@@ -34,7 +33,7 @@ export function createTestSdkContext(
     sendNotification: vi.fn().mockResolvedValue(undefined),
     sendRequest: vi.fn().mockResolvedValue({}),
     ...overrides,
-  } as unknown as SdkContext;
+  } as unknown as SdkContext
 }
 
 /**
@@ -51,5 +50,5 @@ export function createMockSurrealClient() {
     signin: vi.fn().mockResolvedValue('token'),
     signup: vi.fn().mockResolvedValue('token'),
     close: vi.fn().mockResolvedValue(undefined),
-  };
+  }
 }

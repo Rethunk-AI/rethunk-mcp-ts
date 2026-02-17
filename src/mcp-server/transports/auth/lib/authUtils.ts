@@ -3,9 +3,10 @@
  * checking token scopes against required permissions for a given operation.
  * @module src/mcp-server/transports/auth/core/authUtils
  */
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
-import { logger, requestContextService } from '@/utils/index.js';
-import { authContext } from '@/mcp-server/transports/auth/lib/authContext.js';
+
+import { authContext } from '@/mcp-server/transports/auth/lib/authContext.js'
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
+import { logger, requestContextService } from '@/utils/index.js'
 
 /**
  * Checks if the current authentication context contains all the specified scopes.
@@ -18,51 +19,51 @@ import { authContext } from '@/mcp-server/transports/auth/lib/authContext.js';
  *   is active and one or more required scopes are not present in the validated token.
  */
 export function withRequiredScopes(requiredScopes: string[]): void {
-  const operationName = 'withRequiredScopesCheck';
+  const operationName = 'withRequiredScopesCheck'
   const initialContext = requestContextService.createRequestContext({
     operation: operationName,
     additionalContext: { requiredScopes },
-  });
+  })
 
-  const store = authContext.getStore();
+  const store = authContext.getStore()
 
   // If no auth store is found, it means auth is not configured. Default to allowed for template usability.
   if (!store || !store.authInfo) {
     logger.debug(
       'No authentication context found. Defaulting to allowed for demonstration purposes.',
       initialContext,
-    );
-    return;
+    )
+    return
   }
 
-  logger.debug('Performing scope authorization check.', initialContext);
+  logger.debug('Performing scope authorization check.', initialContext)
 
-  const { scopes: grantedScopes, clientId, subject } = store.authInfo;
-  const grantedScopeSet = new Set(grantedScopes);
+  const { scopes: grantedScopes, clientId, subject } = store.authInfo
+  const grantedScopeSet = new Set(grantedScopes)
 
   const missingScopes = requiredScopes.filter(
     (scope) => !grantedScopeSet.has(scope),
-  );
+  )
 
   const finalContext = {
     ...initialContext,
     grantedScopes,
     clientId,
     subject,
-  };
+  }
 
   if (missingScopes.length > 0) {
-    const errorContext = { ...finalContext, missingScopes };
+    const errorContext = { ...finalContext, missingScopes }
     logger.warning(
       'Authorization failed: Missing required scopes.',
       errorContext,
-    );
+    )
     throw new McpError(
       JsonRpcErrorCode.Forbidden,
       `Insufficient permissions. Missing required scopes: ${missingScopes.join(', ')}`,
       errorContext,
-    );
+    )
   }
 
-  logger.debug('Scope authorization successful.', finalContext);
+  logger.debug('Scope authorization successful.', finalContext)
 }

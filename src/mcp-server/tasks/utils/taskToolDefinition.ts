@@ -6,13 +6,12 @@
  * @experimental These APIs are experimental and may change without notice.
  * @module src/mcp-server/tasks/utils/taskToolDefinition
  */
-import type { ZodObject, ZodRawShape } from 'zod';
-
-import type { ToolAnnotations } from '@/mcp-server/tools/utils/toolDefinition.js';
+import type { ZodObject, ZodRawShape } from 'zod'
 import type {
-  ToolTaskHandler,
   TaskToolExecution,
-} from '@/mcp-server/tasks/core/taskTypes.js';
+  ToolTaskHandler,
+} from '@/mcp-server/tasks/core/taskTypes.js'
+import type { ToolAnnotations } from '@/mcp-server/tools/utils/toolDefinition.js'
 
 /**
  * Represents a task-based tool definition for long-running async operations.
@@ -61,36 +60,36 @@ export interface TaskToolDefinition<
    * The programmatic, unique name for the tool (e.g., 'async_analysis').
    * Must follow MCP tool naming conventions: alphanumeric, underscores, hyphens.
    */
-  name: string;
+  name: string
 
   /**
    * An optional, human-readable title for the tool.
    * If not provided, derived from `name` or `annotations.title`.
    */
-  title?: string;
+  title?: string
 
   /**
    * A clear, concise description of what the tool does.
    * This is sent to the LLM to help it decide when to use the tool.
    */
-  description: string;
+  description: string
 
   /**
    * The Zod schema for validating the tool's input parameters.
    * All fields should have `.describe()` for LLM context.
    */
-  inputSchema: TInputSchema;
+  inputSchema: TInputSchema
 
   /**
    * The Zod schema for validating the tool's successful output structure.
    * Used for documentation and client-side type inference.
    */
-  outputSchema?: TOutputSchema;
+  outputSchema?: TOutputSchema
 
   /**
    * Optional metadata providing hints about the tool's behavior.
    */
-  annotations?: ToolAnnotations;
+  annotations?: ToolAnnotations
 
   /**
    * Task execution configuration.
@@ -101,7 +100,7 @@ export interface TaskToolDefinition<
    * Note: `taskSupport: 'forbidden'` is not valid for task tools;
    * use a regular ToolDefinition instead.
    */
-  execution: TaskToolExecution;
+  execution: TaskToolExecution
 
   /**
    * The task handlers implementing the task lifecycle.
@@ -111,7 +110,7 @@ export interface TaskToolDefinition<
    * - `getTask`: When polling for status (tasks/get)
    * - `getTaskResult`: When retrieving results (tasks/result)
    */
-  taskHandlers: ToolTaskHandler<TInputSchema>;
+  taskHandlers: ToolTaskHandler<TInputSchema>
 }
 
 /**
@@ -129,5 +128,5 @@ export function isTaskToolDefinition(
     'taskHandlers' in def &&
     def.taskHandlers !== null &&
     typeof def.taskHandlers === 'object'
-  );
+  )
 }

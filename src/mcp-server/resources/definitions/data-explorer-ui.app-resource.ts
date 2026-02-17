@@ -15,16 +15,15 @@
  * @module src/mcp-server/resources/definitions/data-explorer-ui.app-resource
  * @see {@link ../../tools/definitions/template-data-explorer.app-tool.ts} linked tool
  */
-import { RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server';
-import { z } from 'zod';
-
-import { type RequestContext, logger } from '@/utils/index.js';
-import { withResourceAuth } from '@/mcp-server/transports/auth/lib/withAuth.js';
-import type { ResourceDefinition } from '@/mcp-server/resources/utils/resourceDefinition.js';
+import { RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server'
+import { z } from 'zod'
+import type { ResourceDefinition } from '@/mcp-server/resources/utils/resourceDefinition.js'
+import { withResourceAuth } from '@/mcp-server/transports/auth/lib/withAuth.js'
+import { logger, type RequestContext } from '@/utils/index.js'
 
 const ParamsSchema = z
   .object({})
-  .describe('No parameters. Returns the static HTML app.');
+  .describe('No parameters. Returns the static HTML app.')
 
 // ─── HTML Application ─────────────────────────────────────────────────────────
 
@@ -286,7 +285,7 @@ const APP_HTML = `<!DOCTYPE html>
     await app.connect();
   </script>
 </body>
-</html>`;
+</html>`
 
 // ─── Logic ────────────────────────────────────────────────────────────────────
 
@@ -298,8 +297,8 @@ function dataExplorerUiLogic(
   logger.debug('Serving data explorer UI resource.', {
     ...context,
     resourceUri: uri.href,
-  });
-  return APP_HTML;
+  })
+  return APP_HTML
 }
 
 // ─── Definition ───────────────────────────────────────────────────────────────
@@ -331,4 +330,4 @@ export const dataExplorerUiResource: ResourceDefinition<typeof ParamsSchema> = {
   responseFormatter: (result, meta) => [
     { uri: meta.uri.href, mimeType: meta.mimeType, text: result as string },
   ],
-};
+}

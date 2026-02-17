@@ -4,7 +4,7 @@
  * can be used interchangeably throughout the application.
  * @module src/storage/core/IStorageProvider
  */
-import type { RequestContext } from '@/utils/index.js';
+import type { RequestContext } from '@/utils/index.js'
 
 /**
  * Options for storage operations.
@@ -22,7 +22,7 @@ export interface StorageOptions {
    * Time-to-live for the stored item, in seconds.
    * If not provided, the item will be stored indefinitely.
    */
-  ttl?: number;
+  ttl?: number
 }
 
 /**
@@ -35,12 +35,12 @@ export interface ListOptions {
   /**
    * Maximum number of keys to return. Defaults to provider-specific limit.
    */
-  limit?: number;
+  limit?: number
   /**
    * Pagination cursor from a previous list operation.
    * Format is provider-specific (opaque string).
    */
-  cursor?: string;
+  cursor?: string
 }
 
 /**
@@ -53,12 +53,12 @@ export interface ListResult {
   /**
    * Array of keys matching the prefix.
    */
-  keys: string[];
+  keys: string[]
   /**
    * Cursor for fetching the next page of results.
    * Undefined if there are no more results.
    */
-  nextCursor?: string | undefined;
+  nextCursor?: string | undefined
 }
 
 /**
@@ -77,7 +77,7 @@ export interface IStorageProvider {
     tenantId: string,
     key: string,
     context: RequestContext,
-  ): Promise<T | null>;
+  ): Promise<T | null>
 
   /**
    * Stores a value in the storage.
@@ -93,7 +93,7 @@ export interface IStorageProvider {
     value: unknown,
     context: RequestContext,
     options?: StorageOptions,
-  ): Promise<void>;
+  ): Promise<void>
 
   /**
    * Deletes a value from the storage.
@@ -105,7 +105,7 @@ export interface IStorageProvider {
     tenantId: string,
     key: string,
     context: RequestContext,
-  ): Promise<boolean>;
+  ): Promise<boolean>
 
   /**
    * Lists all keys that match a given prefix.
@@ -122,7 +122,7 @@ export interface IStorageProvider {
     prefix: string,
     context: RequestContext,
     options?: ListOptions,
-  ): Promise<ListResult>;
+  ): Promise<ListResult>
 
   /**
    * Retrieves multiple values from storage in a single operation.
@@ -143,7 +143,7 @@ export interface IStorageProvider {
     tenantId: string,
     keys: string[],
     context: RequestContext,
-  ): Promise<Map<string, T>>;
+  ): Promise<Map<string, T>>
 
   /**
    * Stores multiple values in a single operation.
@@ -166,7 +166,7 @@ export interface IStorageProvider {
     entries: Map<string, unknown>,
     context: RequestContext,
     options?: StorageOptions,
-  ): Promise<void>;
+  ): Promise<void>
 
   /**
    * Deletes multiple keys in a single operation.
@@ -187,7 +187,7 @@ export interface IStorageProvider {
     tenantId: string,
     keys: string[],
     context: RequestContext,
-  ): Promise<number>;
+  ): Promise<number>
 
   /**
    * Clears all keys for a given tenant.
@@ -197,5 +197,5 @@ export interface IStorageProvider {
    * @param context The request context for logging and tracing.
    * @returns A promise that resolves to the number of keys deleted.
    */
-  clear(tenantId: string, context: RequestContext): Promise<number>;
+  clear(tenantId: string, context: RequestContext): Promise<number>
 }

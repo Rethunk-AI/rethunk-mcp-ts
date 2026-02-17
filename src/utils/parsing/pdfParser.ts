@@ -5,23 +5,23 @@
  * @module src/utils/parsing/pdfParser
  */
 import {
-  PDFDocument,
-  PDFFont,
-  PDFImage,
-  PDFPage,
-  StandardFonts,
   degrees,
-  rgb,
+  PDFDocument,
+  type PDFFont,
+  type PDFImage,
+  type PDFPage,
   type RGB,
-} from 'pdf-lib';
-import { extractText as unpdfExtractText, getDocumentProxy } from 'unpdf';
+  rgb,
+  StandardFonts,
+} from 'pdf-lib'
+import { getDocumentProxy, extractText as unpdfExtractText } from 'unpdf'
 
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
 import {
-  type RequestContext,
   logger,
+  type RequestContext,
   requestContextService,
-} from '@/utils/index.js';
+} from '@/utils/index.js'
 
 /**
  * Options for adding a new page to a PDF document.
@@ -30,12 +30,12 @@ export interface AddPageOptions {
   /**
    * Width of the page in points (1/72 inch). Defaults to US Letter width (612 points).
    */
-  width?: number;
+  width?: number
 
   /**
    * Height of the page in points (1/72 inch). Defaults to US Letter height (792 points).
    */
-  height?: number;
+  height?: number
 }
 
 /**
@@ -45,48 +45,48 @@ export interface DrawTextOptions {
   /**
    * The text string to draw.
    */
-  text: string;
+  text: string
 
   /**
    * X-coordinate (in points) of the text baseline start.
    */
-  x: number;
+  x: number
 
   /**
    * Y-coordinate (in points) of the text baseline.
    */
-  y: number;
+  y: number
 
   /**
    * Font size in points. Defaults to 12.
    */
-  size?: number;
+  size?: number
 
   /**
    * Font to use. Must be embedded first via embedFont().
    * Defaults to Helvetica.
    */
-  font?: PDFFont;
+  font?: PDFFont
 
   /**
    * Text color as an RGB object. Defaults to black.
    */
-  color?: RGB;
+  color?: RGB
 
   /**
    * Rotation angle in degrees. Defaults to 0.
    */
-  rotate?: number;
+  rotate?: number
 
   /**
    * Maximum width for text wrapping (in points). If specified, text will wrap.
    */
-  maxWidth?: number;
+  maxWidth?: number
 
   /**
    * Line height multiplier for wrapped text. Defaults to 1.2.
    */
-  lineHeight?: number;
+  lineHeight?: number
 }
 
 /**
@@ -96,12 +96,12 @@ export interface EmbedImageOptions {
   /**
    * Image data as Uint8Array or ArrayBuffer.
    */
-  imageBytes: Uint8Array | ArrayBuffer;
+  imageBytes: Uint8Array | ArrayBuffer
 
   /**
    * Image format: 'png' or 'jpg'.
    */
-  format: 'png' | 'jpg';
+  format: 'png' | 'jpg'
 }
 
 /**
@@ -111,37 +111,37 @@ export interface DrawImageOptions {
   /**
    * The embedded PDF image.
    */
-  image: PDFImage;
+  image: PDFImage
 
   /**
    * X-coordinate (in points) of the image's top-left corner.
    */
-  x: number;
+  x: number
 
   /**
    * Y-coordinate (in points) of the image's top-left corner.
    */
-  y: number;
+  y: number
 
   /**
    * Width of the image in points. Defaults to original width.
    */
-  width?: number;
+  width?: number
 
   /**
    * Height of the image in points. Defaults to original height.
    */
-  height?: number;
+  height?: number
 
   /**
    * Rotation angle in degrees. Defaults to 0.
    */
-  rotate?: number;
+  rotate?: number
 
   /**
    * Opacity (0-1). Defaults to 1 (fully opaque).
    */
-  opacity?: number;
+  opacity?: number
 }
 
 /**
@@ -151,12 +151,12 @@ export interface PageRange {
   /**
    * Starting page index (0-based).
    */
-  start: number;
+  start: number
 
   /**
    * Ending page index (0-based, inclusive).
    */
-  end: number;
+  end: number
 }
 
 /**
@@ -166,47 +166,47 @@ export interface PdfMetadata {
   /**
    * Document title.
    */
-  title?: string;
+  title?: string
 
   /**
    * Document author.
    */
-  author?: string;
+  author?: string
 
   /**
    * Document subject.
    */
-  subject?: string;
+  subject?: string
 
   /**
    * Keywords associated with the document.
    */
-  keywords?: string;
+  keywords?: string
 
   /**
    * Application that created the document.
    */
-  creator?: string;
+  creator?: string
 
   /**
    * Application that produced the PDF.
    */
-  producer?: string;
+  producer?: string
 
   /**
    * Creation date (ISO 8601 string).
    */
-  creationDate?: string;
+  creationDate?: string
 
   /**
    * Modification date (ISO 8601 string).
    */
-  modificationDate?: string;
+  modificationDate?: string
 
   /**
    * Total number of pages.
    */
-  pageCount: number;
+  pageCount: number
 }
 
 /**
@@ -216,32 +216,32 @@ export interface SetMetadataOptions {
   /**
    * Document title.
    */
-  title?: string;
+  title?: string
 
   /**
    * Document author.
    */
-  author?: string;
+  author?: string
 
   /**
    * Document subject.
    */
-  subject?: string;
+  subject?: string
 
   /**
    * Keywords associated with the document.
    */
-  keywords?: string;
+  keywords?: string
 
   /**
    * Application that created the document.
    */
-  creator?: string;
+  creator?: string
 
   /**
    * Application that produced the PDF.
    */
-  producer?: string;
+  producer?: string
 }
 
 /**
@@ -251,13 +251,13 @@ export interface FillFormOptions {
   /**
    * Map of field names to their values.
    */
-  fields: Record<string, string | boolean | number>;
+  fields: Record<string, string | boolean | number>
 
   /**
    * Whether to flatten the form after filling (make it non-editable).
    * Defaults to false.
    */
-  flatten?: boolean;
+  flatten?: boolean
 }
 
 /**
@@ -270,7 +270,7 @@ export interface ExtractTextOptions {
    * If false, returns text as an array with one string per page.
    * Defaults to false.
    */
-  mergePages?: boolean;
+  mergePages?: boolean
 }
 
 /**
@@ -280,14 +280,14 @@ export interface ExtractTextResult {
   /**
    * Total number of pages in the PDF.
    */
-  totalPages: number;
+  totalPages: number
 
   /**
    * Extracted text content.
    * String array if mergePages is false (one entry per page).
    * Single string if mergePages is true (all pages concatenated).
    */
-  text: string | string[];
+  text: string | string[]
 }
 
 /**
@@ -313,18 +313,18 @@ export class PdfParser {
       context ||
       requestContextService.createRequestContext({
         operation: 'PdfParser.createDocument',
-      });
+      })
 
     try {
-      logger.debug('Creating new PDF document.', logContext);
-      const doc = await PDFDocument.create();
-      return doc;
+      logger.debug('Creating new PDF document.', logContext)
+      const doc = await PDFDocument.create()
+      return doc
     } catch (e: unknown) {
-      const error = e as Error;
+      const error = e as Error
       logger.error('Failed to create PDF document.', {
         ...logContext,
         errorDetails: error.message,
-      });
+      })
 
       throw new McpError(
         JsonRpcErrorCode.InternalError,
@@ -333,7 +333,7 @@ export class PdfParser {
           ...context,
           rawError: error instanceof Error ? error.stack : String(error),
         },
-      );
+      )
     }
   }
 
@@ -358,7 +358,7 @@ export class PdfParser {
       context ||
       requestContextService.createRequestContext({
         operation: 'PdfParser.loadDocument',
-      });
+      })
 
     try {
       logger.debug('Loading PDF document from bytes.', {
@@ -367,16 +367,16 @@ export class PdfParser {
           pdfBytes instanceof Uint8Array
             ? pdfBytes.length
             : pdfBytes.byteLength,
-      });
+      })
 
-      const doc = await PDFDocument.load(pdfBytes);
-      return doc;
+      const doc = await PDFDocument.load(pdfBytes)
+      return doc
     } catch (e: unknown) {
-      const error = e as Error;
+      const error = e as Error
       logger.error('Failed to load PDF document.', {
         ...logContext,
         errorDetails: error.message,
-      });
+      })
 
       throw new McpError(
         JsonRpcErrorCode.ValidationError,
@@ -385,7 +385,7 @@ export class PdfParser {
           ...context,
           rawError: error instanceof Error ? error.stack : String(error),
         },
-      );
+      )
     }
   }
 
@@ -401,9 +401,9 @@ export class PdfParser {
    * ```
    */
   addPage(doc: PDFDocument, options?: AddPageOptions): PDFPage {
-    const width = options?.width ?? 612; // US Letter width
-    const height = options?.height ?? 792; // US Letter height
-    return doc.addPage([width, height]);
+    const width = options?.width ?? 612 // US Letter width
+    const height = options?.height ?? 792 // US Letter height
+    return doc.addPage([width, height])
   }
 
   /**
@@ -428,23 +428,23 @@ export class PdfParser {
       context ||
       requestContextService.createRequestContext({
         operation: 'PdfParser.embedFont',
-      });
+      })
 
     try {
       logger.debug('Embedding standard font.', {
         ...logContext,
         fontName,
-      });
+      })
 
-      const font = await doc.embedFont(StandardFonts[fontName]);
-      return font;
+      const font = await doc.embedFont(StandardFonts[fontName])
+      return font
     } catch (e: unknown) {
-      const error = e as Error;
+      const error = e as Error
       logger.error('Failed to embed font.', {
         ...logContext,
         fontName,
         errorDetails: error.message,
-      });
+      })
 
       throw new McpError(
         JsonRpcErrorCode.InternalError,
@@ -453,7 +453,7 @@ export class PdfParser {
           ...context,
           rawError: error instanceof Error ? error.stack : String(error),
         },
-      );
+      )
     }
   }
 
@@ -483,27 +483,27 @@ export class PdfParser {
       context ||
       requestContextService.createRequestContext({
         operation: 'PdfParser.embedImage',
-      });
+      })
 
     try {
       logger.debug('Embedding image into PDF.', {
         ...logContext,
         format: options.format,
-      });
+      })
 
       const image =
         options.format === 'png'
           ? await doc.embedPng(options.imageBytes)
-          : await doc.embedJpg(options.imageBytes);
+          : await doc.embedJpg(options.imageBytes)
 
-      return image;
+      return image
     } catch (e: unknown) {
-      const error = e as Error;
+      const error = e as Error
       logger.error('Failed to embed image.', {
         ...logContext,
         format: options.format,
         errorDetails: error.message,
-      });
+      })
 
       throw new McpError(
         JsonRpcErrorCode.InternalError,
@@ -512,7 +512,7 @@ export class PdfParser {
           ...context,
           rawError: error instanceof Error ? error.stack : String(error),
         },
-      );
+      )
     }
   }
 
@@ -545,76 +545,76 @@ export class PdfParser {
       rotate = 0,
       maxWidth,
       lineHeight = 1.2,
-    } = options;
+    } = options
 
     if (!maxWidth) {
       // Simple single-line text
       const drawOptions: {
-        x: number;
-        y: number;
-        size: number;
-        font?: PDFFont;
-        color: RGB;
-        rotate?: ReturnType<typeof degrees>;
+        x: number
+        y: number
+        size: number
+        font?: PDFFont
+        color: RGB
+        rotate?: ReturnType<typeof degrees>
       } = {
         x,
         y,
         size,
         color,
-      };
+      }
 
-      if (font) drawOptions.font = font;
-      if (rotate) drawOptions.rotate = degrees(rotate);
+      if (font) drawOptions.font = font
+      if (rotate) drawOptions.rotate = degrees(rotate)
 
-      page.drawText(text, drawOptions);
+      page.drawText(text, drawOptions)
     } else {
       // Text wrapping
-      const words = text.split(' ');
-      const lines: string[] = [];
-      let currentLine = '';
+      const words = text.split(' ')
+      const lines: string[] = []
+      let currentLine = ''
 
-      const effectiveFont = font || page.doc.getForm().getDefaultFont();
+      const effectiveFont = font || page.doc.getForm().getDefaultFont()
 
       for (const word of words) {
-        const testLine = currentLine ? `${currentLine} ${word}` : word;
-        const testWidth = effectiveFont.widthOfTextAtSize(testLine, size);
+        const testLine = currentLine ? `${currentLine} ${word}` : word
+        const testWidth = effectiveFont.widthOfTextAtSize(testLine, size)
 
         if (testWidth <= maxWidth) {
-          currentLine = testLine;
+          currentLine = testLine
         } else {
           if (currentLine) {
-            lines.push(currentLine);
+            lines.push(currentLine)
           }
-          currentLine = word;
+          currentLine = word
         }
       }
 
       if (currentLine) {
-        lines.push(currentLine);
+        lines.push(currentLine)
       }
 
       // Draw each line
-      let currentY = y;
+      let currentY = y
       for (const line of lines) {
         const drawOptions: {
-          x: number;
-          y: number;
-          size: number;
-          font?: PDFFont;
-          color: RGB;
-          rotate?: ReturnType<typeof degrees>;
+          x: number
+          y: number
+          size: number
+          font?: PDFFont
+          color: RGB
+          rotate?: ReturnType<typeof degrees>
         } = {
           x,
           y: currentY,
           size,
           color,
-        };
+        }
 
-        if (font) drawOptions.font = font;
-        if (rotate) drawOptions.rotate = degrees(rotate);
+        if (font) drawOptions.font = font
+        if (rotate) drawOptions.rotate = degrees(rotate)
 
-        page.drawText(line, drawOptions);
-        currentY -= size * lineHeight;
+        page.drawText(line, drawOptions)
+        currentY -= size * lineHeight
       }
     }
   }
@@ -645,26 +645,26 @@ export class PdfParser {
       height = image.height,
       rotate = 0,
       opacity = 1,
-    } = options;
+    } = options
 
     const drawOptions: {
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-      rotate?: ReturnType<typeof degrees>;
-      opacity: number;
+      x: number
+      y: number
+      width: number
+      height: number
+      rotate?: ReturnType<typeof degrees>
+      opacity: number
     } = {
       x,
       y,
       width,
       height,
       opacity,
-    };
+    }
 
-    if (rotate) drawOptions.rotate = degrees(rotate);
+    if (rotate) drawOptions.rotate = degrees(rotate)
 
-    page.drawImage(image, drawOptions);
+    page.drawImage(image, drawOptions)
   }
 
   /**
@@ -689,40 +689,42 @@ export class PdfParser {
       context ||
       requestContextService.createRequestContext({
         operation: 'PdfParser.mergePdfs',
-      });
+      })
 
     try {
       logger.debug('Merging PDF documents.', {
         ...logContext,
         documentCount: pdfBytesArray.length,
-      });
+      })
 
-      const mergedPdf = await PDFDocument.create();
+      const mergedPdf = await PDFDocument.create()
 
       for (let i = 0; i < pdfBytesArray.length; i++) {
-        const pdfBytes = pdfBytesArray[i];
-        if (!pdfBytes) continue;
+        const pdfBytes = pdfBytesArray[i]
+        if (!pdfBytes) continue
 
-        const pdfDoc = await PDFDocument.load(pdfBytes);
+        const pdfDoc = await PDFDocument.load(pdfBytes)
         const copiedPages = await mergedPdf.copyPages(
           pdfDoc,
           pdfDoc.getPageIndices(),
-        );
-        copiedPages.forEach((page) => mergedPdf.addPage(page));
+        )
+        copiedPages.forEach((page) => {
+          mergedPdf.addPage(page)
+        })
       }
 
       logger.debug('Successfully merged PDF documents.', {
         ...logContext,
         mergedPageCount: mergedPdf.getPageCount(),
-      });
+      })
 
-      return mergedPdf;
+      return mergedPdf
     } catch (e: unknown) {
-      const error = e as Error;
+      const error = e as Error
       logger.error('Failed to merge PDF documents.', {
         ...logContext,
         errorDetails: error.message,
-      });
+      })
 
       throw new McpError(
         JsonRpcErrorCode.InternalError,
@@ -731,7 +733,7 @@ export class PdfParser {
           ...context,
           rawError: error instanceof Error ? error.stack : String(error),
         },
-      );
+      )
     }
   }
 
@@ -761,43 +763,45 @@ export class PdfParser {
       context ||
       requestContextService.createRequestContext({
         operation: 'PdfParser.splitPdf',
-      });
+      })
 
     try {
       logger.debug('Splitting PDF document.', {
         ...logContext,
         rangeCount: ranges.length,
-      });
+      })
 
-      const sourcePdf = await PDFDocument.load(pdfBytes);
-      const results: PDFDocument[] = [];
+      const sourcePdf = await PDFDocument.load(pdfBytes)
+      const results: PDFDocument[] = []
 
       for (const range of ranges) {
-        const newPdf = await PDFDocument.create();
-        const pageIndices: number[] = [];
+        const newPdf = await PDFDocument.create()
+        const pageIndices: number[] = []
 
         for (let i = range.start; i <= range.end; i++) {
-          pageIndices.push(i);
+          pageIndices.push(i)
         }
 
-        const copiedPages = await newPdf.copyPages(sourcePdf, pageIndices);
-        copiedPages.forEach((page) => newPdf.addPage(page));
+        const copiedPages = await newPdf.copyPages(sourcePdf, pageIndices)
+        copiedPages.forEach((page) => {
+          newPdf.addPage(page)
+        })
 
-        results.push(newPdf);
+        results.push(newPdf)
       }
 
       logger.debug('Successfully split PDF document.', {
         ...logContext,
         resultCount: results.length,
-      });
+      })
 
-      return results;
+      return results
     } catch (e: unknown) {
-      const error = e as Error;
+      const error = e as Error
       logger.error('Failed to split PDF document.', {
         ...logContext,
         errorDetails: error.message,
-      });
+      })
 
       throw new McpError(
         JsonRpcErrorCode.InternalError,
@@ -806,7 +810,7 @@ export class PdfParser {
           ...context,
           rawError: error instanceof Error ? error.stack : String(error),
         },
-      );
+      )
     }
   }
 
@@ -838,42 +842,42 @@ export class PdfParser {
       context ||
       requestContextService.createRequestContext({
         operation: 'PdfParser.fillForm',
-      });
+      })
 
     try {
       logger.debug('Filling PDF form fields.', {
         ...logContext,
         fieldCount: Object.keys(options.fields).length,
         flatten: options.flatten ?? false,
-      });
+      })
 
-      const form = doc.getForm();
+      const form = doc.getForm()
 
       for (const [fieldName, value] of Object.entries(options.fields)) {
         try {
-          const field = form.getField(fieldName);
+          const field = form.getField(fieldName)
 
           if (typeof value === 'string') {
             if ('setText' in field) {
-              (field as { setText: (text: string) => void }).setText(value);
+              ;(field as { setText: (text: string) => void }).setText(value)
             }
           } else if (typeof value === 'boolean') {
             if ('check' in field || 'uncheck' in field) {
               const checkboxField = field as {
-                check?: () => void;
-                uncheck?: () => void;
-              };
+                check?: () => void
+                uncheck?: () => void
+              }
               if (value) {
-                checkboxField.check?.();
+                checkboxField.check?.()
               } else {
-                checkboxField.uncheck?.();
+                checkboxField.uncheck?.()
               }
             }
           } else if (typeof value === 'number') {
             if ('setText' in field) {
-              (field as { setText: (text: string) => void }).setText(
+              ;(field as { setText: (text: string) => void }).setText(
                 String(value),
-              );
+              )
             }
           }
         } catch (fieldError: unknown) {
@@ -884,21 +888,21 @@ export class PdfParser {
               fieldError instanceof Error
                 ? fieldError.message
                 : String(fieldError),
-          });
+          })
         }
       }
 
       if (options.flatten) {
-        form.flatten();
+        form.flatten()
       }
 
-      logger.debug('Successfully filled PDF form.', logContext);
+      logger.debug('Successfully filled PDF form.', logContext)
     } catch (e: unknown) {
-      const error = e as Error;
+      const error = e as Error
       logger.error('Failed to fill PDF form.', {
         ...logContext,
         errorDetails: error.message,
-      });
+      })
 
       throw new McpError(
         JsonRpcErrorCode.InternalError,
@@ -907,7 +911,7 @@ export class PdfParser {
           ...context,
           rawError: error instanceof Error ? error.stack : String(error),
         },
-      );
+      )
     }
   }
 
@@ -923,31 +927,31 @@ export class PdfParser {
    * ```
    */
   extractMetadata(doc: PDFDocument): PdfMetadata {
-    const title = doc.getTitle();
-    const author = doc.getAuthor();
-    const subject = doc.getSubject();
-    const keywords = doc.getKeywords();
-    const creator = doc.getCreator();
-    const producer = doc.getProducer();
-    const creationDate = doc.getCreationDate();
-    const modificationDate = doc.getModificationDate();
+    const title = doc.getTitle()
+    const author = doc.getAuthor()
+    const subject = doc.getSubject()
+    const keywords = doc.getKeywords()
+    const creator = doc.getCreator()
+    const producer = doc.getProducer()
+    const creationDate = doc.getCreationDate()
+    const modificationDate = doc.getModificationDate()
 
     const metadata: PdfMetadata = {
       pageCount: doc.getPageCount(),
-    };
+    }
 
-    if (title !== undefined) metadata.title = title;
-    if (author !== undefined) metadata.author = author;
-    if (subject !== undefined) metadata.subject = subject;
-    if (keywords !== undefined) metadata.keywords = keywords;
-    if (creator !== undefined) metadata.creator = creator;
-    if (producer !== undefined) metadata.producer = producer;
+    if (title !== undefined) metadata.title = title
+    if (author !== undefined) metadata.author = author
+    if (subject !== undefined) metadata.subject = subject
+    if (keywords !== undefined) metadata.keywords = keywords
+    if (creator !== undefined) metadata.creator = creator
+    if (producer !== undefined) metadata.producer = producer
     if (creationDate !== undefined)
-      metadata.creationDate = creationDate.toISOString();
+      metadata.creationDate = creationDate.toISOString()
     if (modificationDate !== undefined)
-      metadata.modificationDate = modificationDate.toISOString();
+      metadata.modificationDate = modificationDate.toISOString()
 
-    return metadata;
+    return metadata
   }
 
   /**
@@ -965,12 +969,12 @@ export class PdfParser {
    * ```
    */
   setMetadata(doc: PDFDocument, metadata: SetMetadataOptions): void {
-    if (metadata.title) doc.setTitle(metadata.title);
-    if (metadata.author) doc.setAuthor(metadata.author);
-    if (metadata.subject) doc.setSubject(metadata.subject);
-    if (metadata.keywords) doc.setKeywords([metadata.keywords]);
-    if (metadata.creator) doc.setCreator(metadata.creator);
-    if (metadata.producer) doc.setProducer(metadata.producer);
+    if (metadata.title) doc.setTitle(metadata.title)
+    if (metadata.author) doc.setAuthor(metadata.author)
+    if (metadata.subject) doc.setSubject(metadata.subject)
+    if (metadata.keywords) doc.setKeywords([metadata.keywords])
+    if (metadata.creator) doc.setCreator(metadata.creator)
+    if (metadata.producer) doc.setProducer(metadata.producer)
   }
 
   /**
@@ -1003,38 +1007,38 @@ export class PdfParser {
       context ||
       requestContextService.createRequestContext({
         operation: 'PdfParser.extractText',
-      });
+      })
 
     try {
-      const pageCount = doc.getPageCount();
-      const mergePages = options?.mergePages ?? false;
+      const pageCount = doc.getPageCount()
+      const mergePages = options?.mergePages ?? false
 
       logger.debug('Extracting text from PDF using unpdf.', {
         ...logContext,
         pageCount,
         mergePages,
-      });
+      })
 
       // Convert PDFDocument to bytes
-      const pdfBytes = await doc.save();
+      const pdfBytes = await doc.save()
 
       // Create document proxy for unpdf
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const pdfProxy = await getDocumentProxy(pdfBytes);
+      const pdfProxy = await getDocumentProxy(pdfBytes)
 
       // Extract text using unpdf with explicit type handling
-      let result: { totalPages: number; text: string | string[] };
+      let result: { totalPages: number; text: string | string[] }
 
       if (mergePages) {
         // Call with mergePages: true for merged text
-        const merged = await unpdfExtractText(pdfProxy, { mergePages: true });
-        result = merged;
+        const merged = await unpdfExtractText(pdfProxy, { mergePages: true })
+        result = merged
       } else {
         // Call with mergePages: false for per-page text
         const perPage = await unpdfExtractText(pdfProxy, {
           mergePages: false,
-        });
-        result = perPage;
+        })
+        result = perPage
       }
 
       logger.debug('Successfully extracted text from PDF.', {
@@ -1043,18 +1047,18 @@ export class PdfParser {
         textLength: Array.isArray(result.text)
           ? result.text.reduce((sum, t) => sum + t.length, 0)
           : result.text.length,
-      });
+      })
 
       return {
         totalPages: result.totalPages,
         text: result.text,
-      };
+      }
     } catch (e: unknown) {
-      const error = e as Error;
+      const error = e as Error
       logger.error('Failed to extract text from PDF.', {
         ...logContext,
         errorDetails: error.message,
-      });
+      })
 
       throw new McpError(
         JsonRpcErrorCode.InternalError,
@@ -1063,7 +1067,7 @@ export class PdfParser {
           ...context,
           rawError: error instanceof Error ? error.stack : String(error),
         },
-      );
+      )
     }
   }
 
@@ -1088,22 +1092,22 @@ export class PdfParser {
       context ||
       requestContextService.createRequestContext({
         operation: 'PdfParser.saveDocument',
-      });
+      })
 
     try {
-      logger.debug('Serializing PDF document to bytes.', logContext);
-      const bytes = await doc.save();
+      logger.debug('Serializing PDF document to bytes.', logContext)
+      const bytes = await doc.save()
       logger.debug('Successfully serialized PDF document.', {
         ...logContext,
         byteLength: bytes.length,
-      });
-      return bytes;
+      })
+      return bytes
     } catch (e: unknown) {
-      const error = e as Error;
+      const error = e as Error
       logger.error('Failed to serialize PDF document.', {
         ...logContext,
         errorDetails: error.message,
-      });
+      })
 
       throw new McpError(
         JsonRpcErrorCode.InternalError,
@@ -1112,7 +1116,7 @@ export class PdfParser {
           ...context,
           rawError: error instanceof Error ? error.stack : String(error),
         },
-      );
+      )
     }
   }
 }
@@ -1144,9 +1148,9 @@ export class PdfParser {
  * await fs.writeFile('output.pdf', pdfBytes);
  * ```
  */
-export const pdfParser = new PdfParser();
+export const pdfParser = new PdfParser()
 
 /**
  * Re-export commonly used pdf-lib utilities for convenience.
  */
-export { PDFDocument, StandardFonts, degrees, rgb };
+export { PDFDocument, StandardFonts, degrees, rgb }

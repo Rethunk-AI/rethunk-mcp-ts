@@ -4,10 +4,10 @@
  * @module src/storage/providers/surrealdb/graph/graphOperations
  */
 
-import type Surreal from 'surrealdb';
-import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js';
-import { McpError, JsonRpcErrorCode } from '@/types-global/errors.js';
-import type { Edge, Vertex } from './graphTypes.js';
+import type Surreal from 'surrealdb'
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
+import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js'
+import type { Edge, Vertex } from './graphTypes.js'
 
 /**
  * Graph operations manager for SurrealDB.
@@ -55,45 +55,45 @@ export class GraphOperations {
         logger.debug(
           `[GraphOperations] Creating edge: ${from} -[${edgeTable}]-> ${to}`,
           context,
-        );
+        )
 
         // Build SET clause from data
         const setClause = Object.keys(data).length
           ? `SET ${Object.keys(data)
               .map((key) => `${key} = $data.${key}`)
               .join(', ')}`
-          : '';
+          : ''
 
         const query = `
           RELATE $from->${edgeTable}->$to
           ${setClause}
           RETURN AFTER
-        `;
+        `
 
         const result = await this.client.query<[{ result: Edge[] }]>(query, {
           from,
           to,
           data,
-        });
+        })
 
-        const edge = result[0]?.result?.[0];
+        const edge = result[0]?.result?.[0]
 
         if (!edge) {
           throw new McpError(
             JsonRpcErrorCode.InternalError,
             'Failed to create edge',
             context,
-          );
+          )
         }
 
-        return edge;
+        return edge
       },
       {
         operation: 'GraphOperations.createEdge',
         context,
         input: { from, edgeTable, to },
       },
-    );
+    )
   }
 
   /**
@@ -123,29 +123,29 @@ export class GraphOperations {
     return ErrorHandler.tryCatch(
       async () => {
         // Build traversal operator (-> for each depth)
-        const operator = '->'.repeat(depth);
+        const operator = '->'.repeat(depth)
         const filter = edgeFilter
           ? `[WHERE meta::tb(id) = '${edgeFilter}']`
-          : '';
+          : ''
 
         const query = `
           SELECT ${operator}${filter} as connections
           FROM $startId
-        `;
+        `
 
         const result = await this.client.query<
           [{ result: Array<{ connections: Vertex[] }> }]
-        >(query, { startId });
+        >(query, { startId })
 
-        const connections = result[0]?.result?.[0]?.connections ?? [];
-        return Array.isArray(connections) ? connections : [connections];
+        const connections = result[0]?.result?.[0]?.connections ?? []
+        return Array.isArray(connections) ? connections : [connections]
       },
       {
         operation: 'GraphOperations.traverseOut',
         context,
         input: { startId, depth, edgeFilter },
       },
-    );
+    )
   }
 
   /**
@@ -165,29 +165,29 @@ export class GraphOperations {
   ): Promise<Vertex[]> {
     return ErrorHandler.tryCatch(
       async () => {
-        const operator = '<-'.repeat(depth);
+        const operator = '<-'.repeat(depth)
         const filter = edgeFilter
           ? `[WHERE meta::tb(id) = '${edgeFilter}']`
-          : '';
+          : ''
 
         const query = `
           SELECT ${operator}${filter} as connections
           FROM $startId
-        `;
+        `
 
         const result = await this.client.query<
           [{ result: Array<{ connections: Vertex[] }> }]
-        >(query, { startId });
+        >(query, { startId })
 
-        const connections = result[0]?.result?.[0]?.connections ?? [];
-        return Array.isArray(connections) ? connections : [connections];
+        const connections = result[0]?.result?.[0]?.connections ?? []
+        return Array.isArray(connections) ? connections : [connections]
       },
       {
         operation: 'GraphOperations.traverseIn',
         context,
         input: { startId, depth, edgeFilter },
       },
-    );
+    )
   }
 
   /**
@@ -207,29 +207,29 @@ export class GraphOperations {
   ): Promise<Vertex[]> {
     return ErrorHandler.tryCatch(
       async () => {
-        const operator = '<->'.repeat(depth);
+        const operator = '<->'.repeat(depth)
         const filter = edgeFilter
           ? `[WHERE meta::tb(id) = '${edgeFilter}']`
-          : '';
+          : ''
 
         const query = `
           SELECT ${operator}${filter} as connections
           FROM $startId
-        `;
+        `
 
         const result = await this.client.query<
           [{ result: Array<{ connections: Vertex[] }> }]
-        >(query, { startId });
+        >(query, { startId })
 
-        const connections = result[0]?.result?.[0]?.connections ?? [];
-        return Array.isArray(connections) ? connections : [connections];
+        const connections = result[0]?.result?.[0]?.connections ?? []
+        return Array.isArray(connections) ? connections : [connections]
       },
       {
         operation: 'GraphOperations.traverseBoth',
         context,
         input: { startId, depth, edgeFilter },
       },
-    );
+    )
   }
 
   /**
@@ -242,19 +242,19 @@ export class GraphOperations {
   async deleteEdge(edgeId: string, context: RequestContext): Promise<boolean> {
     return ErrorHandler.tryCatch(
       async () => {
-        const query = 'DELETE $edgeId RETURN BEFORE';
+        const query = 'DELETE $edgeId RETURN BEFORE'
 
         const result = await this.client.query<[{ result: Edge[] }]>(query, {
           edgeId,
-        });
+        })
 
-        return (result[0]?.result?.length ?? 0) > 0;
+        return (result[0]?.result?.length ?? 0) > 0
       },
       {
         operation: 'GraphOperations.deleteEdge',
         context,
         input: { edgeId },
       },
-    );
+    )
   }
 }

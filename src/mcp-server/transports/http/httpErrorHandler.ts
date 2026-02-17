@@ -5,18 +5,18 @@
  * formats them into a consistent JSON-RPC error response.
  * @module src/mcp-server/transports/http/httpErrorHandler
  */
-import type { Context } from 'hono';
-import type { StatusCode } from 'hono/utils/http-status';
+import type { Context } from 'hono'
+import type { StatusCode } from 'hono/utils/http-status'
 
-import { config } from '@/config/index.js';
-import type { HonoNodeBindings } from '@/mcp-server/transports/http/httpTypes.js';
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
+import { config } from '@/config/index.js'
+import type { HonoNodeBindings } from '@/mcp-server/transports/http/httpTypes.js'
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
 import {
   ErrorHandler,
+  getProperty,
   logger,
   requestContextService,
-  getProperty,
-} from '@/utils/index.js';
+} from '@/utils/index.js'
 
 /**
  * A centralized error handling middleware for Hono.
@@ -42,95 +42,95 @@ export const httpErrorHandler = async <
       path: c.req.path,
       method: c.req.method,
     },
-  });
-  logger.debug('HTTP error handler invoked.', context);
+  })
+  logger.debug('HTTP error handler invoked.', context)
 
   const handledError = ErrorHandler.handleError(err, {
     operation: 'httpTransport',
     context,
-  });
+  })
 
-  let status: StatusCode = 500;
+  let status: StatusCode = 500
   if (handledError instanceof McpError) {
     switch (handledError.code) {
       case JsonRpcErrorCode.NotFound:
-        status = 404;
-        break;
+        status = 404
+        break
       case JsonRpcErrorCode.Unauthorized:
-        status = 401;
+        status = 401
         // MCP Spec 2025-06-18: Add WWW-Authenticate header per RFC 9728 Section 5.1
         // https://datatracker.ietf.org/doc/html/rfc9728#section-5.1
         if (config.oauthIssuerUrl) {
-          const origin = new URL(c.req.url).origin;
-          const resourceMetadataUrl = `${origin}/.well-known/oauth-protected-resource`;
+          const origin = new URL(c.req.url).origin
+          const resourceMetadataUrl = `${origin}/.well-known/oauth-protected-resource`
 
           // Build WWW-Authenticate header per RFC 9728
           const wwwAuthValue = [
             `Bearer realm="${config.mcpServerName}"`,
             `resource_metadata="${resourceMetadataUrl}"`,
-          ].join(', ');
+          ].join(', ')
 
-          c.header('WWW-Authenticate', wwwAuthValue);
+          c.header('WWW-Authenticate', wwwAuthValue)
 
           logger.debug('Added WWW-Authenticate header for 401 response', {
             ...context,
             resourceMetadataUrl,
-          });
+          })
         }
-        break;
+        break
       case JsonRpcErrorCode.Forbidden:
-        status = 403;
-        break;
+        status = 403
+        break
       case JsonRpcErrorCode.ValidationError:
       case JsonRpcErrorCode.InvalidRequest:
-        status = 400;
-        break;
+        status = 400
+        break
       case JsonRpcErrorCode.Conflict:
-        status = 409;
-        break;
+        status = 409
+        break
       case JsonRpcErrorCode.RateLimited:
-        status = 429;
-        break;
+        status = 429
+        break
       default:
-        status = 500;
+        status = 500
     }
   }
   logger.debug(`Mapping error to HTTP status ${status}.`, {
     ...context,
     status,
     errorCode: (handledError as McpError).code,
-  });
+  })
 
   // Attempt to get the request ID from the body, but don't fail if it's not there or unreadable.
-  let requestId: string | number | null = null;
+  let requestId: string | number | null = null
   // Only attempt to read the body if it hasn't been consumed already.
   if (c.req.raw.bodyUsed === false) {
     try {
-      const body: unknown = await c.req.json();
-      const id = getProperty(body, 'id');
-      requestId = typeof id === 'string' || typeof id === 'number' ? id : null;
+      const body: unknown = await c.req.json()
+      const id = getProperty(body, 'id')
+      requestId = typeof id === 'string' || typeof id === 'number' ? id : null
       logger.debug('Extracted JSON-RPC request ID from body.', {
         ...context,
         jsonRpcId: requestId,
-      });
+      })
     } catch {
       logger.warning(
         'Could not parse request body to extract JSON-RPC ID.',
         context,
-      );
+      )
       // Ignore parsing errors, requestId will remain null
     }
   } else {
     logger.debug(
       'Request body already consumed, cannot extract JSON-RPC ID.',
       context,
-    );
+    )
   }
 
   const errorCode =
-    handledError instanceof McpError ? handledError.code : -32603;
+    handledError instanceof McpError ? handledError.code : -32603
 
-  c.status(status);
+  c.status(status)
   const errorResponse = {
     jsonrpc: '2.0',
     error: {
@@ -138,12 +138,12 @@ export const httpErrorHandler = async <
       message: handledError.message,
     },
     id: requestId,
-  };
+  }
   logger.info(`Sending formatted error response for request.`, {
     ...context,
     status,
     errorCode,
     jsonRpcId: requestId,
-  });
-  return c.json(errorResponse);
-};
+  })
+  return c.json(errorResponse)
+}

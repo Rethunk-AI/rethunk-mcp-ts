@@ -17,15 +17,15 @@
  * @see {@link https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization | MCP Authorization Specification}
  * @module src/mcp-server/transports/stdioTransport
  */
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 
 import {
   ErrorHandler,
-  type RequestContext,
   logger,
   logStartupBanner,
-} from '@/utils/index.js';
+  type RequestContext,
+} from '@/utils/index.js'
 
 /**
  * Connects a given `McpServer` instance to the Stdio transport.
@@ -55,28 +55,28 @@ export async function startStdioTransport(
     ...parentContext,
     operation: 'connectStdioTransport',
     transportType: 'Stdio',
-  };
-  logger.info('Attempting to connect stdio transport...', operationContext);
+  }
+  logger.info('Attempting to connect stdio transport...', operationContext)
 
   try {
-    logger.debug('Creating StdioServerTransport instance...', operationContext);
-    const transport = new StdioServerTransport();
+    logger.debug('Creating StdioServerTransport instance...', operationContext)
+    const transport = new StdioServerTransport()
 
     logger.debug(
       'Connecting McpServer instance to StdioServerTransport...',
       operationContext,
-    );
-    await server.connect(transport);
+    )
+    await server.connect(transport)
 
     logger.info(
       'MCP Server connected and listening via stdio transport.',
       operationContext,
-    );
+    )
     logStartupBanner(
       `\n🚀 MCP Server running in STDIO mode.\n   (MCP Spec: 2025-06-18 Stdio Transport)\n`,
       'stdio',
-    );
-    return server;
+    )
+    return server
   } catch (err) {
     // Let the ErrorHandler log the error with all context, then rethrow.
     throw ErrorHandler.handleError(err, {
@@ -84,7 +84,7 @@ export async function startStdioTransport(
       context: operationContext,
       critical: true,
       rethrow: true,
-    });
+    })
   }
 }
 
@@ -96,10 +96,10 @@ export async function stopStdioTransport(
     ...parentContext,
     operation: 'stopStdioTransport',
     transportType: 'Stdio',
-  };
-  logger.info('Attempting to stop stdio transport...', operationContext);
+  }
+  logger.info('Attempting to stop stdio transport...', operationContext)
   if (server) {
-    await server.close();
-    logger.info('Stdio transport stopped successfully.', operationContext);
+    await server.close()
+    logger.info('Stdio transport stopped successfully.', operationContext)
   }
 }

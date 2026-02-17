@@ -4,35 +4,36 @@
  * @module src/utils/internal/error-handler/errorHandler
  */
 
-import { SpanStatusCode, trace } from '@opentelemetry/api';
+import { SpanStatusCode, trace } from '@opentelemetry/api'
 
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
-import { generateUUID, sanitizeInputForLogging } from '@/utils/index.js';
-import { logger } from '@/utils/internal/logger.js';
-import type { RequestContext } from '@/utils/internal/requestContext.js';
-
-import {
-  COMPILED_ERROR_PATTERNS,
-  COMPILED_PROVIDER_PATTERNS,
-  ERROR_TYPE_MAPPINGS,
-} from './mappings.js';
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
+import { generateUUID, sanitizeInputForLogging } from '@/utils/index.js'
+import { logger } from '@/utils/internal/logger.js'
+import type { RequestContext } from '@/utils/internal/requestContext.js'
 import {
   createSafeRegex,
   extractErrorCauseChain,
   getErrorMessage,
   getErrorName,
-} from './helpers.js';
+} from './helpers.js'
+import {
+  COMPILED_ERROR_PATTERNS,
+  COMPILED_PROVIDER_PATTERNS,
+  ERROR_TYPE_MAPPINGS,
+} from './mappings.js'
 import type {
   EnhancedErrorContext,
   ErrorHandlerOptions,
   ErrorMapping,
   ErrorRecoveryStrategy,
   Result,
-} from './types.js';
+} from './types.js'
 
 /**
  * A utility class providing static methods for comprehensive error handling.
  */
+
+// biome-ignore lint/complexity/noStaticOnlyClass: Error Handler must be static here.
 export class ErrorHandler {
   /**
    * Determines an appropriate `JsonRpcErrorCode` for a given error.
@@ -44,18 +45,18 @@ export class ErrorHandler {
    */
   public static determineErrorCode(error: unknown): JsonRpcErrorCode {
     if (error instanceof McpError) {
-      return error.code;
+      return error.code
     }
 
-    const errorName = getErrorName(error);
-    const errorMessage = getErrorMessage(error);
+    const errorName = getErrorName(error)
+    const errorMessage = getErrorMessage(error)
 
     // Check against standard JavaScript error types
     const mappedFromType = (
       ERROR_TYPE_MAPPINGS as Record<string, JsonRpcErrorCode>
-    )[errorName];
+    )[errorName]
     if (mappedFromType) {
-      return mappedFromType;
+      return mappedFromType
     }
 
     // Check provider-specific patterns first (more specific)
@@ -64,7 +65,7 @@ export class ErrorHandler {
         mapping.compiledPattern.test(errorMessage) ||
         mapping.compiledPattern.test(errorName)
       ) {
-        return mapping.errorCode;
+        return mapping.errorCode
       }
     }
 
@@ -74,7 +75,7 @@ export class ErrorHandler {
         mapping.compiledPattern.test(errorMessage) ||
         mapping.compiledPattern.test(errorName)
       ) {
-        return mapping.errorCode;
+        return mapping.errorCode
       }
     }
     // Special-case common platform errors
@@ -84,9 +85,9 @@ export class ErrorHandler {
       'name' in error &&
       (error as { name?: string }).name === 'AbortError'
     ) {
-      return JsonRpcErrorCode.Timeout;
+      return JsonRpcErrorCode.Timeout
     }
-    return JsonRpcErrorCode.InternalError;
+    return JsonRpcErrorCode.InternalError
   }
 
   /**
@@ -101,15 +102,15 @@ export class ErrorHandler {
     options: ErrorHandlerOptions,
   ): Error {
     // --- OpenTelemetry Integration ---
-    const activeSpan = trace.getActiveSpan();
+    const activeSpan = trace.getActiveSpan()
     if (activeSpan) {
       if (error instanceof Error) {
-        activeSpan.recordException(error);
+        activeSpan.recordException(error)
       }
       activeSpan.setStatus({
         code: SpanStatusCode.ERROR,
         message: error instanceof Error ? error.message : String(error),
-      });
+      })
     }
     // --- End OpenTelemetry Integration ---
 
@@ -122,50 +123,50 @@ export class ErrorHandler {
       includeStack = true,
       critical = false,
       errorMapper,
-    } = options;
+    } = options
 
     const sanitizedInput =
-      input !== undefined ? sanitizeInputForLogging(input) : undefined;
-    const originalErrorName = getErrorName(error);
-    const originalErrorMessage = getErrorMessage(error);
-    const originalStack = error instanceof Error ? error.stack : undefined;
+      input !== undefined ? sanitizeInputForLogging(input) : undefined
+    const originalErrorName = getErrorName(error)
+    const originalErrorMessage = getErrorMessage(error)
+    const originalStack = error instanceof Error ? error.stack : undefined
 
-    let finalError: Error;
-    let loggedErrorCode: JsonRpcErrorCode;
+    let finalError: Error
+    let loggedErrorCode: JsonRpcErrorCode
 
     const errorDataSeed =
       error instanceof McpError &&
       typeof error.data === 'object' &&
       error.data !== null
         ? { ...error.data }
-        : {};
+        : {}
 
     const consolidatedData: Record<string, unknown> = {
       ...errorDataSeed,
       ...context,
       originalErrorName,
       originalMessage: originalErrorMessage,
-    };
+    }
     if (
       originalStack &&
       !(error instanceof McpError && error.data?.originalStack)
     ) {
-      consolidatedData.originalStack = originalStack;
+      consolidatedData.originalStack = originalStack
     }
 
-    const cause = error instanceof Error ? error : undefined;
+    const cause = error instanceof Error ? error : undefined
 
     // Extract full cause chain with circular reference detection
-    const causeChain = extractErrorCauseChain(error);
+    const causeChain = extractErrorCauseChain(error)
     if (causeChain.length > 0) {
-      const rootCause = causeChain[causeChain.length - 1];
+      const rootCause = causeChain[causeChain.length - 1]
       if (rootCause) {
-        consolidatedData['rootCause'] = {
+        consolidatedData.rootCause = {
           name: rootCause.name,
           message: rootCause.message,
-        };
+        }
       }
-      consolidatedData['causeChain'] = causeChain;
+      consolidatedData.causeChain = causeChain
     }
 
     // Add breadcrumbs from enhanced context if present
@@ -176,25 +177,25 @@ export class ErrorHandler {
       typeof context.metadata === 'object' &&
       'breadcrumbs' in context.metadata
     ) {
-      consolidatedData['breadcrumbs'] = context.metadata.breadcrumbs;
+      consolidatedData.breadcrumbs = context.metadata.breadcrumbs
     }
 
     if (error instanceof McpError) {
-      loggedErrorCode = error.code;
+      loggedErrorCode = error.code
       finalError = errorMapper
         ? errorMapper(error)
         : new McpError(error.code, error.message, consolidatedData, {
             cause,
-          });
+          })
     } else {
       loggedErrorCode =
-        explicitErrorCode || ErrorHandler.determineErrorCode(error);
-      const message = `Error in ${operation}: ${originalErrorMessage}`;
+        explicitErrorCode || ErrorHandler.determineErrorCode(error)
+      const message = `Error in ${operation}: ${originalErrorMessage}`
       finalError = errorMapper
         ? errorMapper(error)
         : new McpError(loggedErrorCode, message, consolidatedData, {
             cause,
-          });
+          })
     }
 
     if (
@@ -204,21 +205,20 @@ export class ErrorHandler {
       !finalError.stack &&
       error.stack
     ) {
-      finalError.stack = error.stack;
+      finalError.stack = error.stack
     }
 
     const logRequestId =
       typeof context.requestId === 'string' && context.requestId
         ? context.requestId
-        : generateUUID();
+        : generateUUID()
 
     const logTimestamp =
       typeof context.timestamp === 'string' && context.timestamp
         ? context.timestamp
-        : new Date().toISOString();
+        : new Date().toISOString()
 
-    const stack =
-      finalError instanceof Error ? finalError.stack : originalStack;
+    const stack = finalError instanceof Error ? finalError.stack : originalStack
     const logContext: RequestContext = {
       requestId: logRequestId,
       timestamp: logTimestamp,
@@ -238,17 +238,17 @@ export class ErrorHandler {
           ? finalError.data
           : consolidatedData,
       ...(includeStack && stack ? { stack } : {}),
-    };
+    }
 
     logger.error(
       `Error in ${operation}: ${finalError.message || originalErrorMessage}`,
       logContext,
-    );
+    )
 
     if (rethrow) {
-      throw finalError;
+      throw finalError
     }
-    return finalError;
+    return finalError
   }
 
   /**
@@ -265,21 +265,21 @@ export class ErrorHandler {
     mappings: ReadonlyArray<ErrorMapping<T>>,
     defaultFactory?: (error: unknown, context?: Record<string, unknown>) => T,
   ): T | Error {
-    const errorMessage = getErrorMessage(error);
-    const errorName = getErrorName(error);
+    const errorMessage = getErrorMessage(error)
+    const errorName = getErrorName(error)
 
     for (const mapping of mappings) {
-      const regex = createSafeRegex(mapping.pattern);
+      const regex = createSafeRegex(mapping.pattern)
       if (regex.test(errorMessage) || regex.test(errorName)) {
         // c8 ignore next
-        return mapping.factory(error, mapping.additionalContext);
+        return mapping.factory(error, mapping.additionalContext)
       }
     }
 
     if (defaultFactory) {
-      return defaultFactory(error);
+      return defaultFactory(error)
     }
-    return error instanceof Error ? error : new Error(String(error));
+    return error instanceof Error ? error : new Error(String(error))
   }
 
   /**
@@ -296,7 +296,7 @@ export class ErrorHandler {
           typeof error.data === 'object' && error.data !== null
             ? error.data
             : {},
-      };
+      }
     }
 
     if (error instanceof Error) {
@@ -304,14 +304,14 @@ export class ErrorHandler {
         code: ErrorHandler.determineErrorCode(error),
         message: error.message,
         data: { errorType: error.name || 'Error' },
-      };
+      }
     }
 
     return {
       code: JsonRpcErrorCode.UnknownError,
       message: getErrorMessage(error),
       data: { errorType: getErrorName(error) },
-    };
+    }
   }
 
   /**
@@ -328,13 +328,13 @@ export class ErrorHandler {
     options: Omit<ErrorHandlerOptions, 'rethrow'>,
   ): Promise<T> {
     try {
-      return await Promise.resolve(fn());
+      return await Promise.resolve(fn())
     } catch (caughtError) {
       // ErrorHandler.handleError will return the error to be thrown.
       throw ErrorHandler.handleError(caughtError, {
         ...options,
         rethrow: true,
-      });
+      })
     }
   }
 
@@ -365,14 +365,14 @@ export class ErrorHandler {
     options: Omit<ErrorHandlerOptions, 'rethrow'>,
   ): Promise<Result<T, McpError>> {
     try {
-      const value = await Promise.resolve(fn());
-      return { ok: true, value };
+      const value = await Promise.resolve(fn())
+      return { ok: true, value }
     } catch (caughtError) {
       const error = ErrorHandler.handleError(caughtError, {
         ...options,
         rethrow: false,
-      }) as McpError;
-      return { ok: false, error };
+      }) as McpError
+      return { ok: false, error }
     }
   }
 
@@ -396,7 +396,7 @@ export class ErrorHandler {
   ): Result<U, McpError> {
     if (result.ok) {
       try {
-        return { ok: true, value: fn(result.value) };
+        return { ok: true, value: fn(result.value) }
       } catch (error: unknown) {
         return {
           ok: false,
@@ -404,10 +404,10 @@ export class ErrorHandler {
             JsonRpcErrorCode.InternalError,
             `Error mapping result: ${getErrorMessage(error)}`,
           ),
-        };
+        }
       }
     }
-    return result;
+    return result
   }
 
   /**
@@ -432,9 +432,9 @@ export class ErrorHandler {
     fn: (value: T) => Result<U, McpError>,
   ): Result<U, McpError> {
     if (result.ok) {
-      return fn(result.value);
+      return fn(result.value)
     }
-    return result;
+    return result
   }
 
   /**
@@ -457,11 +457,11 @@ export class ErrorHandler {
     fallback: T | ((error: McpError) => T),
   ): T {
     if (result.ok) {
-      return result.value;
+      return result.value
     }
     return typeof fallback === 'function'
       ? (fallback as (error: McpError) => T)(result.error)
-      : fallback;
+      : fallback
   }
 
   /**
@@ -483,14 +483,14 @@ export class ErrorHandler {
     operation: string,
     additionalData?: Record<string, unknown>,
   ): EnhancedErrorContext {
-    const breadcrumbs = context.metadata?.breadcrumbs || [];
+    const breadcrumbs = context.metadata?.breadcrumbs || []
 
     breadcrumbs.push({
       timestamp: new Date().toISOString(),
       operation,
       // Only include context if it exists (exact optional property types)
       ...(additionalData !== undefined ? { context: additionalData } : {}),
-    });
+    })
 
     return {
       ...context,
@@ -498,7 +498,7 @@ export class ErrorHandler {
         ...context.metadata,
         breadcrumbs,
       },
-    };
+    }
   }
 
   /**
@@ -525,22 +525,22 @@ export class ErrorHandler {
     options: Omit<ErrorHandlerOptions, 'rethrow'>,
     strategy: ErrorRecoveryStrategy,
   ): Promise<T> {
-    let lastError: Error | undefined;
+    let lastError: Error | undefined
 
     for (let attempt = 1; attempt <= strategy.maxAttempts; attempt++) {
       try {
-        return await Promise.resolve(fn());
+        return await Promise.resolve(fn())
       } catch (caughtError) {
         lastError =
           caughtError instanceof Error
             ? caughtError
-            : new Error(String(caughtError));
+            : new Error(String(caughtError))
 
         if (
           attempt < strategy.maxAttempts &&
           strategy.shouldRetry(lastError, attempt)
         ) {
-          const delay = strategy.getRetryDelay(attempt);
+          const delay = strategy.getRetryDelay(attempt)
 
           const retryContext: RequestContext = {
             ...options.context,
@@ -549,17 +549,17 @@ export class ErrorHandler {
             operation: options.operation,
             error: lastError.message,
             attempt,
-          };
+          }
 
           logger.warning(
             `Retry attempt ${attempt}/${strategy.maxAttempts} after ${delay}ms`,
             retryContext,
-          );
+          )
 
-          strategy.onRetry?.(lastError, attempt);
+          strategy.onRetry?.(lastError, attempt)
 
           // Wait before retry
-          await new Promise((resolve) => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay))
         } else {
           // Max attempts reached or error not retryable
           throw ErrorHandler.handleError(lastError, {
@@ -570,16 +570,17 @@ export class ErrorHandler {
               retryAttempts: attempt,
               finalAttempt: true,
             },
-          });
+          })
         }
       }
     }
 
     // Should never reach here, but TypeScript requires it
+    // biome-ignore lint/style/noNonNullAssertion: See Above
     throw ErrorHandler.handleError(lastError!, {
       ...options,
       rethrow: true,
-    });
+    })
   }
 
   /**
@@ -609,17 +610,17 @@ export class ErrorHandler {
             JsonRpcErrorCode.Unauthorized,
             JsonRpcErrorCode.Forbidden,
             JsonRpcErrorCode.NotFound,
-          ];
-          return !nonRetryableCodes.includes(error.code);
+          ]
+          return !nonRetryableCodes.includes(error.code)
         }
-        return true;
+        return true
       },
       getRetryDelay: (attemptNumber: number) => {
         // Exponential backoff: baseDelay * 2^(attempt - 1) with jitter
-        const exponentialDelay = baseDelay * Math.pow(2, attemptNumber - 1);
-        const jitter = Math.random() * 0.3 * exponentialDelay; // 30% jitter
-        return Math.min(exponentialDelay + jitter, maxDelay);
+        const exponentialDelay = baseDelay * 2 ** (attemptNumber - 1)
+        const jitter = Math.random() * 0.3 * exponentialDelay // 30% jitter
+        return Math.min(exponentialDelay + jitter, maxDelay)
       },
-    };
+    }
   }
 }

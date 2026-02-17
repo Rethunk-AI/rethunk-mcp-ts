@@ -4,16 +4,16 @@
  * @module src/storage/providers/surrealdb/query/subqueryBuilder
  */
 
-import { SelectQueryBuilder } from '../core/queryBuilder.js';
+import { SelectQueryBuilder } from '../core/queryBuilder.js'
 
 /**
  * Subquery context for nested queries.
  */
 export interface SubqueryContext {
   /** Alias for the subquery result */
-  alias?: string;
+  alias?: string
   /** Whether to wrap in parentheses */
-  wrapped?: boolean;
+  wrapped?: boolean
 }
 
 /**
@@ -42,20 +42,20 @@ export class SubqueryBuilder extends SelectQueryBuilder {
    * Note: This is reserved for future use with correlated subqueries.
    */
   withParentAlias(_alias: string): this {
-    return this;
+    return this
   }
 
   /**
    * Build a subquery as a string (for embedding in other queries).
    */
   buildSubquery(context?: SubqueryContext): string {
-    const { query } = this.build();
+    const { query } = this.build()
 
     if (context?.wrapped !== false) {
-      return `(${query})${context?.alias ? ` as ${context.alias}` : ''}`;
+      return `(${query})${context?.alias ? ` as ${context.alias}` : ''}`
     }
 
-    return query;
+    return query
   }
 
   /**
@@ -73,8 +73,8 @@ export class SubqueryBuilder extends SelectQueryBuilder {
    * ```
    */
   static where(builder: (sq: SubqueryBuilder) => SubqueryBuilder): string {
-    const subquery = builder(new SubqueryBuilder());
-    return subquery.buildSubquery({ wrapped: true });
+    const subquery = builder(new SubqueryBuilder())
+    return subquery.buildSubquery({ wrapped: true })
   }
 
   /**
@@ -97,8 +97,8 @@ export class SubqueryBuilder extends SelectQueryBuilder {
     builder: (sq: SubqueryBuilder) => SubqueryBuilder,
     alias: string,
   ): string {
-    const subquery = builder(new SubqueryBuilder());
-    return subquery.buildSubquery({ wrapped: true, alias });
+    const subquery = builder(new SubqueryBuilder())
+    return subquery.buildSubquery({ wrapped: true, alias })
   }
 
   /**
@@ -116,8 +116,8 @@ export class SubqueryBuilder extends SelectQueryBuilder {
    * ```
    */
   static exists(builder: (sq: SubqueryBuilder) => SubqueryBuilder): string {
-    const subquery = builder(new SubqueryBuilder());
-    return `EXISTS ${subquery.buildSubquery({ wrapped: true })}`;
+    const subquery = builder(new SubqueryBuilder())
+    return `EXISTS ${subquery.buildSubquery({ wrapped: true })}`
   }
 
   /**
@@ -139,8 +139,8 @@ export class SubqueryBuilder extends SelectQueryBuilder {
     field: string,
     builder: (sq: SubqueryBuilder) => SubqueryBuilder,
   ): string {
-    const subquery = builder(new SubqueryBuilder());
-    return `${field} IN ${subquery.buildSubquery({ wrapped: true })}`;
+    const subquery = builder(new SubqueryBuilder())
+    return `${field} IN ${subquery.buildSubquery({ wrapped: true })}`
   }
 
   /**
@@ -150,8 +150,8 @@ export class SubqueryBuilder extends SelectQueryBuilder {
     field: string,
     builder: (sq: SubqueryBuilder) => SubqueryBuilder,
   ): string {
-    const subquery = builder(new SubqueryBuilder());
-    return `${field} NOT IN ${subquery.buildSubquery({ wrapped: true })}`;
+    const subquery = builder(new SubqueryBuilder())
+    return `${field} NOT IN ${subquery.buildSubquery({ wrapped: true })}`
   }
 
   /**
@@ -174,8 +174,8 @@ export class SubqueryBuilder extends SelectQueryBuilder {
     builder: (sq: SubqueryBuilder) => SubqueryBuilder,
     index: number = 0,
   ): string {
-    const subquery = builder(new SubqueryBuilder());
-    return `${subquery.buildSubquery({ wrapped: true })}[${index}]`;
+    const subquery = builder(new SubqueryBuilder())
+    return `${subquery.buildSubquery({ wrapped: true })}[${index}]`
   }
 }
 
@@ -183,5 +183,5 @@ export class SubqueryBuilder extends SelectQueryBuilder {
  * Helper function to create a subquery builder.
  */
 export function subquery(): SubqueryBuilder {
-  return new SubqueryBuilder();
+  return new SubqueryBuilder()
 }

@@ -4,48 +4,48 @@
  * container, receiving its dependencies via constructor injection.
  * @module src/services/llm/providers/openrouter.provider
  */
-import OpenAI from 'openai';
-import {
-  type ChatCompletion,
-  type ChatCompletionChunk,
-} from 'openai/resources/chat/completions';
-import { Stream } from 'openai/streaming';
-import { inject, injectable } from 'tsyringe';
+import OpenAI from 'openai'
+import type {
+  ChatCompletion,
+  ChatCompletionChunk,
+} from 'openai/resources/chat/completions'
+import type { Stream } from 'openai/streaming'
+import { inject, injectable } from 'tsyringe'
 
-import { config as ConfigType } from '@/config/index.js';
-import { AppConfig, Logger, RateLimiterService } from '@/container/index.js';
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
-import { ErrorHandler } from '@/utils/internal/error-handler/index.js';
-import { logger as LoggerType } from '@/utils/internal/logger.js';
-import {
-  type RequestContext,
-  requestContextService,
-} from '@/utils/internal/requestContext.js';
-import { RateLimiter } from '@/utils/security/rateLimiter.js';
-import { sanitization } from '@/utils/security/sanitization.js';
+import type { config as ConfigType } from '@/config/index.js'
+import { AppConfig, Logger, RateLimiterService } from '@/container/index.js'
 import type {
   ILlmProvider,
   OpenRouterChatParams,
-} from '@/services/llm/core/ILlmProvider.js';
+} from '@/services/llm/core/ILlmProvider.js'
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
+import { ErrorHandler } from '@/utils/internal/error-handler/index.js'
+import type { logger as LoggerType } from '@/utils/internal/logger.js'
+import {
+  type RequestContext,
+  requestContextService,
+} from '@/utils/internal/requestContext.js'
+import type { RateLimiter } from '@/utils/security/rateLimiter.js'
+import { sanitization } from '@/utils/security/sanitization.js'
 
 export interface OpenRouterClientOptions {
-  apiKey: string;
-  baseURL?: string;
-  siteUrl?: string;
-  siteName?: string;
+  apiKey: string
+  baseURL?: string
+  siteUrl?: string
+  siteName?: string
 }
 
 @injectable()
 export class OpenRouterProvider implements ILlmProvider {
-  private readonly client: OpenAI;
+  private readonly client: OpenAI
   private readonly defaultParams: {
-    model: string;
-    temperature: number | undefined;
-    topP: number | undefined;
-    maxTokens: number | undefined;
-    topK: number | undefined;
-    minP: number | undefined;
-  };
+    model: string
+    temperature: number | undefined
+    topP: number | undefined
+    maxTokens: number | undefined
+    topK: number | undefined
+    minP: number | undefined
+  }
 
   constructor(
     @inject(RateLimiterService) private rateLimiter: RateLimiter,
@@ -54,18 +54,18 @@ export class OpenRouterProvider implements ILlmProvider {
   ) {
     const context = requestContextService.createRequestContext({
       operation: 'OpenRouterProvider.constructor',
-    });
+    })
 
     if (!this.config.openrouterApiKey) {
       this.logger.fatal(
         'OpenRouter API key is not configured. Please set OPENROUTER_API_KEY.',
         context,
-      );
+      )
       throw new McpError(
         JsonRpcErrorCode.ConfigurationError,
         'OpenRouter API key is not configured.',
         context,
-      );
+      )
     }
 
     try {
@@ -73,7 +73,7 @@ export class OpenRouterProvider implements ILlmProvider {
         apiKey: this.config.openrouterApiKey,
         siteUrl: this.config.openrouterAppUrl,
         siteName: this.config.openrouterAppName,
-      };
+      }
 
       this.client = new OpenAI({
         baseURL: options.baseURL || 'https://openrouter.ai/api/v1',
@@ -83,7 +83,7 @@ export class OpenRouterProvider implements ILlmProvider {
           'X-Title': options.siteName,
         },
         maxRetries: 0,
-      });
+      })
 
       this.defaultParams = {
         model: this.config.llmDefaultModel,
@@ -92,23 +92,23 @@ export class OpenRouterProvider implements ILlmProvider {
         maxTokens: this.config.llmDefaultMaxTokens,
         topK: this.config.llmDefaultTopK,
         minP: this.config.llmDefaultMinP,
-      };
+      }
 
       this.logger.info(
         'OpenRouter provider instance created and ready.',
         context,
-      );
+      )
     } catch (e: unknown) {
-      const error = e as Error;
+      const error = e as Error
       this.logger.error('Failed to construct OpenRouter client', {
         ...context,
         error: error.message,
-      });
+      })
       throw new McpError(
         JsonRpcErrorCode.ConfigurationError,
         'Failed to construct OpenRouter client. Please check the configuration.',
         { cause: error },
-      );
+      )
     }
   }
 
@@ -122,7 +122,7 @@ export class OpenRouterProvider implements ILlmProvider {
       max_tokens: maxTokens,
       stream,
       ...rest
-    } = params;
+    } = params
 
     return {
       ...rest,
@@ -137,7 +137,7 @@ export class OpenRouterProvider implements ILlmProvider {
           ? undefined
           : (maxTokens ?? this.defaultParams.maxTokens),
       ...(typeof stream === 'boolean' && { stream }),
-    };
+    }
   }
 
   private async _openRouterChatCompletionLogic(
@@ -148,17 +148,17 @@ export class OpenRouterProvider implements ILlmProvider {
     this.logger.logInteraction('OpenRouterRequest', {
       context,
       request: params,
-    });
+    })
     if (params.stream) {
-      return client.chat.completions.create(params);
+      return client.chat.completions.create(params)
     } else {
-      const response = await client.chat.completions.create(params);
+      const response = await client.chat.completions.create(params)
 
       this.logger.logInteraction('OpenRouterResponse', {
         context,
         response,
-      });
-      return response;
+      })
+      return response
     }
   }
 
@@ -168,54 +168,54 @@ export class OpenRouterProvider implements ILlmProvider {
     params: OpenRouterChatParams,
     context: RequestContext,
   ): Promise<ChatCompletion | Stream<ChatCompletionChunk>> {
-    const operation = 'OpenRouterProvider.chatCompletion';
-    const sanitizedParams = sanitization.sanitizeForLogging(params);
+    const operation = 'OpenRouterProvider.chatCompletion'
+    const sanitizedParams = sanitization.sanitizeForLogging(params)
 
     return await ErrorHandler.tryCatch(
       async () => {
-        const rateLimitKey = context.requestId || 'openrouter_default_key';
-        this.rateLimiter.check(rateLimitKey, context);
+        const rateLimitKey = context.requestId || 'openrouter_default_key'
+        this.rateLimiter.check(rateLimitKey, context)
         const finalApiParams = this._prepareApiParameters(
           params,
-        ) as OpenRouterChatParams;
+        ) as OpenRouterChatParams
         return await this._openRouterChatCompletionLogic(
           this.client,
           finalApiParams,
           context,
-        );
+        )
       },
       { operation, context, input: sanitizedParams },
-    );
+    )
   }
 
   public async chatCompletionStream(
     params: OpenRouterChatParams,
     context: RequestContext,
   ): Promise<AsyncIterable<ChatCompletionChunk>> {
-    const streamParams = { ...params, stream: true };
+    const streamParams = { ...params, stream: true }
     const responseStream = (await this.chatCompletion(
       streamParams,
       context,
-    )) as Stream<ChatCompletionChunk>;
+    )) as Stream<ChatCompletionChunk>
 
     const loggingStream = async function* (
       this: OpenRouterProvider,
     ): AsyncGenerator<ChatCompletionChunk> {
-      const chunks: ChatCompletionChunk[] = [];
+      const chunks: ChatCompletionChunk[] = []
       try {
         for await (const chunk of responseStream) {
-          chunks.push(chunk);
-          yield chunk;
+          chunks.push(chunk)
+          yield chunk
         }
       } finally {
         this.logger.logInteraction('OpenRouterResponse', {
           context,
           response: chunks,
           streaming: true,
-        });
+        })
       }
-    }.bind(this)();
+    }.bind(this)()
 
-    return loggingStream;
+    return loggingStream
   }
 }

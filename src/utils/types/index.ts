@@ -3,4 +3,4 @@
  * @module utils/types
  */
 
-export * from './guards.js';
+export * from './guards.js'

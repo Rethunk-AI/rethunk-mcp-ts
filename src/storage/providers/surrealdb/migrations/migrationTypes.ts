@@ -6,29 +6,29 @@
 /**
  * Migration direction.
  */
-export type MigrationDirection = 'up' | 'down';
+export type MigrationDirection = 'up' | 'down'
 
 /**
  * Migration status.
  */
-export type MigrationStatus = 'pending' | 'applied' | 'failed' | 'rolled_back';
+export type MigrationStatus = 'pending' | 'applied' | 'failed' | 'rolled_back'
 
 /**
  * A single schema migration.
  */
 export interface Migration {
   /** Unique migration identifier (e.g., '001_create_users_table') */
-  id: string;
+  id: string
   /** Migration name/description */
-  name: string;
+  name: string
   /** SQL to apply migration */
-  up: string;
+  up: string
   /** SQL to rollback migration */
-  down: string;
+  down: string
   /** When this migration was created */
-  createdAt?: Date;
+  createdAt?: Date
   /** Dependencies (migration IDs that must run first) */
-  dependencies?: string[];
+  dependencies?: string[]
 }
 
 /**
@@ -36,13 +36,13 @@ export interface Migration {
  */
 export interface MigrationResult {
   /** Migration ID */
-  id: string;
+  id: string
   /** Whether migration succeeded */
-  success: boolean;
+  success: boolean
   /** Error message if failed */
-  error?: string;
+  error?: string
   /** Execution time in milliseconds */
-  duration?: number;
+  duration?: number
 }
 
 /**
@@ -50,17 +50,17 @@ export interface MigrationResult {
  */
 export interface MigrationHistory {
   /** Migration ID */
-  migration_id: string;
+  migration_id: string
   /** Migration name */
-  name: string;
+  name: string
   /** Current status */
-  status: MigrationStatus;
+  status: MigrationStatus
   /** When it was applied */
-  applied_at?: string;
+  applied_at?: string
   /** When it was rolled back */
-  rolled_back_at?: string;
+  rolled_back_at?: string
   /** Error message if failed */
-  error?: string;
+  error?: string
 }
 
 /**
@@ -68,9 +68,9 @@ export interface MigrationHistory {
  */
 export interface MigrationPlan {
   /** Migrations to execute in order */
-  migrations: Migration[];
+  migrations: Migration[]
   /** Total count */
-  count: number;
+  count: number
   /** Direction (up or down) */
-  direction: MigrationDirection;
+  direction: MigrationDirection
 }

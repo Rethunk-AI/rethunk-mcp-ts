@@ -11,44 +11,44 @@ export type Json =
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[];
+  | Json[]
 
 export type Database = {
   public: {
     Tables: {
       kv_store: {
         Row: {
-          key: string;
-          value: Json | null;
-          expires_at: string | null;
-          tenant_id: string;
-        };
+          key: string
+          value: Json | null
+          expires_at: string | null
+          tenant_id: string
+        }
         Insert: {
-          key: string;
-          value: Json | null;
-          expires_at?: string | null;
-          tenant_id: string;
-        };
+          key: string
+          value: Json | null
+          expires_at?: string | null
+          tenant_id: string
+        }
         Update: {
-          key?: string;
-          value?: Json | null;
-          expires_at?: string | null;
-          tenant_id?: string;
-        };
-        Relationships: [];
-      };
-    };
+          key?: string
+          value?: Json | null
+          expires_at?: string | null
+          tenant_id?: string
+        }
+        Relationships: []
+      }
+    }
     Views: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     Functions: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     Enums: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
-};
+      [_ in never]: never
+    }
+  }
+}

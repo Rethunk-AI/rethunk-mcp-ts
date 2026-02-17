@@ -8,4 +8,4 @@
  * Re-export OpenRouter-specific types from the interface.
  * This keeps types centralized while allowing provider-specific extensions.
  */
-export type { OpenRouterChatParams } from "./core/ILlmProvider.js";
+export type { OpenRouterChatParams } from './core/ILlmProvider.js'

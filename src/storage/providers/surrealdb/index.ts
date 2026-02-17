@@ -3,114 +3,98 @@
  * @module src/storage/providers/surrealdb
  */
 
-// Core exports
-export { SurrealDbClient } from './core/surrealDbClient.js';
-export { SurrealKvProvider } from './kv/surrealKvProvider.js';
-export { ConnectionManager } from './core/connectionManager.js';
-export { TransactionManager } from './core/transactionManager.js';
-export {
-  SelectQueryBuilder,
-  WhereBuilder,
-  select,
-  where,
-} from './core/queryBuilder.js';
-
-// Authentication exports
-export { AuthManager } from './auth/authManager.js';
-export {
-  ScopeDefinitions,
-  PermissionPatterns,
-} from './auth/scopeDefinitions.js';
-export {
-  PermissionHelper,
-  PermissionBuilder,
-} from './auth/permissionHelpers.js';
-
-// Graph exports
-export { GraphOperations } from './graph/graphOperations.js';
-export { RelationshipManager } from './graph/relationshipManager.js';
-export { PathFinder } from './graph/pathFinder.js';
-
-// Event exports
-export { EventManager } from './events/eventManager.js';
-export { TriggerBuilder } from './events/triggerBuilder.js';
-
-// Query exports
-export { SubqueryBuilder, subquery } from './query/subqueryBuilder.js';
-export { ForLoopBuilder, forLoop } from './query/forLoopBuilder.js';
-
-// Function exports
-export { CustomFunctions } from './functions/customFunctions.js';
-export { FunctionRegistry } from './functions/functionRegistry.js';
-
-// Migration exports
-export { MigrationRunner } from './migrations/migrationRunner.js';
-
-// Introspection exports
-export { SchemaIntrospector } from './introspection/schemaIntrospector.js';
-
-// Types
 export type {
-  SurrealDb,
-  KvStoreRecord,
-  KvStoreInput,
-  SurrealDbConfig,
-  QueryResult,
-  TransactionOptions,
-  HealthCheckResult,
-} from './types.js';
-
-export type {
-  AuthStrategy,
-  JwtAlgorithm,
-  JwtAccessConfig,
-  RecordAccessConfig,
   AuthResult,
-} from './auth/authManager.js';
-
+  AuthStrategy,
+  JwtAccessConfig,
+  JwtAlgorithm,
+  RecordAccessConfig,
+} from './auth/authManager.js'
+// Authentication exports
+export { AuthManager } from './auth/authManager.js'
 export type {
   PermissionOp,
   PermissionRule,
   TablePermissions,
-} from './auth/permissionHelpers.js';
-
+} from './auth/permissionHelpers.js'
+export {
+  PermissionBuilder,
+  PermissionHelper,
+} from './auth/permissionHelpers.js'
+export {
+  PermissionPatterns,
+  ScopeDefinitions,
+} from './auth/scopeDefinitions.js'
+export { ConnectionManager } from './core/connectionManager.js'
+export {
+  SelectQueryBuilder,
+  select,
+  WhereBuilder,
+  where,
+} from './core/queryBuilder.js'
+// Core exports
+export { SurrealDbClient } from './core/surrealDbClient.js'
+export { TransactionManager } from './core/transactionManager.js'
+// Event exports
+export { EventManager } from './events/eventManager.js'
 export type {
-  Vertex,
+  DefineEventResult,
+  EventConfig,
+  EventContext,
+  EventInfo,
+  EventTrigger,
+} from './events/eventTypes.js'
+export { TriggerBuilder } from './events/triggerBuilder.js'
+export type {
+  CustomFunctionConfig,
+  DefineFunctionResult,
+  FunctionParameter,
+} from './functions/customFunctions.js'
+// Function exports
+export { CustomFunctions } from './functions/customFunctions.js'
+export { FunctionRegistry } from './functions/functionRegistry.js'
+// Graph exports
+export { GraphOperations } from './graph/graphOperations.js'
+export type {
   Edge,
   EdgeOptions,
   GraphQueryResult,
-} from './graph/graphTypes.js';
-
-export type { Path, PathFindingOptions } from './graph/pathFinder.js';
-
+  Vertex,
+} from './graph/graphTypes.js'
+export type { Path, PathFindingOptions } from './graph/pathFinder.js'
+export { PathFinder } from './graph/pathFinder.js'
+export { RelationshipManager } from './graph/relationshipManager.js'
 export type {
-  EventTrigger,
-  EventConfig,
-  EventContext,
-  DefineEventResult,
-  EventInfo,
-} from './events/eventTypes.js';
-
-export type { SubqueryContext } from './query/subqueryBuilder.js';
-export type { ForLoopConfig } from './query/forLoopBuilder.js';
-export type {
-  FunctionParameter,
-  CustomFunctionConfig,
-  DefineFunctionResult,
-} from './functions/customFunctions.js';
-
-export type {
-  Migration,
-  MigrationResult,
-  MigrationHistory,
-  MigrationPlan,
-  MigrationDirection,
-  MigrationStatus,
-} from './migrations/migrationTypes.js';
-
-export type {
-  TableInfo,
+  DatabaseSchema,
   FieldInfo,
   IndexInfo,
-  DatabaseSchema,
-} from './introspection/schemaIntrospector.js';
+  TableInfo,
+} from './introspection/schemaIntrospector.js'
+// Introspection exports
+export { SchemaIntrospector } from './introspection/schemaIntrospector.js'
+export { SurrealKvProvider } from './kv/surrealKvProvider.js'
+// Migration exports
+export { MigrationRunner } from './migrations/migrationRunner.js'
+export type {
+  Migration,
+  MigrationDirection,
+  MigrationHistory,
+  MigrationPlan,
+  MigrationResult,
+  MigrationStatus,
+} from './migrations/migrationTypes.js'
+export type { ForLoopConfig } from './query/forLoopBuilder.js'
+export { ForLoopBuilder, forLoop } from './query/forLoopBuilder.js'
+export type { SubqueryContext } from './query/subqueryBuilder.js'
+// Query exports
+export { SubqueryBuilder, subquery } from './query/subqueryBuilder.js'
+// Types
+export type {
+  HealthCheckResult,
+  KvStoreInput,
+  KvStoreRecord,
+  QueryResult,
+  SurrealDb,
+  SurrealDbConfig,
+  TransactionOptions,
+} from './types.js'

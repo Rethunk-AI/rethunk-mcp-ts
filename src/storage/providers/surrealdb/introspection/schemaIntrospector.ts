@@ -1,26 +1,28 @@
+/** biome-ignore-all lint/suspicious/noThenProperty: We use this as a variable in test cases and Surreal events. */
+
 /**
  * @fileoverview Schema introspection for SurrealDB.
  * Inspects and reports on database schema structure.
  * @module src/storage/providers/surrealdb/introspection/schemaIntrospector
  */
 
-import type Surreal from 'surrealdb';
-import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js';
+import type Surreal from 'surrealdb'
+import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js'
 
 /**
  * Table information from schema.
  */
 export interface TableInfo {
   /** Table name */
-  name: string;
+  name: string
   /** Whether table is schemafull */
-  schemafull: boolean;
+  schemafull: boolean
   /** Fields defined on table */
-  fields: FieldInfo[];
+  fields: FieldInfo[]
   /** Indexes defined on table */
-  indexes: IndexInfo[];
+  indexes: IndexInfo[]
   /** Events defined on table */
-  events: EventInfo[];
+  events: EventInfo[]
 }
 
 /**
@@ -28,13 +30,13 @@ export interface TableInfo {
  */
 export interface FieldInfo {
   /** Field name */
-  name: string;
+  name: string
   /** Field type */
-  type: string;
+  type: string
   /** Whether field is required */
-  required: boolean;
+  required: boolean
   /** Default value if any */
-  default?: string;
+  default?: string
 }
 
 /**
@@ -42,11 +44,11 @@ export interface FieldInfo {
  */
 export interface IndexInfo {
   /** Index name */
-  name: string;
+  name: string
   /** Columns in index */
-  columns: string[];
+  columns: string[]
   /** Whether index is unique */
-  unique: boolean;
+  unique: boolean
 }
 
 /**
@@ -54,11 +56,11 @@ export interface IndexInfo {
  */
 export interface EventInfo {
   /** Event name */
-  name: string;
+  name: string
   /** When event triggers */
-  when?: string;
+  when?: string
   /** What event does */
-  then: string;
+  then: string
 }
 
 /**
@@ -66,15 +68,15 @@ export interface EventInfo {
  */
 export interface DatabaseSchema {
   /** Namespace name */
-  namespace: string;
+  namespace: string
   /** Database name */
-  database: string;
+  database: string
   /** Tables in database */
-  tables: TableInfo[];
+  tables: TableInfo[]
   /** Custom functions */
-  functions: string[];
+  functions: string[]
   /** Access methods */
-  accessMethods: string[];
+  accessMethods: string[]
 }
 
 /**
@@ -110,33 +112,34 @@ export class SchemaIntrospector {
   async getDatabaseSchema(context: RequestContext): Promise<DatabaseSchema> {
     return ErrorHandler.tryCatch(
       async () => {
-        logger.debug('[SchemaIntrospector] Getting database schema', context);
+        logger.debug('[SchemaIntrospector] Getting database schema', context)
 
-        const query = 'INFO FOR DATABASE';
+        const query = 'INFO FOR DATABASE'
 
-        const result = await this.client.query<
-          [
-            {
-              result: {
-                tables: Record<string, unknown>;
-                functions: Record<string, unknown>;
-                accesses: Record<string, unknown>;
-              };
-            },
-          ]
-        >(query);
+        const result =
+          await this.client.query<
+            [
+              {
+                result: {
+                  tables: Record<string, unknown>
+                  functions: Record<string, unknown>
+                  accesses: Record<string, unknown>
+                }
+              },
+            ]
+          >(query)
 
-        const info = result[0]?.result;
+        const info = result[0]?.result
 
-        const tables = Object.keys(info?.tables ?? {});
-        const functions = Object.keys(info?.functions ?? {});
-        const accessMethods = Object.keys(info?.accesses ?? {});
+        const tables = Object.keys(info?.tables ?? {})
+        const functions = Object.keys(info?.functions ?? {})
+        const accessMethods = Object.keys(info?.accesses ?? {})
 
         // Get detailed info for each table
-        const tableInfos: TableInfo[] = [];
+        const tableInfos: TableInfo[] = []
         for (const tableName of tables) {
-          const tableInfo = await this.getTableInfo(tableName, context);
-          tableInfos.push(tableInfo);
+          const tableInfo = await this.getTableInfo(tableName, context)
+          tableInfos.push(tableInfo)
         }
 
         return {
@@ -145,13 +148,13 @@ export class SchemaIntrospector {
           tables: tableInfos,
           functions,
           accessMethods,
-        };
+        }
       },
       {
         operation: 'SchemaIntrospector.getDatabaseSchema',
         context,
       },
-    );
+    )
   }
 
   /**
@@ -167,21 +170,22 @@ export class SchemaIntrospector {
   ): Promise<TableInfo> {
     return ErrorHandler.tryCatch(
       async () => {
-        const query = `INFO FOR TABLE ${tableName}`;
+        const query = `INFO FOR TABLE ${tableName}`
 
-        const result = await this.client.query<
-          [
-            {
-              result: {
-                fields: Record<string, string>;
-                indexes: Record<string, string>;
-                events: Record<string, string>;
-              };
-            },
-          ]
-        >(query);
+        const result =
+          await this.client.query<
+            [
+              {
+                result: {
+                  fields: Record<string, string>
+                  indexes: Record<string, string>
+                  events: Record<string, string>
+                }
+              },
+            ]
+          >(query)
 
-        const info = result[0]?.result;
+        const info = result[0]?.result
 
         const fields: FieldInfo[] = Object.entries(info?.fields ?? {}).map(
           ([name, type]) => ({
@@ -189,7 +193,7 @@ export class SchemaIntrospector {
             type: String(type),
             required: !String(type).includes('option'),
           }),
-        );
+        )
 
         const indexes: IndexInfo[] = Object.entries(info?.indexes ?? {}).map(
           ([name, _def]) => ({
@@ -197,7 +201,7 @@ export class SchemaIntrospector {
             columns: [], // Would parse from definition
             unique: String(_def).includes('UNIQUE'),
           }),
-        );
+        )
 
         const events: EventInfo[] = Object.keys(info?.events ?? {}).map(
           (name) => ({
@@ -205,7 +209,7 @@ export class SchemaIntrospector {
             when: '',
             then: '',
           }),
-        );
+        )
 
         return {
           name: tableName,
@@ -213,14 +217,14 @@ export class SchemaIntrospector {
           fields,
           indexes,
           events,
-        };
+        }
       },
       {
         operation: 'SchemaIntrospector.getTableInfo',
         context,
         input: { tableName },
       },
-    );
+    )
   }
 
   /**
@@ -232,21 +236,21 @@ export class SchemaIntrospector {
   async listTables(context: RequestContext): Promise<string[]> {
     return ErrorHandler.tryCatch(
       async () => {
-        const query = 'INFO FOR DATABASE';
+        const query = 'INFO FOR DATABASE'
 
         const result =
           await this.client.query<
             [{ result: { tables: Record<string, unknown> } }]
-          >(query);
+          >(query)
 
-        const tables = result[0]?.result?.tables ?? {};
-        return Object.keys(tables);
+        const tables = result[0]?.result?.tables ?? {}
+        return Object.keys(tables)
       },
       {
         operation: 'SchemaIntrospector.listTables',
         context,
       },
-    );
+    )
   }
 
   /**
@@ -258,20 +262,20 @@ export class SchemaIntrospector {
   async listFunctions(context: RequestContext): Promise<string[]> {
     return ErrorHandler.tryCatch(
       async () => {
-        const query = 'INFO FOR DATABASE';
+        const query = 'INFO FOR DATABASE'
 
         const result =
           await this.client.query<
             [{ result: { functions: Record<string, unknown> } }]
-          >(query);
+          >(query)
 
-        const functions = result[0]?.result?.functions ?? {};
-        return Object.keys(functions);
+        const functions = result[0]?.result?.functions ?? {}
+        return Object.keys(functions)
       },
       {
         operation: 'SchemaIntrospector.listFunctions',
         context,
       },
-    );
+    )
   }
 }

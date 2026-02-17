@@ -27,9 +27,9 @@ export function logStartupBanner(
   if (process.stdout.isTTY) {
     // In STDIO mode, use stderr to avoid polluting stdout (which is reserved for MCP JSON-RPC)
     if (transportType === 'stdio') {
-      console.error(message);
+      console.error(message)
     } else {
-      console.log(message);
+      console.log(message)
     }
   }
 }

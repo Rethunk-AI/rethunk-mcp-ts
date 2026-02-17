@@ -4,21 +4,21 @@
  * optional <think>...</think> blocks often found at the beginning of LLM outputs.
  * @module src/utils/parsing/xmlParser
  */
-import { XMLParser as FastXmlParser } from 'fast-xml-parser';
+import { XMLParser as FastXmlParser } from 'fast-xml-parser'
 
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
 import {
-  type RequestContext,
   logger,
+  type RequestContext,
   requestContextService,
-} from '@/utils/index.js';
+} from '@/utils/index.js'
 
 /**
  * Regular expression to find a <think> block at the start of a string.
  * Captures content within <think>...</think> (Group 1) and the rest of the string (Group 2).
  * @private
  */
-const thinkBlockRegex = /^<think>([\s\S]*?)<\/think>\s*([\s\S]*)$/;
+const thinkBlockRegex = /^<think>([\s\S]*?)<\/think>\s*([\s\S]*)$/
 
 /**
  * Utility class for parsing XML strings.
@@ -26,7 +26,7 @@ const thinkBlockRegex = /^<think>([\s\S]*?)<\/think>\s*([\s\S]*)$/;
  * optional <think> blocks from LLMs.
  */
 export class XmlParser {
-  private parser: FastXmlParser;
+  private parser: FastXmlParser
 
   constructor() {
     this.parser = new FastXmlParser({
@@ -35,7 +35,7 @@ export class XmlParser {
       // against default changes in future versions.
       processEntities: false,
       htmlEntities: false,
-    });
+    })
   }
 
   /**
@@ -50,53 +50,53 @@ export class XmlParser {
    * @throws {McpError} If the string is empty after processing or if parsing fails.
    */
   parse<T = unknown>(xmlString: string, context?: RequestContext): T {
-    let stringToParse = xmlString;
-    const match = xmlString.match(thinkBlockRegex);
+    let stringToParse = xmlString
+    const match = xmlString.match(thinkBlockRegex)
 
     if (match) {
-      const thinkContent = match[1]?.trim() ?? '';
-      const restOfString = match[2] ?? '';
+      const thinkContent = match[1]?.trim() ?? ''
+      const restOfString = match[2] ?? ''
 
       const logContext =
         context ||
         requestContextService.createRequestContext({
           operation: 'XmlParser.thinkBlock',
-        });
+        })
       if (thinkContent) {
         logger.debug('LLM <think> block detected and logged.', {
           ...logContext,
           thinkContent,
-        });
+        })
       } else {
-        logger.debug('Empty LLM <think> block detected.', logContext);
+        logger.debug('Empty LLM <think> block detected.', logContext)
       }
-      stringToParse = restOfString;
+      stringToParse = restOfString
     }
 
-    stringToParse = stringToParse.trim();
+    stringToParse = stringToParse.trim()
 
     if (!stringToParse) {
       throw new McpError(
         JsonRpcErrorCode.ValidationError,
         'XML string is empty after removing <think> block and trimming.',
         context,
-      );
+      )
     }
 
     try {
-      return this.parser.parse(stringToParse) as T;
+      return this.parser.parse(stringToParse) as T
     } catch (e: unknown) {
-      const error = e as Error;
+      const error = e as Error
       const errorLogContext =
         context ||
         requestContextService.createRequestContext({
           operation: 'XmlParser.parseError',
-        });
+        })
       logger.error('Failed to parse XML content.', {
         ...errorLogContext,
         errorDetails: error.message,
         contentAttempted: stringToParse.substring(0, 200),
-      });
+      })
 
       throw new McpError(
         JsonRpcErrorCode.ValidationError,
@@ -108,7 +108,7 @@ export class XmlParser {
             (stringToParse.length > 200 ? '...' : ''),
           rawError: error instanceof Error ? error.stack : String(error),
         },
-      );
+      )
     }
   }
 }
@@ -130,4 +130,4 @@ export class XmlParser {
  * console.log(parsedWithThink); // Output: { root: { key: 'value' } }
  * ```
  */
-export const xmlParser = new XmlParser();
+export const xmlParser = new XmlParser()

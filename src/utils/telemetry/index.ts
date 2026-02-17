@@ -6,7 +6,7 @@
  * @module src/utils/telemetry
  */
 
-export * from './instrumentation.js';
-export * from './semconv.js';
-export * from './trace.js';
-export * from './metrics.js';
+export * from './instrumentation.js'
+export * from './metrics.js'
+export * from './semconv.js'
+export * from './trace.js'

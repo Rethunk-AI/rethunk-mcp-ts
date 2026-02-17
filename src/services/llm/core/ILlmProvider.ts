@@ -8,14 +8,14 @@ import type {
   ChatCompletionChunk,
   ChatCompletionCreateParamsNonStreaming,
   ChatCompletionCreateParamsStreaming,
-} from 'openai/resources/chat/completions';
-import type { Stream } from 'openai/streaming';
+} from 'openai/resources/chat/completions'
+import type { Stream } from 'openai/streaming'
 
-import type { RequestContext } from '@/utils/index.js';
+import type { RequestContext } from '@/utils/index.js'
 
 export type OpenRouterChatParams =
   | ChatCompletionCreateParamsNonStreaming
-  | ChatCompletionCreateParamsStreaming;
+  | ChatCompletionCreateParamsStreaming
 
 export interface ILlmProvider {
   /**
@@ -27,7 +27,7 @@ export interface ILlmProvider {
   chatCompletion(
     params: OpenRouterChatParams, // We can generalize this type later if needed
     context: RequestContext,
-  ): Promise<ChatCompletion | Stream<ChatCompletionChunk>>;
+  ): Promise<ChatCompletion | Stream<ChatCompletionChunk>>
 
   /**
    * Creates a streaming chat completion.
@@ -38,5 +38,5 @@ export interface ILlmProvider {
   chatCompletionStream(
     params: OpenRouterChatParams,
     context: RequestContext,
-  ): Promise<AsyncIterable<ChatCompletionChunk>>;
+  ): Promise<AsyncIterable<ChatCompletionChunk>>
 }

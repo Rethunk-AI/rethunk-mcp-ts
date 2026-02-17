@@ -4,9 +4,9 @@
  * @module src/utils/internal/error-handler/helpers
  */
 
-import { McpError } from '@/types-global/errors.js';
-import { isAggregateError } from '@/utils/types/guards.js';
-import { getCompiledPattern } from './mappings.js';
+import { McpError } from '@/types-global/errors.js'
+import { isAggregateError } from '@/utils/types/guards.js'
+import { getCompiledPattern } from './mappings.js'
 
 /**
  * Creates a "safe" RegExp for testing error messages with caching.
@@ -16,7 +16,7 @@ import { getCompiledPattern } from './mappings.js';
  * @returns A cached RegExp instance.
  */
 export function createSafeRegex(pattern: string | RegExp): RegExp {
-  return getCompiledPattern(pattern);
+  return getCompiledPattern(pattern)
 }
 
 /**
@@ -26,13 +26,13 @@ export function createSafeRegex(pattern: string | RegExp): RegExp {
  */
 export function getErrorName(error: unknown): string {
   if (error instanceof Error) {
-    return error.name || 'Error';
+    return error.name || 'Error'
   }
   if (error === null) {
-    return 'NullValueEncountered';
+    return 'NullValueEncountered'
   }
   if (error === undefined) {
-    return 'UndefinedValueEncountered';
+    return 'UndefinedValueEncountered'
   }
   if (
     typeof error === 'object' &&
@@ -41,9 +41,9 @@ export function getErrorName(error: unknown): string {
     typeof error.constructor.name === 'string' &&
     error.constructor.name !== 'Object'
   ) {
-    return `${error.constructor.name}Encountered`;
+    return `${error.constructor.name}Encountered`
   }
-  return `${typeof error}Encountered`;
+  return `${typeof error}Encountered`
 }
 
 /**
@@ -60,47 +60,47 @@ export function getErrorMessage(error: unknown): string {
           .map((e) => (e instanceof Error ? e.message : String(e)))
           .filter(Boolean)
           .slice(0, 3)
-          .join('; ');
-        return inner ? `${error.message}: ${inner}` : error.message;
+          .join('; ')
+        return inner ? `${error.message}: ${inner}` : error.message
       }
-      return error.message;
+      return error.message
     }
     if (error === null) {
-      return 'Null value encountered as error';
+      return 'Null value encountered as error'
     }
     if (error === undefined) {
-      return 'Undefined value encountered as error';
+      return 'Undefined value encountered as error'
     }
     if (typeof error === 'string') {
-      return error;
+      return error
     }
     if (typeof error === 'number' || typeof error === 'boolean') {
-      return String(error);
+      return String(error)
     }
     if (typeof error === 'bigint') {
-      return error.toString();
+      return error.toString()
     }
     if (typeof error === 'function') {
-      return `[function ${error.name || 'anonymous'}]`;
+      return `[function ${error.name || 'anonymous'}]`
     }
     if (typeof error === 'object') {
       try {
-        const json = JSON.stringify(error);
-        if (json && json !== '{}') return json;
+        const json = JSON.stringify(error)
+        if (json && json !== '{}') return json
       } catch {
         // fall through
       }
       const ctor = (error as { constructor?: { name?: string } }).constructor
-        ?.name;
-      return `Non-Error object encountered (constructor: ${ctor || 'Object'})`;
+        ?.name
+      return `Non-Error object encountered (constructor: ${ctor || 'Object'})`
     }
     if (typeof error === 'symbol') {
-      return error.toString();
+      return error.toString()
     }
     // c8 ignore next
-    return '[unrepresentable error]';
+    return '[unrepresentable error]'
   } catch (conversionError) {
-    return `Error converting error to string: ${conversionError instanceof Error ? conversionError.message : 'Unknown conversion error'}`;
+    return `Error converting error to string: ${conversionError instanceof Error ? conversionError.message : 'Unknown conversion error'}`
   }
 }
 
@@ -109,15 +109,15 @@ export function getErrorMessage(error: unknown): string {
  */
 export interface ErrorCauseNode {
   /** Error name/type */
-  name: string;
+  name: string
   /** Error message */
-  message: string;
+  message: string
   /** Stack trace if available */
-  stack?: string;
+  stack?: string
   /** Depth in the cause chain (0 = original error) */
-  depth: number;
+  depth: number
   /** Additional data from McpError instances */
-  data?: Record<string, unknown>;
+  data?: Record<string, unknown>
 }
 
 /**
@@ -138,10 +138,10 @@ export function extractErrorCauseChain(
   error: unknown,
   maxDepth = 20,
 ): ErrorCauseNode[] {
-  const chain: ErrorCauseNode[] = [];
-  const seen = new WeakSet<object>();
-  let current = error;
-  let depth = 0;
+  const chain: ErrorCauseNode[] = []
+  const seen = new WeakSet<object>()
+  let current = error
+  let depth = 0
 
   while (current && depth < maxDepth) {
     // Circular reference detection
@@ -151,10 +151,10 @@ export function extractErrorCauseChain(
           name: 'CircularReference',
           message: 'Circular reference detected in error cause chain',
           depth,
-        });
-        break;
+        })
+        break
       }
-      seen.add(current);
+      seen.add(current)
     }
 
     if (current instanceof Error) {
@@ -164,34 +164,34 @@ export function extractErrorCauseChain(
         depth,
         // Only include stack if it exists (exact optional property types)
         ...(current.stack !== undefined ? { stack: current.stack } : {}),
-      };
+      }
 
       // Extract data from McpError instances
       if (current instanceof McpError && current.data) {
-        node.data = current.data;
+        node.data = current.data
       }
 
-      chain.push(node);
+      chain.push(node)
 
       // Continue traversing cause chain
-      current = current.cause;
+      current = current.cause
     } else if (typeof current === 'string') {
       chain.push({
         name: 'StringError',
         message: current,
         depth,
-      });
-      break;
+      })
+      break
     } else {
       chain.push({
         name: getErrorName(current),
         message: getErrorMessage(current),
         depth,
-      });
-      break;
+      })
+      break
     }
 
-    depth++;
+    depth++
   }
 
   if (depth >= maxDepth) {
@@ -199,10 +199,10 @@ export function extractErrorCauseChain(
       name: 'MaxDepthExceeded',
       message: `Error cause chain exceeded maximum depth of ${maxDepth}`,
       depth,
-    });
+    })
   }
 
-  return chain;
+  return chain
 }
 
 /**
@@ -220,20 +220,20 @@ export function extractErrorCauseChain(
  * ```
  */
 export function serializeErrorCauseChain(error: unknown): {
-  rootCause: ErrorCauseNode;
-  chain: ErrorCauseNode[];
-  totalDepth: number;
+  rootCause: ErrorCauseNode
+  chain: ErrorCauseNode[]
+  totalDepth: number
 } {
-  const chain = extractErrorCauseChain(error);
+  const chain = extractErrorCauseChain(error)
   const rootCause = chain[chain.length - 1] || {
     name: 'Unknown',
     message: 'No error information available',
     depth: 0,
-  };
+  }
 
   return {
     rootCause,
     chain,
     totalDepth: chain.length,
-  };
+  }
 }

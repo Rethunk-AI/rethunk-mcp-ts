@@ -5,23 +5,23 @@
  */
 
 // Export core interfaces and service
-export type { ISpeechProvider } from './core/ISpeechProvider.js';
-export { supportsTTS, supportsSTT } from './core/ISpeechProvider.js';
-export { SpeechService, createSpeechProvider } from './core/SpeechService.js';
+export type { ISpeechProvider } from './core/ISpeechProvider.js'
+export { supportsSTT, supportsTTS } from './core/ISpeechProvider.js'
+export { createSpeechProvider, SpeechService } from './core/SpeechService.js'
 
 // Export provider implementations
-export { ElevenLabsProvider } from './providers/elevenlabs.provider.js';
-export { WhisperProvider } from './providers/whisper.provider.js';
+export { ElevenLabsProvider } from './providers/elevenlabs.provider.js'
+export { WhisperProvider } from './providers/whisper.provider.js'
 
 // Export types
 export type {
+  AudioFormat,
   SpeechProviderConfig,
-  TextToSpeechOptions,
-  TextToSpeechResult,
   SpeechToTextOptions,
   SpeechToTextResult,
+  TextToSpeechOptions,
+  TextToSpeechResult,
   Voice,
   VoiceSettings,
   WordTimestamp,
-  AudioFormat,
-} from './types.js';
+} from './types.js'

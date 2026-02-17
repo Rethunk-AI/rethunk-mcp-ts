@@ -1,7 +1,7 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from 'node:fs'
+import path from 'node:path'
 
-import type { SdkContext } from './toolDefinition.js';
+import type { SdkContext } from './toolDefinition.js'
 
 /**
  * Create a safe SdkContext where `signal` is a native AbortSignal controlled
@@ -9,23 +9,23 @@ import type { SdkContext } from './toolDefinition.js';
  * instead of reading its properties (avoids cross-realm getter errors).
  */
 export function sanitizeSdkContext(sdkContext: SdkContext): SdkContext {
-  if (!sdkContext) return sdkContext;
+  if (!sdkContext) return sdkContext
   // Use a narrow, well-known shape for probing the signal property
-  type MaybeHasSignal = { signal?: AbortSignal | EventTarget | undefined };
-  const maybeSignal = (sdkContext as MaybeHasSignal).signal;
+  type MaybeHasSignal = { signal?: AbortSignal | EventTarget | undefined }
+  const maybeSignal = (sdkContext as MaybeHasSignal).signal
 
   try {
     if (
       maybeSignal &&
       typeof (maybeSignal as EventTarget).addEventListener === 'function'
     ) {
-      const controller = new AbortController();
+      const controller = new AbortController()
       try {
-        (maybeSignal as EventTarget).addEventListener(
+        ;(maybeSignal as EventTarget).addEventListener(
           'abort',
           () => controller.abort(),
           { once: true } as AddEventListenerOptions,
-        );
+        )
       } catch {
         // best-effort
       }
@@ -34,16 +34,16 @@ export function sanitizeSdkContext(sdkContext: SdkContext): SdkContext {
       return {
         ...(sdkContext as object),
         signal: controller.signal,
-      } as SdkContext;
+      } as SdkContext
     }
   } catch {
     // ignore errors and return original context
   }
 
-  return sdkContext;
+  return sdkContext
 }
 
-export type PackageManager = 'bun' | 'yarn' | 'npm' | 'pnpm';
+export type PackageManager = 'bun' | 'yarn' | 'npm' | 'pnpm'
 
 /**
  * Detect package manager based on lockfiles or package.json heuristics.
@@ -52,33 +52,33 @@ export function detectProjectPackageManager(
   cwd = process.cwd(),
 ): PackageManager {
   try {
-    const bunLock = path.join(cwd, 'bun.lockb');
-    const yarnLock = path.join(cwd, 'yarn.lock');
-    const pnpmLock = path.join(cwd, 'pnpm-lock.yaml');
-    const npmLock = path.join(cwd, 'package-lock.json');
-    const pkgJson = path.join(cwd, 'package.json');
+    const bunLock = path.join(cwd, 'bun.lockb')
+    const yarnLock = path.join(cwd, 'yarn.lock')
+    const pnpmLock = path.join(cwd, 'pnpm-lock.yaml')
+    const npmLock = path.join(cwd, 'package-lock.json')
+    const pkgJson = path.join(cwd, 'package.json')
 
-    if (fs.existsSync(bunLock)) return 'bun';
-    if (fs.existsSync(yarnLock)) return 'yarn';
-    if (fs.existsSync(pnpmLock)) return 'pnpm';
-    if (fs.existsSync(npmLock)) return 'npm';
+    if (fs.existsSync(bunLock)) return 'bun'
+    if (fs.existsSync(yarnLock)) return 'yarn'
+    if (fs.existsSync(pnpmLock)) return 'pnpm'
+    if (fs.existsSync(npmLock)) return 'npm'
 
     if (fs.existsSync(pkgJson)) {
       try {
-        const raw = fs.readFileSync(pkgJson, 'utf8');
-        const parsedRaw: unknown = JSON.parse(raw);
+        const raw = fs.readFileSync(pkgJson, 'utf8')
+        const parsedRaw: unknown = JSON.parse(raw)
         if (
           parsedRaw &&
           typeof parsedRaw === 'object' &&
           !Array.isArray(parsedRaw)
         ) {
-          const parsedObj = parsedRaw as Record<string, unknown>;
-          const maybePm = parsedObj.packageManager;
+          const parsedObj = parsedRaw as Record<string, unknown>
+          const maybePm = parsedObj.packageManager
           if (typeof maybePm === 'string') {
-            if (maybePm.startsWith('pnpm')) return 'pnpm';
-            if (maybePm.startsWith('yarn')) return 'yarn';
-            if (maybePm.startsWith('bun')) return 'bun';
-            if (maybePm.startsWith('npm')) return 'npm';
+            if (maybePm.startsWith('pnpm')) return 'pnpm'
+            if (maybePm.startsWith('yarn')) return 'yarn'
+            if (maybePm.startsWith('bun')) return 'bun'
+            if (maybePm.startsWith('npm')) return 'npm'
           }
         }
       } catch {
@@ -87,12 +87,12 @@ export function detectProjectPackageManager(
     }
 
     // Fallback to runtime hints (prefer explicit env var)
-    if (process.env.BUN_VERSION) return 'bun';
+    if (process.env.BUN_VERSION) return 'bun'
   } catch {
     // ignore
   }
 
-  return 'yarn';
+  return 'yarn'
 }
 
 /**
@@ -107,14 +107,14 @@ export function installAbortSignalShim(): void {
         { name: 'aborted', defaultValue: false },
         { name: 'reason', defaultValue: undefined },
         { name: 'onabort', defaultValue: null },
-      ];
+      ]
 
       for (const { name, defaultValue } of props) {
         const desc = Object.getOwnPropertyDescriptor(
           AbortSignal.prototype,
           name,
-        );
-        if (!desc) continue;
+        )
+        if (!desc) continue
         Object.defineProperty(AbortSignal.prototype, name, {
           get(this: AbortSignal) {
             try {
@@ -126,23 +126,23 @@ export function installAbortSignalShim(): void {
                     this: unknown,
                     ...args: unknown[]
                   ) => unknown
-                ).call(this);
+                ).call(this)
               }
-              return defaultValue;
+              return defaultValue
             } catch {
-              return defaultValue;
+              return defaultValue
             }
           },
           set(this: AbortSignal, v: unknown) {
             try {
               if (typeof desc.set === 'function') {
                 // call the original setter with proper `this` binding
-                (
+                ;(
                   desc.set as unknown as (
                     this: unknown,
                     ...args: unknown[]
                   ) => unknown
-                ).call(this, v);
+                ).call(this, v)
               }
             } catch {
               // swallow
@@ -150,7 +150,7 @@ export function installAbortSignalShim(): void {
           },
           configurable: true,
           enumerable: false,
-        });
+        })
       }
     }
   } catch {
@@ -166,23 +166,23 @@ export function mapScriptArgsToRunner(
   command: PackageManager,
   args: readonly string[],
 ): string[] {
-  const arr = Array.from(args || []);
+  const arr = Array.from(args || [])
 
   if (arr.length > 0 && arr[0] === '-s') {
-    const script = arr[1] ?? '';
-    const remainder = arr.slice(2);
+    const script = arr[1] ?? ''
+    const remainder = arr.slice(2)
     switch (command) {
       case 'bun':
-        return ['run', script, '--', ...remainder];
+        return ['run', script, '--', ...remainder]
       case 'yarn':
-        return ['-s', script, ...remainder];
+        return ['-s', script, ...remainder]
       case 'pnpm':
       case 'npm':
-        return ['run', script, '--silent', '--', ...remainder];
+        return ['run', script, '--silent', '--', ...remainder]
       default:
-        return ['-s', script, ...remainder];
+        return ['-s', script, ...remainder]
     }
   }
 
-  return arr;
+  return arr
 }

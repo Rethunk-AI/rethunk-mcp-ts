@@ -3,18 +3,18 @@
  * @module tests/utils/telemetry/instrumentation.test
  */
 
+import { DiagLogLevel, diag } from '@opentelemetry/api'
 import {
-  describe,
-  test,
-  expect,
-  beforeEach,
   afterEach,
-  vi,
+  beforeEach,
+  describe,
+  expect,
   type MockInstance,
-} from 'vitest';
-import { diag, DiagLogLevel } from '@opentelemetry/api';
-import * as instrumentation from '@/utils/telemetry/instrumentation.js';
-import * as runtimeModule from '@/utils/internal/runtime.js';
+  test,
+  vi,
+} from 'vitest'
+import * as runtimeModule from '@/utils/internal/runtime.js'
+import * as instrumentation from '@/utils/telemetry/instrumentation.js'
 
 // Mock config at module level
 vi.mock('@/config/index.js', () => ({
@@ -30,44 +30,44 @@ vi.mock('@/config/index.js', () => ({
       samplingRatio: 1.0,
     },
   },
-}));
+}))
 
 describe('OpenTelemetry Instrumentation', () => {
-  let diagInfoSpy: MockInstance;
+  let diagInfoSpy: MockInstance
   // Unused spies kept for potential future tests
   // let diagWarnSpy: MockInstance;
   // let diagErrorSpy: MockInstance;
 
   beforeEach(() => {
-    diagInfoSpy = vi.spyOn(diag, 'info').mockImplementation(() => true);
+    diagInfoSpy = vi.spyOn(diag, 'info').mockImplementation(() => true)
     // Unused spies kept for potential future tests
     // diagWarnSpy = vi.spyOn(diag, 'warn').mockImplementation(() => true);
     // diagErrorSpy = vi.spyOn(diag, 'error').mockImplementation(() => true);
-  });
+  })
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.restoreAllMocks()
     // Note: Cannot restore process.versions as it's readonly in vitest environment
     // Tests should not modify it directly
-  });
+  })
 
   describe('initializeOpenTelemetry', () => {
     // Note: Module initialization tests skipped due to module-level state
     test.skip('should skip initialization when telemetry is disabled', async () => {
       // Mock config to have telemetry disabled
-      const configMock = await import('@/config/index.js');
+      const configMock = await import('@/config/index.js')
       vi.spyOn(
         configMock.config.openTelemetry,
         'enabled',
         'get',
-      ).mockReturnValue(false);
+      ).mockReturnValue(false)
 
-      await instrumentation.initializeOpenTelemetry();
+      await instrumentation.initializeOpenTelemetry()
 
       expect(diagInfoSpy).toHaveBeenCalledWith(
         'OpenTelemetry disabled via configuration.',
-      );
-    });
+      )
+    })
 
     test.skip('should use lightweight mode when NodeSDK unavailable - SKIPPED: Requires vi.doMock() for dynamic module mocking which Bun does not support. Would need integration test in real runtime environment to verify NodeSDK fallback behavior.', async () => {
       // This test requires dynamically mocking the NodeSDK import to simulate it being unavailable.
@@ -75,14 +75,14 @@ describe('OpenTelemetry Instrumentation', () => {
       // The lightweight mode fallback is documented and tested manually in non-Node environments.
       vi.spyOn(runtimeModule.runtimeCaps, 'isNode', 'get').mockReturnValue(
         false,
-      );
+      )
 
-      await instrumentation.initializeOpenTelemetry();
+      await instrumentation.initializeOpenTelemetry()
 
       expect(diagInfoSpy).toHaveBeenCalledWith(
         expect.stringContaining('NodeSDK unavailable'),
-      );
-    });
+      )
+    })
 
     test.skip('should be idempotent - multiple calls return same promise - SKIPPED: Cannot reliably test due to readonly sdk export and module-level state. The initPromise is internal to the module and cannot be reset between tests without causing side effects. Idempotency is verified through manual testing and protected by the initialization guard in production code.', async () => {
       // This test requires manipulating the readonly 'sdk' export and internal initPromise state.
@@ -91,53 +91,53 @@ describe('OpenTelemetry Instrumentation', () => {
       // The idempotency behavior is protected by the initPromise guard in the implementation.
       vi.spyOn(runtimeModule.runtimeCaps, 'isNode', 'get').mockReturnValue(
         false,
-      );
+      )
 
-      const promise1 = instrumentation.initializeOpenTelemetry();
-      const promise2 = instrumentation.initializeOpenTelemetry();
+      const promise1 = instrumentation.initializeOpenTelemetry()
+      const promise2 = instrumentation.initializeOpenTelemetry()
 
-      expect(promise1).toBe(promise2);
+      expect(promise1).toBe(promise2)
 
-      await promise1;
-      await promise2;
-    });
+      await promise1
+      await promise2
+    })
 
     test.skip('should return immediately if already initialized', async () => {
       // Mock runtime to skip actual initialization
       vi.spyOn(runtimeModule.runtimeCaps, 'isNode', 'get').mockReturnValue(
         false,
-      );
+      )
 
-      await instrumentation.initializeOpenTelemetry();
+      await instrumentation.initializeOpenTelemetry()
 
       // Call again
-      const callCountBefore = diagInfoSpy.mock.calls.length;
-      await instrumentation.initializeOpenTelemetry();
-      const callCountAfter = diagInfoSpy.mock.calls.length;
+      const callCountBefore = diagInfoSpy.mock.calls.length
+      await instrumentation.initializeOpenTelemetry()
+      const callCountAfter = diagInfoSpy.mock.calls.length
 
       // Should not log again (already initialized)
-      expect(callCountAfter).toBe(callCountBefore);
-    });
+      expect(callCountAfter).toBe(callCountBefore)
+    })
 
     test.skip('should detect AWS Lambda environment', async () => {
       if (typeof process !== 'undefined') {
-        process.env.AWS_LAMBDA_FUNCTION_NAME = 'test-function';
-        process.env.AWS_REGION = 'us-east-1';
+        process.env.AWS_LAMBDA_FUNCTION_NAME = 'test-function'
+        process.env.AWS_REGION = 'us-east-1'
       }
 
       // Internal function would detect this
-      expect(process.env?.AWS_LAMBDA_FUNCTION_NAME).toBe('test-function');
-    });
+      expect(process.env?.AWS_LAMBDA_FUNCTION_NAME).toBe('test-function')
+    })
 
     test.skip('should detect GCP environment', async () => {
       if (typeof process !== 'undefined') {
-        process.env.FUNCTION_TARGET = 'test-function';
-        process.env.GCP_REGION = 'us-central1';
+        process.env.FUNCTION_TARGET = 'test-function'
+        process.env.GCP_REGION = 'us-central1'
       }
 
-      expect(process.env?.FUNCTION_TARGET).toBe('test-function');
-    });
-  });
+      expect(process.env?.FUNCTION_TARGET).toBe('test-function')
+    })
+  })
 
   describe('Runtime detection', () => {
     test('should identify Node.js runtime correctly', () => {
@@ -145,56 +145,54 @@ describe('OpenTelemetry Instrumentation', () => {
       // We verify the runtime detection works with the actual process object
 
       // The canUseNodeSDK function checks these conditions
-      expect(typeof process?.versions?.node).toBe('string');
-      expect(typeof process?.env).toBe('object');
-    });
+      expect(typeof process?.versions?.node).toBe('string')
+      expect(typeof process?.env).toBe('object')
+    })
 
     test('should handle missing process.versions', () => {
       // Note: Cannot modify readonly process.versions in vitest
       // This test verifies the code handles the case gracefully through mocking
       vi.spyOn(runtimeModule.runtimeCaps, 'isNode', 'get').mockReturnValueOnce(
         false,
-      );
+      )
 
       // When runtime is not Node, versions.node would be undefined
-      const isNode = runtimeModule.runtimeCaps.isNode;
-      expect(isNode).toBe(false);
-    });
-  });
+      const isNode = runtimeModule.runtimeCaps.isNode
+      expect(isNode).toBe(false)
+    })
+  })
 
   describe('Error handling', () => {
     test('should handle import errors gracefully', async () => {
       // Note: process.versions is readonly in vitest environment
       // We can only mock runtime detection, not modify process.versions directly
-      vi.spyOn(runtimeModule.runtimeCaps, 'isNode', 'get').mockReturnValue(
-        true,
-      );
+      vi.spyOn(runtimeModule.runtimeCaps, 'isNode', 'get').mockReturnValue(true)
 
       // This would test error handling during import, but we can't easily
       // simulate import failures in unit tests without complex mocking
       // The try-catch in the actual code handles this
-    });
-  });
+    })
+  })
 
   describe('Configuration handling', () => {
     test.skip('should use configured service name and version', async () => {
-      const configMock = await import('@/config/index.js');
+      const configMock = await import('@/config/index.js')
 
-      expect(configMock.config.openTelemetry.serviceName).toBe('test-service');
-      expect(configMock.config.openTelemetry.serviceVersion).toBe('1.0.0');
-    });
+      expect(configMock.config.openTelemetry.serviceName).toBe('test-service')
+      expect(configMock.config.openTelemetry.serviceVersion).toBe('1.0.0')
+    })
 
     test.skip('should use configured sampling ratio', async () => {
-      const configMock = await import('@/config/index.js');
+      const configMock = await import('@/config/index.js')
 
-      expect(configMock.config.openTelemetry.samplingRatio).toBe(1.0);
-    });
+      expect(configMock.config.openTelemetry.samplingRatio).toBe(1.0)
+    })
 
     test.skip('should parse log level correctly', () => {
       // Test that DiagLogLevel enum is accessible
-      expect(DiagLogLevel.INFO).toBeDefined();
-      expect(DiagLogLevel.DEBUG).toBeDefined();
-      expect(DiagLogLevel.ERROR).toBeDefined();
-    });
-  });
-});
+      expect(DiagLogLevel.INFO).toBeDefined()
+      expect(DiagLogLevel.DEBUG).toBeDefined()
+      expect(DiagLogLevel.ERROR).toBeDefined()
+    })
+  })
+})

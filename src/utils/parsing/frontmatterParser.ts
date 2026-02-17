@@ -4,13 +4,13 @@
  * Leverages the existing yamlParser for parsing extracted YAML content.
  * @module src/utils/parsing/frontmatterParser
  */
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
 import {
-  type RequestContext,
   logger,
+  type RequestContext,
   requestContextService,
-} from '@/utils/index.js';
-import { yamlParser } from './yamlParser.js';
+} from '@/utils/index.js'
+import { yamlParser } from './yamlParser.js'
 
 /**
  * Regular expression to extract frontmatter from markdown.
@@ -19,7 +19,7 @@ import { yamlParser } from './yamlParser.js';
  * - Group 2: Remaining markdown content
  * @private
  */
-const frontmatterRegex = /^---\s*\n([\s\S]*?)^---\s*([\s\S]*)$/m;
+const frontmatterRegex = /^---\s*\n([\s\S]*?)^---\s*([\s\S]*)$/m
 
 /**
  * Result of parsing markdown with frontmatter.
@@ -29,16 +29,16 @@ export interface FrontmatterResult<T = unknown> {
   /**
    * Parsed frontmatter object. Empty object if no frontmatter found.
    */
-  frontmatter: T;
+  frontmatter: T
   /**
    * Remaining markdown content after frontmatter extraction.
    * If no frontmatter exists, contains the original markdown.
    */
-  content: string;
+  content: string
   /**
    * Indicates whether frontmatter was found and extracted.
    */
-  hasFrontmatter: boolean;
+  hasFrontmatter: boolean
 }
 
 /**
@@ -62,7 +62,7 @@ export class FrontmatterParser {
     markdown: string,
     context?: RequestContext,
   ): FrontmatterResult<T> {
-    const match = markdown.match(frontmatterRegex);
+    const match = markdown.match(frontmatterRegex)
 
     if (!match) {
       // No frontmatter found - return original content
@@ -70,45 +70,45 @@ export class FrontmatterParser {
         context ||
         requestContextService.createRequestContext({
           operation: 'FrontmatterParser.noFrontmatter',
-        });
-      logger.debug('No frontmatter detected in markdown.', logContext);
+        })
+      logger.debug('No frontmatter detected in markdown.', logContext)
 
       return {
         frontmatter: {} as T,
         content: markdown,
         hasFrontmatter: false,
-      };
+      }
     }
 
-    const yamlContent = match[1] ?? '';
-    const markdownContent = match[2] ?? '';
+    const yamlContent = match[1] ?? ''
+    const markdownContent = match[2] ?? ''
 
     const logContext =
       context ||
       requestContextService.createRequestContext({
         operation: 'FrontmatterParser.parse',
-      });
+      })
 
     logger.debug('Frontmatter detected, extracting and parsing.', {
       ...logContext,
       yamlLength: yamlContent.length,
       contentLength: markdownContent.length,
-    });
+    })
 
     // Validate that we have YAML content
-    const trimmedYaml = yamlContent.trim();
+    const trimmedYaml = yamlContent.trim()
     if (!trimmedYaml) {
-      logger.debug('Empty frontmatter block detected.', logContext);
+      logger.debug('Empty frontmatter block detected.', logContext)
       return {
         frontmatter: {} as T,
         content: markdownContent,
         hasFrontmatter: true,
-      };
+      }
     }
 
     try {
       // Use existing yamlParser for parsing (handles <think> blocks too)
-      const parsedFrontmatter = yamlParser.parse<T>(yamlContent, context);
+      const parsedFrontmatter = yamlParser.parse<T>(yamlContent, context)
 
       logger.debug('Frontmatter parsed successfully.', {
         ...logContext,
@@ -118,30 +118,30 @@ export class FrontmatterParser {
           !Array.isArray(parsedFrontmatter)
             ? Object.keys(parsedFrontmatter)
             : [],
-      });
+      })
 
       return {
         frontmatter: parsedFrontmatter,
         content: markdownContent,
         hasFrontmatter: true,
-      };
+      }
     } catch (e: unknown) {
-      const error = e as Error;
+      const error = e as Error
       const errorLogContext =
         context ||
         requestContextService.createRequestContext({
           operation: 'FrontmatterParser.parseError',
-        });
+        })
 
       logger.error('Failed to parse frontmatter YAML content.', {
         ...errorLogContext,
         errorDetails: error.message,
         yamlContentSample: yamlContent.substring(0, 200),
-      });
+      })
 
       // Re-throw McpError from yamlParser or create new one
       if (error instanceof McpError) {
-        throw error;
+        throw error
       }
 
       throw new McpError(
@@ -154,7 +154,7 @@ export class FrontmatterParser {
             (yamlContent.length > 200 ? '...' : ''),
           rawError: error instanceof Error ? error.stack : String(error),
         },
-      );
+      )
     }
   }
 }
@@ -190,4 +190,4 @@ export class FrontmatterParser {
  * console.log(result2.hasFrontmatter); // false
  * ```
  */
-export const frontmatterParser = new FrontmatterParser();
+export const frontmatterParser = new FrontmatterParser()

@@ -4,37 +4,37 @@
  * @module src/mcp-server/tools/utils/process-runner
  */
 
-import type { ChildProcess } from 'node:child_process';
-import { spawn } from 'node:child_process';
-import type { SdkContext } from './index.js';
-import type { RequestContext } from '@/utils/index.js';
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
+import type { ChildProcess } from 'node:child_process'
+import { spawn } from 'node:child_process'
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
+import type { RequestContext } from '@/utils/index.js'
+import type { SdkContext } from './index.js'
 
 /**
  * Result from executing a child process.
  */
 export type ProcessResult = {
-  exitCode: number;
-  stdout: string;
-  stderr: string;
-  duration: number;
-};
+  exitCode: number
+  stdout: string
+  stderr: string
+  duration: number
+}
 
 /**
  * Configuration for spawning a child process.
  */
 export type SpawnConfig = {
   /** Command name to execute (e.g., 'bun', 'git', 'yarn') */
-  command: string;
+  command: string
   /** Arguments to pass to the command */
-  args: readonly string[];
+  args: readonly string[]
   /** Optional stdin to write to the process */
-  stdin?: string;
+  stdin?: string
   /** Allowed commands for security (whitelist validation) */
-  allowedCommands: Set<string>;
+  allowedCommands: Set<string>
   /** Optional stdio configuration; defaults to ['pipe', 'pipe', 'pipe'] */
-  stdinMode?: 'pipe' | 'ignore';
-};
+  stdinMode?: 'pipe' | 'ignore'
+}
 
 /**
  * Creates a sanitized environment for executing child processes.
@@ -52,20 +52,20 @@ export function createSafeCommandEnv(): Record<string, string> {
     'SYSTEMROOT',
     'WINDIR',
     'COMSPEC',
-  ] as const;
+  ] as const
   const env: Record<string, string> = {
     NO_COLOR: '1',
     FORCE_COLOR: '0',
-  };
+  }
 
   for (const key of safeKeys) {
-    const value = process.env[key];
+    const value = process.env[key]
     if (value) {
-      env[key] = value;
+      env[key] = value
     }
   }
 
-  return env;
+  return env
 }
 
 /**
@@ -98,42 +98,42 @@ export const processRunner = {
             `Command not allowed: ${config.command}`,
             { requestId: appContext.requestId, command: config.command },
           ),
-        );
-        return;
+        )
+        return
       }
 
-      const startTime = performance.now();
-      const stdinMode = config.stdinMode ?? 'pipe';
+      const startTime = performance.now()
+      const stdinMode = config.stdinMode ?? 'pipe'
       const stdio: Array<'pipe' | 'ignore'> =
         stdinMode === 'ignore'
           ? ['ignore', 'pipe', 'pipe']
-          : ['pipe', 'pipe', 'pipe'];
+          : ['pipe', 'pipe', 'pipe']
 
       const spawnOptions: Parameters<typeof spawn>[2] = {
         cwd: process.cwd(),
         env: createSafeCommandEnv(),
         stdio,
-      };
+      }
 
       const child: ChildProcess = spawn(
         config.command,
         config.args as string[],
         spawnOptions,
-      );
+      )
 
-      let stdout = '';
-      let stderr = '';
+      let stdout = ''
+      let stderr = ''
 
       if (child.stdout) {
         child.stdout.on('data', (chunk: Buffer) => {
-          stdout += chunk.toString();
-        });
+          stdout += chunk.toString()
+        })
       }
 
       if (child.stderr) {
         child.stderr.on('data', (chunk: Buffer) => {
-          stderr += chunk.toString();
-        });
+          stderr += chunk.toString()
+        })
       }
 
       child.on('error', (error) => {
@@ -148,64 +148,64 @@ export const processRunner = {
               operation: operationName,
             },
           ),
-        );
-      });
+        )
+      })
 
       // Handle AbortSignal for cancellation
       if (
         sdkContext?.signal &&
         typeof (sdkContext.signal as EventTarget).addEventListener ===
-        'function'
+          'function'
       ) {
         const onAbort = () => {
           try {
-            child.kill?.('SIGTERM');
+            child.kill?.('SIGTERM')
           } catch {
             // ignore
           }
-        };
+        }
 
         try {
-          (sdkContext.signal as EventTarget).addEventListener(
+          ;(sdkContext.signal as EventTarget).addEventListener(
             'abort',
             onAbort,
             { once: true } as AddEventListenerOptions,
-          );
+          )
         } catch {
           // ignore if addEventListener unavailable
         }
 
         child.on('close', () => {
           try {
-            (sdkContext.signal as EventTarget).removeEventListener(
+            ;(sdkContext.signal as EventTarget).removeEventListener(
               'abort',
               onAbort,
-            );
+            )
           } catch {
             // ignore
           }
-        });
+        })
       }
 
       if (child.stdin) {
         if (config.stdin) {
-          child.stdin.write(config.stdin);
+          child.stdin.write(config.stdin)
         }
         try {
-          child.stdin.end();
+          child.stdin.end()
         } catch {
           // ignore
         }
       }
 
       child.on('close', (exitCode: number | null) => {
-        const duration = Math.round(performance.now() - startTime);
+        const duration = Math.round(performance.now() - startTime)
         resolve({
           exitCode: exitCode ?? -1,
           stdout,
           stderr,
           duration,
-        });
-      });
+        })
+      })
     }),
-};
+}

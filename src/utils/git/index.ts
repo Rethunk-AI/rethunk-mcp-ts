@@ -9,11 +9,11 @@ export {
   buildCachedPatchForRanges,
   collectDiffHunks,
   collectPrefixedLines,
-  ensureBlockFullyContained,
-  getLine,
-  parseHunkHeader,
-  parseDiffBlocks,
   type DiffBlock,
   type DiffHunk,
+  ensureBlockFullyContained,
+  getLine,
   type LineRange,
-} from './diff-parser.js';
+  parseDiffBlocks,
+  parseHunkHeader,
+} from './diff-parser.js'

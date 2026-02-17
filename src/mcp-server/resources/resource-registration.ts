@@ -4,15 +4,15 @@
  * McpServer instance.
  * @module src/mcp-server/resources/resource-registration
  */
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { type DependencyContainer, injectable, injectAll } from 'tsyringe';
-import { ZodObject, type ZodRawShape } from 'zod';
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { type DependencyContainer, injectAll, injectable } from 'tsyringe'
+import type { ZodObject, ZodRawShape } from 'zod'
 
-import { ResourceDefinitions } from '@/container/index.js';
-import { allResourceDefinitions } from '@/mcp-server/resources/definitions/index.js';
-import type { ResourceDefinition } from '@/mcp-server/resources/utils/resourceDefinition.js';
-import { registerResource } from '@/mcp-server/resources/utils/resourceHandlerFactory.js';
-import { logger, requestContextService } from '@/utils/index.js';
+import { ResourceDefinitions } from '@/container/index.js'
+import { allResourceDefinitions } from '@/mcp-server/resources/definitions/index.js'
+import type { ResourceDefinition } from '@/mcp-server/resources/utils/resourceDefinition.js'
+import { registerResource } from '@/mcp-server/resources/utils/resourceHandlerFactory.js'
+import { logger, requestContextService } from '@/utils/index.js'
 
 @injectable()
 export class ResourceRegistry {
@@ -31,13 +31,13 @@ export class ResourceRegistry {
   public async registerAll(server: McpServer): Promise<void> {
     const context = requestContextService.createRequestContext({
       operation: 'ResourceRegistry.registerAll',
-    });
+    })
     logger.info(
       `Registering ${this.resourceDefs.length} resource(s)...`,
       context,
-    );
+    )
     for (const resourceDef of this.resourceDefs) {
-      await registerResource(server, resourceDef);
+      await registerResource(server, resourceDef)
     }
   }
 }
@@ -50,6 +50,6 @@ export class ResourceRegistry {
  */
 export const registerResources = (container: DependencyContainer): void => {
   for (const resource of allResourceDefinitions) {
-    container.register(ResourceDefinitions, { useValue: resource });
+    container.register(ResourceDefinitions, { useValue: resource })
   }
-};
+}

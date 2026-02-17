@@ -4,15 +4,15 @@
  * and logic in a consistent, self-contained format, aligned with MCP specifications.
  * @module mcp-server/tools/utils/toolDefinition
  */
-import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
+import type { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js'
 import type {
   ContentBlock,
   ServerNotification,
   ServerRequest,
-} from '@modelcontextprotocol/sdk/types.js';
-import type { ZodObject, ZodRawShape, z } from 'zod';
+} from '@modelcontextprotocol/sdk/types.js'
+import type { ZodObject, ZodRawShape, z } from 'zod'
 
-import type { RequestContext } from '@/utils/index.js';
+import type { RequestContext } from '@/utils/index.js'
 
 /**
  * Defines the annotations that provide hints about a tool's behavior.
@@ -20,29 +20,29 @@ import type { RequestContext } from '@/utils/index.js';
  * The index signature `[key: string]: unknown;` ensures compatibility with the MCP SDK.
  */
 export interface ToolAnnotations {
-  [key: string]: unknown;
+  [key: string]: unknown
   /**
    * An optional human-readable name for the tool, optimized for UI display.
    * If provided, it may be used by clients instead of the programmatic `name`.
    */
-  title?: string;
+  title?: string
   /**
    * A hint indicating that the tool does not modify any state.
    * For example, a "read" operation.
    */
-  readOnlyHint?: boolean;
+  readOnlyHint?: boolean
   /**
    * A hint indicating that the tool may interact with external, unpredictable,
    * or dynamic systems (e.g., fetching from a live API, web search).
    */
-  openWorldHint?: boolean;
+  openWorldHint?: boolean
 }
 
 /**
  * A type alias for the SDK's `RequestHandlerExtra` context, making it more
  * specific and easier to reference in our tool logic signatures.
  */
-export type SdkContext = RequestHandlerExtra<ServerRequest, ServerNotification>;
+export type SdkContext = RequestHandlerExtra<ServerRequest, ServerNotification>
 
 /**
  * Represents the complete, self-contained definition of an MCP tool.
@@ -54,29 +54,29 @@ export interface ToolDefinition<
   /**
    * The programmatic, unique name for the tool (e.g., 'echo_message').
    */
-  name: string;
+  name: string
   /**
    * An optional, human-readable title for the tool. This is preferred for display in UIs.
    * If not provided, the `name` or `annotations.title` may be used as a fallback.
    */
-  title?: string;
+  title?: string
   /**
    * A clear, concise description of what the tool does.
    * This is sent to the LLM to help it decide when to use the tool.
    */
-  description: string;
+  description: string
   /**
    * The Zod schema for validating the tool's input parameters.
    */
-  inputSchema: TInputSchema;
+  inputSchema: TInputSchema
   /**
    * The Zod schema for validating the tool's successful output structure.
    */
-  outputSchema: TOutputSchema;
+  outputSchema: TOutputSchema
   /**
    * Optional metadata providing hints about the tool's behavior.
    */
-  annotations?: ToolAnnotations;
+  annotations?: ToolAnnotations
   /**
    * The core business logic function for the tool. It receives the validated
    * input and two context objects, and returns a structured output or throws an McpError.
@@ -101,14 +101,14 @@ export interface ToolDefinition<
     input: z.infer<TInputSchema>,
     appContext: RequestContext,
     sdkContext: SdkContext,
-  ) => Promise<z.infer<TOutputSchema>>;
+  ) => Promise<z.infer<TOutputSchema>>
   /**
    * An optional function to format the successful output into an array of ContentBlocks
    * for the `CallToolResult`. If not provided, a default JSON stringifier is used.
    * @param result The successful output from the logic function.
    * @returns An array of ContentBlocks to be sent to the client.
    */
-  responseFormatter?: (result: z.infer<TOutputSchema>) => ContentBlock[];
+  responseFormatter?: (result: z.infer<TOutputSchema>) => ContentBlock[]
   /**
    * Optional protocol-level metadata passed alongside the tool registration.
    * Extensions use namespaced keys within `_meta` to attach additional semantics.
@@ -116,5 +116,5 @@ export interface ToolDefinition<
    * Currently used by the MCP Apps extension (`io.modelcontextprotocol/ui`)
    * to link a tool to an interactive UI resource.
    */
-  _meta?: Record<string, unknown>;
+  _meta?: Record<string, unknown>
 }

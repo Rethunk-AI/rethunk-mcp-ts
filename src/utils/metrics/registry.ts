@@ -12,15 +12,15 @@ import {
   type Meter,
   type MetricOptions,
   metrics,
-} from '@opentelemetry/api';
+} from '@opentelemetry/api'
 
-import { config } from '@/config/index.js';
+import { config } from '@/config/index.js'
 
-type CounterMap = Map<string, Counter>;
-type HistogramMap = Map<string, Histogram>;
+type CounterMap = Map<string, Counter>
+type HistogramMap = Map<string, Histogram>
 
-const counters: CounterMap = new Map();
-const histograms: HistogramMap = new Map();
+const counters: CounterMap = new Map()
+const histograms: HistogramMap = new Map()
 
 /**
  * No-op counter implementation for when OpenTelemetry is disabled.
@@ -31,7 +31,7 @@ const noOpCounter: Counter = {
   add: () => undefined,
   bind: () => ({ add: () => undefined }),
   unbind: () => undefined,
-} as Counter;
+} as Counter
 
 /**
  * No-op histogram implementation for when OpenTelemetry is disabled.
@@ -42,7 +42,7 @@ const noOpHistogram: Histogram = {
   record: () => undefined,
   bind: () => ({ record: () => undefined }),
   unbind: () => undefined,
-} as Histogram;
+} as Histogram
 
 /**
  * Gets the OpenTelemetry meter for creating metrics.
@@ -52,11 +52,11 @@ function getMeter(): Meter {
   return metrics.getMeter(
     config.openTelemetry.serviceName,
     config.openTelemetry.serviceVersion,
-  );
+  )
 }
 
 function isEnabled(): boolean {
-  return Boolean(config.openTelemetry.enabled);
+  return Boolean(config.openTelemetry.enabled)
 }
 
 function getCounter(
@@ -65,19 +65,19 @@ function getCounter(
   unit?: string,
 ): Counter {
   if (!isEnabled()) {
-    return noOpCounter;
+    return noOpCounter
   }
-  const key = `${name}|${description ?? ''}|${unit ?? ''}`;
-  const existing = counters.get(key);
-  if (existing) return existing;
-  const opts: Partial<MetricOptions> = {};
-  if (description !== undefined) opts.description = description;
-  if (unit !== undefined) opts.unit = unit;
+  const key = `${name}|${description ?? ''}|${unit ?? ''}`
+  const existing = counters.get(key)
+  if (existing) return existing
+  const opts: Partial<MetricOptions> = {}
+  if (description !== undefined) opts.description = description
+  if (unit !== undefined) opts.unit = unit
   const counter = Object.keys(opts).length
     ? getMeter().createCounter(name, opts as MetricOptions)
-    : getMeter().createCounter(name);
-  counters.set(key, counter);
-  return counter;
+    : getMeter().createCounter(name)
+  counters.set(key, counter)
+  return counter
 }
 
 function getHistogram(
@@ -86,19 +86,19 @@ function getHistogram(
   unit?: string,
 ): Histogram {
   if (!isEnabled()) {
-    return noOpHistogram;
+    return noOpHistogram
   }
-  const key = `${name}|${description ?? ''}|${unit ?? ''}`;
-  const existing = histograms.get(key);
-  if (existing) return existing;
-  const opts: Partial<MetricOptions> = {};
-  if (description !== undefined) opts.description = description;
-  if (unit !== undefined) opts.unit = unit;
+  const key = `${name}|${description ?? ''}|${unit ?? ''}`
+  const existing = histograms.get(key)
+  if (existing) return existing
+  const opts: Partial<MetricOptions> = {}
+  if (description !== undefined) opts.description = description
+  if (unit !== undefined) opts.unit = unit
   const histogram = Object.keys(opts).length
     ? getMeter().createHistogram(name, opts as MetricOptions)
-    : getMeter().createHistogram(name);
-  histograms.set(key, histogram);
-  return histogram;
+    : getMeter().createHistogram(name)
+  histograms.set(key, histogram)
+  return histogram
 }
 
 function add(
@@ -108,8 +108,8 @@ function add(
   description?: string,
   unit?: string,
 ): void {
-  const c = getCounter(name, description, unit);
-  c.add(value, attributes);
+  const c = getCounter(name, description, unit)
+  c.add(value, attributes)
 }
 
 function record(
@@ -119,8 +119,8 @@ function record(
   description?: string,
   unit?: string,
 ): void {
-  const h = getHistogram(name, description, unit);
-  h.record(value, attributes);
+  const h = getHistogram(name, description, unit)
+  h.record(value, attributes)
 }
 
 export const metricsRegistry = {
@@ -129,4 +129,4 @@ export const metricsRegistry = {
   add,
   record,
   enabled: isEnabled,
-};
+}

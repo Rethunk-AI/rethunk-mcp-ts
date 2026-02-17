@@ -4,17 +4,17 @@
  * @module src/services/graph/core/GraphService
  */
 
-import { logger, type RequestContext } from '@/utils/index.js';
-import type { IGraphProvider } from './IGraphProvider.js';
+import { logger, type RequestContext } from '@/utils/index.js'
+import type { GraphStats } from '../types.js'
 import type {
   Edge,
   GraphPath,
-  TraversalResult,
+  IGraphProvider,
+  PathOptions,
   RelateOptions,
   TraversalOptions,
-  PathOptions,
-} from './IGraphProvider.js';
-import type { GraphStats } from '../types.js';
+  TraversalResult,
+} from './IGraphProvider.js'
 
 /**
  * Service for managing graph database operations.
@@ -45,14 +45,14 @@ import type { GraphStats } from '../types.js';
  */
 export class GraphService {
   constructor(private readonly provider: IGraphProvider) {
-    logger.info(`Graph service initialized with provider: ${provider.name}`);
+    logger.info(`Graph service initialized with provider: ${provider.name}`)
   }
 
   /**
    * Get the underlying provider.
    */
   getProvider(): IGraphProvider {
-    return this.provider;
+    return this.provider
   }
 
   /**
@@ -75,9 +75,9 @@ export class GraphService {
     logger.debug(
       `[GraphService] Creating relationship: ${from} -[${edgeTable}]-> ${to}`,
       context,
-    );
+    )
 
-    return this.provider.relate(from, edgeTable, to, context, options);
+    return this.provider.relate(from, edgeTable, to, context, options)
   }
 
   /**
@@ -88,9 +88,9 @@ export class GraphService {
    * @returns True if deleted
    */
   async unrelate(edgeId: string, context: RequestContext): Promise<boolean> {
-    logger.debug(`[GraphService] Deleting relationship: ${edgeId}`, context);
+    logger.debug(`[GraphService] Deleting relationship: ${edgeId}`, context)
 
-    return this.provider.unrelate(edgeId, context);
+    return this.provider.unrelate(edgeId, context)
   }
 
   /**
@@ -106,9 +106,9 @@ export class GraphService {
     context: RequestContext,
     options?: TraversalOptions,
   ): Promise<TraversalResult> {
-    logger.debug(`[GraphService] Traversing from: ${startVertexId}`, context);
+    logger.debug(`[GraphService] Traversing from: ${startVertexId}`, context)
 
-    return this.provider.traverse(startVertexId, context, options);
+    return this.provider.traverse(startVertexId, context, options)
   }
 
   /**
@@ -129,9 +129,9 @@ export class GraphService {
     logger.debug(
       `[GraphService] Finding shortest path: ${from} -> ${to}`,
       context,
-    );
+    )
 
-    return this.provider.shortestPath(from, to, context, options);
+    return this.provider.shortestPath(from, to, context, options)
   }
 
   /**
@@ -147,7 +147,7 @@ export class GraphService {
     context: RequestContext,
     edgeTypes?: string[],
   ): Promise<Edge[]> {
-    return this.provider.getOutgoingEdges(vertexId, context, edgeTypes);
+    return this.provider.getOutgoingEdges(vertexId, context, edgeTypes)
   }
 
   /**
@@ -163,7 +163,7 @@ export class GraphService {
     context: RequestContext,
     edgeTypes?: string[],
   ): Promise<Edge[]> {
-    return this.provider.getIncomingEdges(vertexId, context, edgeTypes);
+    return this.provider.getIncomingEdges(vertexId, context, edgeTypes)
   }
 
   /**
@@ -181,7 +181,7 @@ export class GraphService {
     context: RequestContext,
     maxDepth?: number,
   ): Promise<boolean> {
-    return this.provider.pathExists(from, to, context, maxDepth);
+    return this.provider.pathExists(from, to, context, maxDepth)
   }
 
   /**
@@ -191,8 +191,8 @@ export class GraphService {
    * @returns Graph statistics including vertex/edge counts and type distributions
    */
   async getStats(context: RequestContext): Promise<GraphStats> {
-    logger.debug('[GraphService] Getting graph statistics', context);
-    return this.provider.getStats(context);
+    logger.debug('[GraphService] Getting graph statistics', context)
+    return this.provider.getStats(context)
   }
 
   /**
@@ -201,6 +201,6 @@ export class GraphService {
    * @returns True if provider is healthy
    */
   async healthCheck(): Promise<boolean> {
-    return this.provider.healthCheck();
+    return this.provider.healthCheck()
   }
 }

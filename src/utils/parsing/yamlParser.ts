@@ -4,21 +4,21 @@
  * optional <think>...</think> blocks often found at the beginning of LLM outputs.
  * @module src/utils/parsing/yamlParser
  */
-import * as yaml from 'js-yaml';
+import * as yaml from 'js-yaml'
 
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
 import {
-  type RequestContext,
   logger,
+  type RequestContext,
   requestContextService,
-} from '@/utils/index.js';
+} from '@/utils/index.js'
 
 /**
  * Regular expression to find a <think> block at the start of a string.
  * Captures content within <think>...</think> (Group 1) and the rest of the string (Group 2).
  * @private
  */
-const thinkBlockRegex = /^<think>([\s\S]*?)<\/think>\s*([\s\S]*)$/;
+const thinkBlockRegex = /^<think>([\s\S]*?)<\/think>\s*([\s\S]*)$/
 
 /**
  * Utility class for parsing YAML strings.
@@ -38,55 +38,55 @@ export class YamlParser {
    * @throws {McpError} If the string is empty after processing or if parsing fails.
    */
   parse<T = unknown>(yamlString: string, context?: RequestContext): T {
-    let stringToParse = yamlString;
-    const match = yamlString.match(thinkBlockRegex);
+    let stringToParse = yamlString
+    const match = yamlString.match(thinkBlockRegex)
 
     if (match) {
-      const thinkContent = match[1]?.trim() ?? '';
-      const restOfString = match[2] ?? '';
+      const thinkContent = match[1]?.trim() ?? ''
+      const restOfString = match[2] ?? ''
 
       const logContext =
         context ||
         requestContextService.createRequestContext({
           operation: 'YamlParser.thinkBlock',
-        });
+        })
       if (thinkContent) {
         logger.debug('LLM <think> block detected and logged.', {
           ...logContext,
           thinkContent,
-        });
+        })
       } else {
-        logger.debug('Empty LLM <think> block detected.', logContext);
+        logger.debug('Empty LLM <think> block detected.', logContext)
       }
-      stringToParse = restOfString;
+      stringToParse = restOfString
     }
 
-    stringToParse = stringToParse.trim();
+    stringToParse = stringToParse.trim()
 
     if (!stringToParse) {
       throw new McpError(
         JsonRpcErrorCode.ValidationError,
         'YAML string is empty after removing <think> block and trimming.',
         context,
-      );
+      )
     }
 
     try {
       // DEFAULT_SCHEMA is safe in js-yaml v4+ (no !!js/function, !!js/object).
       // Specifying it explicitly guards against default changes in future versions.
-      return yaml.load(stringToParse, { schema: yaml.DEFAULT_SCHEMA }) as T;
+      return yaml.load(stringToParse, { schema: yaml.DEFAULT_SCHEMA }) as T
     } catch (e: unknown) {
-      const error = e as Error;
+      const error = e as Error
       const errorLogContext =
         context ||
         requestContextService.createRequestContext({
           operation: 'YamlParser.parseError',
-        });
+        })
       logger.error('Failed to parse YAML content.', {
         ...errorLogContext,
         errorDetails: error.message,
         contentAttempted: stringToParse.substring(0, 200),
-      });
+      })
 
       throw new McpError(
         JsonRpcErrorCode.ValidationError,
@@ -98,7 +98,7 @@ export class YamlParser {
             (stringToParse.length > 200 ? '...' : ''),
           rawError: error instanceof Error ? error.stack : String(error),
         },
-      );
+      )
     }
   }
 }
@@ -120,4 +120,4 @@ export class YamlParser {
  * console.log(parsedWithThink); // Output: { key: 'value' }
  * ```
  */
-export const yamlParser = new YamlParser();
+export const yamlParser = new YamlParser()

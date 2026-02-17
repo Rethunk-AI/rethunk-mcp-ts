@@ -5,19 +5,19 @@
  * @module src/utils/formatting/diffFormatter
  */
 
-import * as Diff from 'diff';
+import * as Diff from 'diff'
 
-import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js';
+import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
 import {
-  type RequestContext,
   logger,
+  type RequestContext,
   requestContextService,
-} from '@/utils/index.js';
+} from '@/utils/index.js'
 
 /**
  * Diff output format options.
  */
-export type DiffFormat = 'unified' | 'patch' | 'inline';
+export type DiffFormat = 'unified' | 'patch' | 'inline'
 
 /**
  * Configuration options for diff formatting.
@@ -27,7 +27,7 @@ export interface DiffFormatterOptions {
    * Number of unchanged lines to show around each change (default: 3).
    * This is the "context" in unified diff format.
    */
-  context?: number;
+  context?: number
 
   /**
    * Output format for the diff.
@@ -35,27 +35,27 @@ export interface DiffFormatterOptions {
    * - patch: Include file headers (---, +++)
    * - inline: Inline diff with context
    */
-  format?: DiffFormat;
+  format?: DiffFormat
 
   /**
    * Whether to include line numbers in the output (default: true).
    */
-  showLineNumbers?: boolean;
+  showLineNumbers?: boolean
 
   /**
    * Whether to include file headers in patch format (default: true).
    */
-  includeHeaders?: boolean;
+  includeHeaders?: boolean
 
   /**
    * File path for old version (used in headers).
    */
-  oldPath?: string;
+  oldPath?: string
 
   /**
    * File path for new version (used in headers).
    */
-  newPath?: string;
+  newPath?: string
 }
 
 /**
@@ -74,7 +74,7 @@ export class DiffFormatter {
     format: 'unified',
     showLineNumbers: true,
     includeHeaders: true,
-  };
+  }
 
   /**
    * Generate a unified diff between two text strings.
@@ -104,7 +104,7 @@ export class DiffFormatter {
       context ||
       requestContextService.createRequestContext({
         operation: 'DiffFormatter.diff',
-      });
+      })
 
     // Validate inputs
     if (typeof oldText !== 'string' || typeof newText !== 'string') {
@@ -112,26 +112,26 @@ export class DiffFormatter {
         JsonRpcErrorCode.ValidationError,
         'Both oldText and newText must be strings',
         logContext,
-      );
+      )
     }
 
     const opts: Required<Omit<DiffFormatterOptions, 'oldPath' | 'newPath'>> &
       Pick<DiffFormatterOptions, 'oldPath' | 'newPath'> = {
       ...this.defaultOptions,
       ...options,
-    };
+    }
 
     try {
       // Split into lines for diffing
-      const oldLines = this.splitLines(oldText);
-      const newLines = this.splitLines(newText);
+      const oldLines = this.splitLines(oldText)
+      const newLines = this.splitLines(newText)
 
       logger.debug('Generating diff', {
         ...logContext,
         oldLines: oldLines.length,
         newLines: newLines.length,
         format: opts.format,
-      });
+      })
 
       // Generate diff using jsdiff library
       const patches = Diff.createPatch(
@@ -141,29 +141,29 @@ export class DiffFormatter {
         opts.oldPath || 'old',
         opts.newPath || 'new',
         { context: opts.context },
-      );
+      )
 
       // Format based on selected format
-      const result = this.formatDiff(patches, opts);
+      const result = this.formatDiff(patches, opts)
 
       logger.debug('Diff generated successfully', {
         ...logContext,
         resultLength: result.length,
-      });
+      })
 
-      return result;
+      return result
     } catch (error: unknown) {
-      const err = error as Error;
+      const err = error as Error
       logger.error('Failed to generate diff', {
         ...logContext,
         error: err.message,
-      });
+      })
 
       throw new McpError(
         JsonRpcErrorCode.InternalError,
         `Failed to generate diff: ${err.message}`,
         { ...logContext, originalError: err.stack },
-      );
+      )
     }
   }
 
@@ -195,7 +195,7 @@ export class DiffFormatter {
       context ||
       requestContextService.createRequestContext({
         operation: 'DiffFormatter.diffLines',
-      });
+      })
 
     // Validate inputs
     if (!Array.isArray(oldLines) || !Array.isArray(newLines)) {
@@ -203,14 +203,14 @@ export class DiffFormatter {
         JsonRpcErrorCode.ValidationError,
         'Both oldLines and newLines must be arrays',
         logContext,
-      );
+      )
     }
 
     // Join arrays back into text and use main diff method
-    const oldText = oldLines.join('\n');
-    const newText = newLines.join('\n');
+    const oldText = oldLines.join('\n')
+    const newText = newLines.join('\n')
 
-    return this.diff(oldText, newText, options, logContext);
+    return this.diff(oldText, newText, options, logContext)
   }
 
   /**
@@ -240,7 +240,7 @@ export class DiffFormatter {
       context ||
       requestContextService.createRequestContext({
         operation: 'DiffFormatter.diffWords',
-      });
+      })
 
     // Validate inputs
     if (typeof oldText !== 'string' || typeof newText !== 'string') {
@@ -248,44 +248,44 @@ export class DiffFormatter {
         JsonRpcErrorCode.ValidationError,
         'Both oldText and newText must be strings',
         logContext,
-      );
+      )
     }
 
     try {
-      logger.debug('Generating word-level diff', logContext);
+      logger.debug('Generating word-level diff', logContext)
 
-      const changes = Diff.diffWords(oldText, newText);
+      const changes = Diff.diffWords(oldText, newText)
 
       // Format word diff as inline changes
       const result = changes
         .map((part) => {
           if (part.added) {
-            return `[+${part.value}+]`;
+            return `[+${part.value}+]`
           } else if (part.removed) {
-            return `[-${part.value}-]`;
+            return `[-${part.value}-]`
           }
-          return part.value;
+          return part.value
         })
-        .join('');
+        .join('')
 
       logger.debug('Word diff generated successfully', {
         ...logContext,
         changeCount: changes.length,
-      });
+      })
 
-      return result;
+      return result
     } catch (error: unknown) {
-      const err = error as Error;
+      const err = error as Error
       logger.error('Failed to generate word diff', {
         ...logContext,
         error: err.message,
-      });
+      })
 
       throw new McpError(
         JsonRpcErrorCode.InternalError,
         `Failed to generate word diff: ${err.message}`,
         { ...logContext, originalError: err.stack },
-      );
+      )
     }
   }
 
@@ -301,18 +301,18 @@ export class DiffFormatter {
     switch (options.format) {
       case 'patch':
         // Full patch format with headers
-        return options.includeHeaders ? patch : this.stripHeaders(patch);
+        return options.includeHeaders ? patch : this.stripHeaders(patch)
 
       case 'unified':
         // Standard unified diff (no file headers)
-        return this.stripHeaders(patch);
+        return this.stripHeaders(patch)
 
       case 'inline':
         // Inline diff with context
-        return this.formatInline(patch);
+        return this.formatInline(patch)
 
       default:
-        return patch;
+        return patch
     }
   }
 
@@ -321,13 +321,13 @@ export class DiffFormatter {
    * @private
    */
   private stripHeaders(patch: string): string {
-    const lines = patch.split('\n');
+    const lines = patch.split('\n')
     // Skip first 4 lines (---, +++, Index, ===)
-    const startIndex = lines.findIndex((line) => line.startsWith('@@'));
+    const startIndex = lines.findIndex((line) => line.startsWith('@@'))
     if (startIndex === -1) {
-      return patch;
+      return patch
     }
-    return lines.slice(startIndex).join('\n');
+    return lines.slice(startIndex).join('\n')
   }
 
   /**
@@ -338,7 +338,7 @@ export class DiffFormatter {
     // Keep the patch as-is for inline format
     // In a more advanced implementation, this could format
     // changes inline with visual markers
-    return patch;
+    return patch
   }
 
   /**
@@ -347,9 +347,9 @@ export class DiffFormatter {
    */
   private splitLines(text: string): string[] {
     if (!text) {
-      return [];
+      return []
     }
-    return text.split(/\r?\n/);
+    return text.split(/\r?\n/)
   }
 
   /**
@@ -369,7 +369,7 @@ export class DiffFormatter {
    * ```
    */
   isEqual(text1: string, text2: string): boolean {
-    return text1 === text2;
+    return text1 === text2
   }
 
   /**
@@ -397,31 +397,31 @@ export class DiffFormatter {
       context ||
       requestContextService.createRequestContext({
         operation: 'DiffFormatter.getStats',
-      });
+      })
 
     try {
-      const changes = Diff.diffLines(oldText, newText);
+      const changes = Diff.diffLines(oldText, newText)
 
       const additions = changes
         .filter((c) => c.added)
-        .reduce((sum, c) => sum + (c.count || 0), 0);
+        .reduce((sum, c) => sum + (c.count || 0), 0)
 
       const deletions = changes
         .filter((c) => c.removed)
-        .reduce((sum, c) => sum + (c.count || 0), 0);
+        .reduce((sum, c) => sum + (c.count || 0), 0)
 
       return {
         additions,
         deletions,
         changes: additions + deletions,
-      };
+      }
     } catch (error: unknown) {
-      const err = error as Error;
+      const err = error as Error
       throw new McpError(
         JsonRpcErrorCode.InternalError,
         `Failed to get diff stats: ${err.message}`,
         { ...logContext, originalError: err.stack },
-      );
+      )
     }
   }
 }
@@ -458,4 +458,4 @@ export class DiffFormatter {
  * console.log(wordDiff);
  * ```
  */
-export const diffFormatter = new DiffFormatter();
+export const diffFormatter = new DiffFormatter()

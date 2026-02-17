@@ -4,11 +4,10 @@
  * generic resource registrar.
  * @module src/mcp-server/resources/definitions/echo.resource
  */
-import { z } from 'zod';
-
-import { type RequestContext, logger } from '@/utils/index.js';
-import { withResourceAuth } from '@/mcp-server/transports/auth/lib/withAuth.js';
-import { type ResourceDefinition } from '@/mcp-server/resources/utils/resourceDefinition.js';
+import { z } from 'zod'
+import type { ResourceDefinition } from '@/mcp-server/resources/utils/resourceDefinition.js'
+import { withResourceAuth } from '@/mcp-server/transports/auth/lib/withAuth.js'
+import { logger, type RequestContext } from '@/utils/index.js'
 
 const ParamsSchema = z
   .object({
@@ -19,7 +18,7 @@ const ParamsSchema = z
         'Optional message to echo back. If omitted, it may be derived from the URI path/host.',
       ),
   })
-  .describe('Echo resource parameters.');
+  .describe('Echo resource parameters.')
 
 const OutputSchema = z
   .object({
@@ -33,40 +32,40 @@ const OutputSchema = z
       .url()
       .describe('The request URI used to fetch this resource.'),
   })
-  .describe('Echo resource response payload.');
+  .describe('Echo resource response payload.')
 
-type EchoParams = z.infer<typeof ParamsSchema>;
-type EchoOutput = z.infer<typeof OutputSchema>;
+type EchoParams = z.infer<typeof ParamsSchema>
+type EchoOutput = z.infer<typeof OutputSchema>
 
 function echoLogic(
   uri: URL,
   params: EchoParams,
   context: RequestContext,
 ): EchoOutput {
-  const messageFromPath = uri.hostname || uri.pathname.replace(/^\/+/, '');
+  const messageFromPath = uri.hostname || uri.pathname.replace(/^\/+/, '')
   const messageToEcho =
-    params.message || messageFromPath || 'Default echo message';
+    params.message || messageFromPath || 'Default echo message'
 
   logger.debug('Processing echo resource logic.', {
     ...context,
     resourceUri: uri.href,
     extractedMessage: messageToEcho,
-  });
+  })
 
   const responsePayload: EchoOutput = {
     message: messageToEcho,
     timestamp: new Date().toISOString(),
     requestUri: uri.href,
-  };
+  }
 
   logger.debug('Echo resource processed successfully.', {
     ...context,
     responsePayloadSummary: {
       messageLength: responsePayload.message.length,
     },
-  });
+  })
 
-  return responsePayload;
+  return responsePayload
 }
 
 export const echoResourceDefinition: ResourceDefinition<
@@ -95,7 +94,7 @@ export const echoResourceDefinition: ResourceDefinition<
           description: 'A simple echo resource example.',
         },
       ],
-    };
+    }
   },
   logic: withResourceAuth(['resource:echo:read'], echoLogic),
-};
+}
