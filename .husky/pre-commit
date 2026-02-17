@@ -1,1 +1,1 @@
-bun run scripts/devcheck.ts --no-audit --no-secrets --no-deps --no-todos
+bun run scripts/devcheck.ts --no-secrets --no-todos --fast

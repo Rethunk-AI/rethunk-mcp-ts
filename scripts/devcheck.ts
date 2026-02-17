@@ -333,10 +333,17 @@ const ALL_CHECKS: Check[] = [
     flag: '--no-test',
     canFix: false,
     slowCheck: true,
-    getCommand: (ctx) => [
-      path.join(ctx.rootDir, 'node_modules', '.bin', 'vitest'),
-      'run',
-    ],
+    getCommand: (ctx) => {
+      const cmd = [
+        path.join(ctx.rootDir, 'node_modules', '.bin', 'vitest'),
+        'run',
+      ]
+      // In fast mode + husky hook: run only unit tests (exclude integration tests)
+      if (ctx.fastMode && ctx.isHuskyHook) {
+        cmd.push(String.raw`--testPathIgnore=\.int\.test\.ts$`)
+      }
+      return cmd
+    },
     tip: () => 'Fix failing tests before committing.',
   },
   {
