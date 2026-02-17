@@ -6,7 +6,7 @@
 import { describe, test } from 'vitest'
 
 describe('Tool Utilities Barrel Export', () => {
-  test.skip('TODO: Implement tests for tool utils index.ts', () => {
+  test.skip('Placeholder: awaiting implementation of tool utils index.ts tests', () => {
     // Tests for tool utilities barrel export
   })
 })

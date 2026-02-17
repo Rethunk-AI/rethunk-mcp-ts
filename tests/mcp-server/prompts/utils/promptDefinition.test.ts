@@ -6,7 +6,7 @@
 import { describe, test } from 'vitest'
 
 describe('Prompt Definition', () => {
-  test.skip('TODO: Implement tests for promptDefinition.ts', () => {
+  test.skip('Placeholder: awaiting implementation of promptDefinition.ts tests', () => {
     // Tests for prompt definition types and utilities
   })
 })

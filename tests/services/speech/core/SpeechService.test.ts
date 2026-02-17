@@ -6,7 +6,7 @@
 import { describe, test } from 'vitest'
 
 describe('Speech Service', () => {
-  test.skip('TODO: Implement tests for SpeechService.ts', () => {
+  test.skip('Placeholder: awaiting implementation of SpeechService.ts', () => {
     // Tests for speech service orchestrator with multi-provider routing
   })
 })

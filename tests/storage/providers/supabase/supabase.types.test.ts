@@ -6,7 +6,7 @@
 import { describe, test } from 'vitest'
 
 describe('Supabase Storage Types', () => {
-  test.skip('TODO: Implement tests for supabase.types.ts', () => {
+  test.skip('Placeholder: awaiting implementation of supabase.types.ts', () => {
     // Tests for Supabase storage type definitions
   })
 })

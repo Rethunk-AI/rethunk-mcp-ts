@@ -6,7 +6,7 @@
 import { describe, test } from 'vitest'
 
 describe('Error Handler Mappings', () => {
-  test.skip('TODO: Implement tests for error handler mappings.ts', () => {
+  test.skip('Placeholder: awaiting implementation of error handler mappings.ts', () => {
     // Tests for error code mappings and transformations
   })
 })

@@ -1,6 +1,8 @@
 {
   "files.exclude": {},
   "chat.tools.terminal.autoApprove": {
-    "git rev-parse": true
+    "git rev-parse": true,
+    "git add": true,
+    "git commit": true
   }
 }

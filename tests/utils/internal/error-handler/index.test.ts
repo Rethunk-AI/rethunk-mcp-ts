@@ -6,7 +6,7 @@
 import { describe, test } from 'vitest'
 
 describe('Error Handler Barrel Export', () => {
-  test.skip('TODO: Implement tests for error handler index.ts', () => {
+  test.skip('Placeholder: awaiting implementation of error handler index.ts tests', () => {
     // Tests for error handler barrel export
   })
 })

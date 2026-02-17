@@ -6,7 +6,7 @@
 import { describe, test } from 'vitest'
 
 describe('Code Review Prompt', () => {
-  test.skip('TODO: Implement tests for code-review.prompt.ts', () => {
+  test.skip('Placeholder: awaiting implementation of code-review.prompt.ts tests', () => {
     // Tests for code review prompt definition and logic
   })
 })

@@ -6,7 +6,7 @@
 import { describe, test } from 'vitest'
 
 describe('ILlmProvider Interface', () => {
-  test.skip('TODO: Implement tests for ILlmProvider.ts', () => {
+  test.skip('Placeholder: awaiting implementation of ILlmProvider.ts', () => {
     // Tests for LLM provider interface definition
   })
 })

@@ -4,6 +4,8 @@
  * A schema change will fail this test — update the snapshot deliberately.
  * @module tests/mcp-server/tools/schemas/schema-snapshots
  */
+import 'reflect-metadata'
+
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 

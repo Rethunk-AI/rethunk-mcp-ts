@@ -6,7 +6,7 @@
 import { describe, test } from 'vitest'
 
 describe('Stdio Transport Barrel Export', () => {
-  test.skip('TODO: Implement tests for stdio transport index.ts', () => {
+  test.skip('Placeholder: awaiting implementation of stdio transport index.ts tests', () => {
     // Tests for stdio transport barrel export
   })
 })

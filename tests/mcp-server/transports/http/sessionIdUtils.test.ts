@@ -6,7 +6,7 @@
 import { describe, test } from 'vitest'
 
 describe('Session ID Utils', () => {
-  test.skip('TODO: Implement tests for sessionIdUtils.ts', () => {
+  test.skip('Placeholder: awaiting implementation of sessionIdUtils.ts tests', () => {
     // Tests for session ID generation and validation utilities
   })
 })

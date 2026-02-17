@@ -48,10 +48,14 @@ describe('checkTypeScriptProjectProblemsTool', () => {
 
     expect(runnerSpy).toHaveBeenCalledTimes(3)
     expect(result.hasProblems).toBe(true)
-    expect(result.checks).toHaveLength(3)
-    expect(result.checks[0]?.name).toBe('lint:fix')
-    expect(result.checks[1]?.name).toBe('typecheck')
-    expect(result.checks[2]?.name).toBe('typecheck:scripts')
+    expect(Object.keys(result.checks)).toEqual([
+      'lint:fix',
+      'typecheck',
+      'typecheck:scripts',
+    ])
+    expect(result.checks['lint:fix']).toBeDefined()
+    expect(result.checks['typecheck']).toBeDefined()
+    expect(result.checks['typecheck:scripts']).toBeDefined()
   })
 
   it('formats output as machine-parseable JSON text', () => {
@@ -60,17 +64,13 @@ describe('checkTypeScriptProjectProblemsTool', () => {
 
     const formatted = formatter?.({
       hasProblems: false,
-      checks: [
-        {
-          name: 'lint:fix',
-          command: 'yarn lint',
-          exitCode: 0,
+      checks: {
+        'lint:fix': {
           success: true,
-          stdout: '[]',
-          stderr: '',
+          exitCode: 0,
           duration: 100,
         },
-      ],
+      },
     })
 
     expect(formatted).toHaveLength(1)
@@ -82,7 +82,8 @@ describe('checkTypeScriptProjectProblemsTool', () => {
 
     const parsed = JSON.parse(first.text)
     expect(parsed.hasProblems).toBe(false)
-    expect(parsed.checks[0]?.name).toBe('lint:fix')
+    expect(parsed.checks['lint:fix']).toBeDefined()
+    expect(parsed.checks['lint:fix'].success).toBe(true)
   })
 
   it('runs only selected checks when checks parameter is provided', async () => {
@@ -113,13 +114,16 @@ describe('checkTypeScriptProjectProblemsTool', () => {
 
     // Should run only 2 checks (not lint:fix)
     expect(runnerSpy).toHaveBeenCalledTimes(2)
-    expect(result.checks).toHaveLength(2)
-    expect(result.checks[0]?.name).toBe('typecheck')
-    expect(result.checks[1]?.name).toBe('typecheck:scripts')
+    expect(Object.keys(result.checks)).toEqual([
+      'typecheck',
+      'typecheck:scripts',
+    ])
+    expect(result.checks.typecheck).toBeDefined()
+    expect(result.checks['typecheck:scripts']).toBeDefined()
     expect(result.hasProblems).toBe(false)
   })
 
-  it('strips stdout/stderr when summaryOnly is true', async () => {
+  it('includes stdout/stderr only for failed checks', async () => {
     vi.spyOn(processRunner, 'run')
       .mockResolvedValueOnce({
         exitCode: 0,
@@ -130,7 +134,7 @@ describe('checkTypeScriptProjectProblemsTool', () => {
       .mockResolvedValueOnce({
         exitCode: 1,
         stdout: 'error TS7006: Parameter x implicitly has type any',
-        stderr: '',
+        stderr: 'TS error details',
         duration: 200,
       })
       .mockResolvedValueOnce({
@@ -141,24 +145,39 @@ describe('checkTypeScriptProjectProblemsTool', () => {
       })
 
     const context = requestContextService.createRequestContext()
-    const input = checkTypeScriptProjectProblemsTool.inputSchema.parse({
-      summaryOnly: true,
-    })
+    const input = checkTypeScriptProjectProblemsTool.inputSchema.parse({})
     const result = await checkTypeScriptProjectProblemsTool.logic(
       input,
       context,
       mockSdkContext,
     )
 
-    // stdout/stderr should be stripped
-    expect(result.checks[0]?.stdout).toBe('')
-    expect(result.checks[0]?.stderr).toBe('')
-    expect(result.checks[1]?.stdout).toBe('')
-    expect(result.checks[1]?.stderr).toBe('')
-    // Duration and success should remain
-    expect(result.checks[0]?.duration).toBe(100)
-    expect(result.checks[1]?.duration).toBe(200)
-    expect(result.checks[1]?.success).toBe(false)
+    // Successful check (lint:fix) should not have stdout/stderr fields
+    const lintFix = result.checks['lint:fix']
+    expect(lintFix).toBeDefined()
+    expect(lintFix?.success).toBe(true)
+    expect('stdout' in lintFix!).toBe(false)
+    expect('stderr' in lintFix!).toBe(false)
+    expect(lintFix?.duration).toBe(100)
+
+    // Failed check (typecheck) should have stdout/stderr
+    const typecheck = result.checks.typecheck
+    expect(typecheck).toBeDefined()
+    expect(typecheck?.success).toBe(false)
+    if (typecheck?.success === false) {
+      expect(typecheck.stdout).toBe(
+        'error TS7006: Parameter x implicitly has type any',
+      )
+      expect(typecheck.stderr).toBe('TS error details')
+      expect(typecheck.duration).toBe(200)
+    }
+
+    // Successful check (typecheck:scripts) should not have stdout/stderr fields
+    const typecheckScripts = result.checks['typecheck:scripts']
+    expect(typecheckScripts).toBeDefined()
+    expect(typecheckScripts?.success).toBe(true)
+    expect('stdout' in typecheckScripts!).toBe(false)
+    expect('stderr' in typecheckScripts!).toBe(false)
   })
 
   it('captures execution duration for each check', async () => {
@@ -190,10 +209,11 @@ describe('checkTypeScriptProjectProblemsTool', () => {
       mockSdkContext,
     )
 
-    expect(result.checks[0]?.duration).toBe(123)
-    expect(result.checks[1]?.duration).toBe(456)
-    expect(result.checks[2]?.duration).toBe(789)
-    result.checks.forEach((check) => {
+    expect(result.checks['lint:fix']?.duration).toBe(123)
+    expect(result.checks.typecheck?.duration).toBe(456)
+    expect(result.checks['typecheck:scripts']?.duration).toBe(789)
+
+    Object.values(result.checks).forEach((check) => {
       expect(check.duration).toBeGreaterThanOrEqual(0)
       expect(Number.isInteger(check.duration)).toBe(true)
     })

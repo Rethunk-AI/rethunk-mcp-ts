@@ -6,7 +6,7 @@
 import { describe, test } from 'vitest'
 
 describe('Tool Definition', () => {
-  test.skip('TODO: Implement tests for toolDefinition.ts', () => {
+  test.skip('Placeholder: awaiting implementation of toolDefinition.ts tests', () => {
     // Tests for ToolDefinition types and utilities
   })
 })

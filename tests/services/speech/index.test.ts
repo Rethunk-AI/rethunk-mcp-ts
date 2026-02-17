@@ -6,7 +6,7 @@
 import { describe, test } from 'vitest'
 
 describe('Speech Service Barrel Export', () => {
-  test.skip('TODO: Implement tests for speech service index.ts', () => {
+  test.skip('Placeholder: awaiting implementation of speech service index.ts tests', () => {
     // Tests for speech service barrel export
   })
 })

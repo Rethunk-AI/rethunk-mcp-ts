@@ -25,8 +25,14 @@ exports[`Tool Schema Snapshots > Tool: check_typescript_project_for_problems > i
       },
       "type": "array",
     },
+    "maxOutputLength": {
+      "description": "Maximum length in characters for stdout and stderr fields. If output exceeds this, it will be truncated with a [...truncated] indicator. Ignored when summaryOnly=true.",
+      "maximum": 9007199254740991,
+      "minimum": 1,
+      "type": "integer",
+    },
     "summaryOnly": {
-      "description": "If true, returns only exit codes and success status per check, omitting stdout/stderr. Useful for reducing output verbosity.",
+      "description": "If true, returns only exit codes, success status, and duration per check, omitting command and output fields. Useful for reducing output verbosity.",
       "type": "boolean",
     },
     "timeout": {
@@ -46,50 +52,79 @@ exports[`Tool Schema Snapshots > Tool: check_typescript_project_for_problems > o
   "additionalProperties": false,
   "properties": {
     "checks": {
-      "items": {
-        "additionalProperties": false,
-        "properties": {
-          "command": {
-            "type": "string",
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "duration": {
+                "description": "Execution time in milliseconds",
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+              "exitCode": {
+                "const": 0,
+                "type": "number",
+              },
+              "success": {
+                "const": true,
+                "type": "boolean",
+              },
+            },
+            "required": [
+              "success",
+              "exitCode",
+              "duration",
+            ],
+            "type": "object",
           },
-          "duration": {
-            "description": "Execution time in milliseconds",
-            "maximum": 9007199254740991,
-            "minimum": 0,
-            "type": "integer",
+          {
+            "additionalProperties": false,
+            "properties": {
+              "duration": {
+                "description": "Execution time in milliseconds",
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+              "exitCode": {
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991,
+                "type": "integer",
+              },
+              "stderr": {
+                "description": "Standard error output from the check",
+                "type": "string",
+              },
+              "stdout": {
+                "description": "Standard output from the check",
+                "type": "string",
+              },
+              "success": {
+                "const": false,
+                "type": "boolean",
+              },
+            },
+            "required": [
+              "success",
+              "exitCode",
+              "stdout",
+              "stderr",
+              "duration",
+            ],
+            "type": "object",
           },
-          "exitCode": {
-            "maximum": 9007199254740991,
-            "minimum": -9007199254740991,
-            "type": "integer",
-          },
-          "name": {
-            "type": "string",
-          },
-          "stderr": {
-            "type": "string",
-          },
-          "stdout": {
-            "type": "string",
-          },
-          "success": {
-            "type": "boolean",
-          },
-        },
-        "required": [
-          "name",
-          "command",
-          "exitCode",
-          "success",
-          "stdout",
-          "stderr",
-          "duration",
         ],
-        "type": "object",
       },
-      "type": "array",
+      "description": "Map of check results keyed by check name (lint:fix, typecheck, or typecheck:scripts). Each result includes success status, exit code, and duration. Failures include stdout/stderr for diagnostics.",
+      "propertyNames": {
+        "type": "string",
+      },
+      "type": "object",
     },
     "hasProblems": {
+      "description": "True if any check failed",
       "type": "boolean",
     },
   },
@@ -205,8 +240,14 @@ exports[`Tool Schema Snapshots Tool: check_typescript_project_for_problems input
       },
       "type": "array",
     },
+    "maxOutputLength": {
+      "description": "Maximum length in characters for stdout and stderr fields. If output exceeds this, it will be truncated with a [...truncated] indicator. Ignored when summaryOnly=true.",
+      "maximum": 9007199254740991,
+      "minimum": 1,
+      "type": "integer",
+    },
     "summaryOnly": {
-      "description": "If true, returns only exit codes and success status per check, omitting stdout/stderr. Useful for reducing output verbosity.",
+      "description": "If true, returns only exit codes, success status, and duration per check, omitting command and output fields. Useful for reducing output verbosity.",
       "type": "boolean",
     },
     "timeout": {
@@ -235,50 +276,79 @@ exports[`Tool Schema Snapshots Tool: check_typescript_project_for_problems outpu
   "additionalProperties": false,
   "properties": {
     "checks": {
-      "items": {
-        "additionalProperties": false,
-        "properties": {
-          "command": {
-            "type": "string",
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "duration": {
+                "description": "Execution time in milliseconds",
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+              "exitCode": {
+                "const": 0,
+                "type": "number",
+              },
+              "success": {
+                "const": true,
+                "type": "boolean",
+              },
+            },
+            "required": [
+              "success",
+              "exitCode",
+              "duration",
+            ],
+            "type": "object",
           },
-          "duration": {
-            "description": "Execution time in milliseconds",
-            "maximum": 9007199254740991,
-            "minimum": 0,
-            "type": "integer",
+          {
+            "additionalProperties": false,
+            "properties": {
+              "duration": {
+                "description": "Execution time in milliseconds",
+                "maximum": 9007199254740991,
+                "minimum": 0,
+                "type": "integer",
+              },
+              "exitCode": {
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991,
+                "type": "integer",
+              },
+              "stderr": {
+                "description": "Standard error output from the check",
+                "type": "string",
+              },
+              "stdout": {
+                "description": "Standard output from the check",
+                "type": "string",
+              },
+              "success": {
+                "const": false,
+                "type": "boolean",
+              },
+            },
+            "required": [
+              "success",
+              "exitCode",
+              "stdout",
+              "stderr",
+              "duration",
+            ],
+            "type": "object",
           },
-          "exitCode": {
-            "maximum": 9007199254740991,
-            "minimum": -9007199254740991,
-            "type": "integer",
-          },
-          "name": {
-            "type": "string",
-          },
-          "stderr": {
-            "type": "string",
-          },
-          "stdout": {
-            "type": "string",
-          },
-          "success": {
-            "type": "boolean",
-          },
-        },
-        "required": [
-          "name",
-          "command",
-          "exitCode",
-          "success",
-          "stdout",
-          "stderr",
-          "duration",
         ],
-        "type": "object",
       },
-      "type": "array",
+      "description": "Map of check results keyed by check name (lint:fix, typecheck, or typecheck:scripts). Each result includes success status, exit code, and duration. Failures include stdout/stderr for diagnostics.",
+      "propertyNames": {
+        "type": "string",
+      },
+      "type": "object",
     },
     "hasProblems": {
+      "description": "True if any check failed",
       "type": "boolean",
     },
   },

@@ -6,7 +6,7 @@
 import { describe, test } from 'vitest'
 
 describe('Supabase Storage Provider', () => {
-  test.skip('TODO: Implement tests for supabaseProvider.ts', () => {
+  test.skip('Placeholder: awaiting implementation of supabaseProvider.ts tests', () => {
     // Tests for Supabase storage provider implementation
   })
 })

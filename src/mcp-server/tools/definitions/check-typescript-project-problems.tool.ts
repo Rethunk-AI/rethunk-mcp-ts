@@ -59,23 +59,52 @@ const InputSchema = z.object({
     .boolean()
     .optional()
     .describe(
-      'If true, returns only exit codes and success status per check, omitting stdout/stderr. Useful for reducing output verbosity.',
+      'If true, returns only exit codes, success status, and duration per check, omitting command and output fields. Useful for reducing output verbosity.',
+    ),
+  maxOutputLength: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe(
+      'Maximum length in characters for stdout and stderr fields. If output exceeds this, it will be truncated with a [...truncated] indicator. Ignored when summaryOnly=true.',
     ),
 })
 
-const CheckResultSchema = z.object({
-  name: z.string(),
-  command: z.string(),
-  exitCode: z.number().int(),
-  success: z.boolean(),
-  stdout: z.string(),
-  stderr: z.string(),
+/**
+ * Check result schema for successful checks (minimal footprint).
+ * Omits stdout/stderr to reduce token usage.
+ */
+const SuccessfulCheckSchema = z.object({
+  success: z.literal(true),
+  exitCode: z.literal(0),
   duration: z.number().int().min(0).describe('Execution time in milliseconds'),
 })
 
+/**
+ * Check result schema for failed checks (includes diagnostics).
+ * Includes stdout/stderr for error diagnosis.
+ */
+const FailedCheckSchema = z.object({
+  success: z.literal(false),
+  exitCode: z.number().int().gt(0),
+  stdout: z.string().describe('Standard output from the check'),
+  stderr: z.string().describe('Standard error output from the check'),
+  duration: z.number().int().min(0).describe('Execution time in milliseconds'),
+})
+
+/**
+ * Discriminated union for check results - varies based on success/failure.
+ */
+const CheckResultSchema = z.union([SuccessfulCheckSchema, FailedCheckSchema])
+
 const OutputSchema = z.object({
-  hasProblems: z.boolean(),
-  checks: z.array(CheckResultSchema),
+  hasProblems: z.boolean().describe('True if any check failed'),
+  checks: z
+    .record(z.string(), CheckResultSchema)
+    .describe(
+      'Map of check results keyed by check name (lint:fix, typecheck, or typecheck:scripts). Each result includes success status, exit code, and duration. Failures include stdout/stderr for diagnostics.',
+    ),
 })
 
 type TypeScriptProjectCheckResponse = z.infer<typeof OutputSchema>
@@ -96,29 +125,59 @@ const QUICK_CHECKS = [
 ] as const
 
 /**
- * Strips stdout and stderr from a check result, keeping only metadata and duration.
+ * Truncates output to maximum length with indicator if truncated.
  */
-function stripOutputFields(
-  result: z.infer<typeof CheckResultSchema>,
-): z.infer<typeof CheckResultSchema> {
+function truncateOutput(output: string, maxLength?: number): string {
+  if (!maxLength || output.length <= maxLength) {
+    return output
+  }
+  return `${output.substring(0, maxLength)}\n[...output truncated]`
+}
+
+/**
+ * Builds a check result object for successful checks (minimal footprint).
+ */
+function buildSuccessfulCheck(
+  duration: number,
+): z.infer<typeof SuccessfulCheckSchema> {
   return {
-    ...result,
-    stdout: '',
-    stderr: '',
+    success: true,
+    exitCode: 0,
+    duration,
+  }
+}
+
+/**
+ * Builds a check result object for failed checks (includes diagnostics).
+ */
+function buildFailedCheck(
+  exitCode: number,
+  stdout: string,
+  stderr: string,
+  duration: number,
+  maxOutputLength?: number,
+): z.infer<typeof FailedCheckSchema> {
+  return {
+    success: false,
+    exitCode,
+    stdout: truncateOutput(stdout, maxOutputLength),
+    stderr: truncateOutput(stderr, maxOutputLength),
+    duration,
   }
 }
 
 /**
  * Runs lint:fix sequentially before other checks to avoid file race conditions,
  * then runs remaining checks in parallel.
+ * Returns results as a Record keyed by check name.
  */
 async function executeChecksWithFileLocking(
   checks: ReadonlyArray<{ name: string; args: readonly string[] }>,
   appContext: RequestContext,
   sdkContext: SdkContext,
-  summaryOnly?: boolean,
-): Promise<Array<z.infer<typeof CheckResultSchema>>> {
-  const results: Array<z.infer<typeof CheckResultSchema>> = []
+  maxOutputLength?: number,
+): Promise<Record<string, z.infer<typeof CheckResultSchema>>> {
+  const results: Record<string, z.infer<typeof CheckResultSchema>> = {}
 
   // Separate lint:fix from other checks
   const lintCheck = checks.find((c) => c.name === 'lint:fix')
@@ -143,20 +202,16 @@ async function executeChecksWithFileLocking(
       lintCheck.name,
     )
 
-    const lintResult: z.infer<typeof CheckResultSchema> = {
-      name: lintCheck.name,
-      command: `${pm} ${lintCheck.args.join(' ')}`,
-      exitCode: result.exitCode,
-      success: result.exitCode === 0,
-      stdout: result.stdout,
-      stderr: result.stderr,
-      duration: result.duration,
-    }
-
-    if (summaryOnly) {
-      results.push(stripOutputFields(lintResult))
+    if (result.exitCode === 0) {
+      results[lintCheck.name] = buildSuccessfulCheck(result.duration)
     } else {
-      results.push(lintResult)
+      results[lintCheck.name] = buildFailedCheck(
+        result.exitCode,
+        result.stdout,
+        result.stderr,
+        result.duration,
+        maxOutputLength,
+      )
     }
   }
 
@@ -180,21 +235,30 @@ async function executeChecksWithFileLocking(
         check.name,
       )
 
-      const checkResult: z.infer<typeof CheckResultSchema> = {
-        name: check.name,
-        command: `${pm} ${check.args.join(' ')}`,
-        exitCode: result.exitCode,
-        success: result.exitCode === 0,
-        stdout: result.stdout,
-        stderr: result.stderr,
-        duration: result.duration,
+      if (result.exitCode === 0) {
+        return {
+          name: check.name,
+          result: buildSuccessfulCheck(result.duration),
+        }
+      } else {
+        return {
+          name: check.name,
+          result: buildFailedCheck(
+            result.exitCode,
+            result.stdout,
+            result.stderr,
+            result.duration,
+            maxOutputLength,
+          ),
+        }
       }
-
-      return summaryOnly ? stripOutputFields(checkResult) : checkResult
     }),
   )
 
-  results.push(...parallelResults)
+  for (const { name, result } of parallelResults) {
+    results[name] = result
+  }
+
   return results
 }
 
@@ -241,11 +305,16 @@ async function checkTypeScriptProjectLogic(
     checksToRun,
     appContext,
     sdkContext,
-    input.summaryOnly,
+    input.maxOutputLength,
+  )
+
+  // Compute hasProblems by checking if any check has success=false
+  const hasProblems = Object.values(checks).some(
+    (check) => check.success === false,
   )
 
   return {
-    hasProblems: checks.some((check) => !check.success),
+    hasProblems,
     checks,
   }
 }
