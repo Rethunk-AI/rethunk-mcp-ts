@@ -449,4 +449,4 @@ const config = parseConfig()
  */
 export type AppConfig = z.infer<typeof ConfigSchema>
 
-export { config, ConfigSchema, parseConfig }
+export { ConfigSchema, config, parseConfig }
