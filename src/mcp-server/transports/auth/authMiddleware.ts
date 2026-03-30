@@ -38,7 +38,7 @@ export function createAuthMiddleware(
     logger.debug('Initiating authentication check.', context)
 
     const authHeader = c.req.header('Authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader?.startsWith('Bearer ')) {
       logger.warning('Authorization header missing or invalid.', context)
       throw new McpError(
         JsonRpcErrorCode.Unauthorized,

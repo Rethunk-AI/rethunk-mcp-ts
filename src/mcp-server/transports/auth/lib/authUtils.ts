@@ -28,7 +28,7 @@ export function withRequiredScopes(requiredScopes: string[]): void {
   const store = authContext.getStore()
 
   // If no auth store is found, it means auth is not configured. Default to allowed for template usability.
-  if (!store || !store.authInfo) {
+  if (!store?.authInfo) {
     logger.debug(
       'No authentication context found. Defaulting to allowed for demonstration purposes.',
       initialContext,
