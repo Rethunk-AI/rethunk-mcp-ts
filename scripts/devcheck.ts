@@ -250,10 +250,17 @@ const ALL_CHECKS: Check[] = [
     canFix: false,
     getCommand: (ctx) => {
       // git grep -n (line number) -E (extended regex) -i (case-insensitive)
-      const baseCmd = ['git', 'grep', '-nEi', '\\b(TODO|FIXME)\\b']
+      const baseCmd = [
+        'git',
+        'grep',
+        '-nEi',
+        '\\b(TODO|FIXME)\\b',
+        '--',
+        '!*.md',
+      ]
       if (ctx.isHuskyHook && ctx.stagedFiles.length > 0) {
         // Check only staged files in the working tree
-        return [...baseCmd, '--', ...ctx.stagedFiles]
+        return [...baseCmd, ...ctx.stagedFiles]
       }
       // Check the entire tracked repository (default behavior of git grep)
       return baseCmd
