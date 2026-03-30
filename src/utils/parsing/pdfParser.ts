@@ -1153,4 +1153,4 @@ export const pdfParser = new PdfParser()
 /**
  * Re-export commonly used pdf-lib utilities for convenience.
  */
-export { PDFDocument, StandardFonts, degrees, rgb }
+export { degrees, PDFDocument, rgb, StandardFonts }
