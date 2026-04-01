@@ -17,8 +17,8 @@
  * @module scripts/validate-mcp-publish-schema
  */
 
-import Ajv from 'ajv'
-import addFormats from 'ajv-formats'
+import { Ajv, type Plugin } from 'ajv'
+import ajvFormats from 'ajv-formats'
 import axios from 'axios'
 import { execSync } from 'child_process'
 import fs from 'fs/promises'
@@ -154,7 +154,7 @@ async function validateServerJson() {
     const { data: schema } = await axios.get(MCP_SCHEMA_URL)
     const serverJson = JSON.parse(await fs.readFile(SERVER_JSON_PATH, 'utf-8'))
     const ajv = new Ajv({ strict: false })
-    addFormats(ajv)
+    ;(ajvFormats as unknown as Plugin<undefined>)(ajv)
     const validate = ajv.compile(schema)
     if (!validate(serverJson)) {
       console.error('Validation failed:', validate.errors)
