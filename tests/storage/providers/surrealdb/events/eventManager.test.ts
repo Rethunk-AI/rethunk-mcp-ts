@@ -149,14 +149,14 @@ describe('EventManager', () => {
   describe('listEvents', () => {
     it('should list events for a table', async () => {
       mockClient.query.mockResolvedValue([
-        {
-          result: {
+        [
+          {
             events: {
               audit_changes: { when: '...', then: '...' },
               email_notification: { when: '...', then: '...' },
             },
           },
-        },
+        ],
       ])
 
       const events = await eventManager.listEvents('user', context)
@@ -164,17 +164,11 @@ describe('EventManager', () => {
       expect(events).toHaveLength(2)
       expect(events[0]?.name).toBe('audit_changes')
       expect(events[1]?.name).toBe('email_notification')
-      expect(mockClient.query).toHaveBeenCalledWith('INFO FOR TABLE user')
+      expect(mockClient.query).toHaveBeenCalledWith('INFO FOR TABLE user', {})
     })
 
     it('should return empty array when no events exist', async () => {
-      mockClient.query.mockResolvedValue([
-        {
-          result: {
-            events: {},
-          },
-        },
-      ])
+      mockClient.query.mockResolvedValue([[{ events: {} }]])
 
       const events = await eventManager.listEvents('user', context)
 

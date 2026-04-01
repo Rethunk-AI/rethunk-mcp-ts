@@ -4,7 +4,7 @@
  * @module src/storage/providers/surrealdb/kv/surrealKvProvider
  */
 
-import type Surreal from 'surrealdb'
+import type { Surreal } from 'surrealdb'
 import { inject, injectable } from 'tsyringe'
 
 import { SurrealdbClient } from '@/container/tokens.js'
@@ -17,8 +17,9 @@ import type {
 import { decodeCursor, encodeCursor } from '@/storage/core/storageValidation.js'
 import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js'
 import { select } from '../core/queryBuilder.js'
+import { queryFirstStatementRows } from '../core/queryCollect.js'
 import { TransactionManager } from '../core/transactionManager.js'
-import type { KvStoreRecord, QueryResult } from '../types.js'
+import type { KvStoreRecord } from '../types.js'
 
 const DEFAULT_LIST_LIMIT = 1000
 
@@ -71,12 +72,7 @@ export class SurrealKvProvider implements IStorageProvider {
           query: query.substring(0, 100),
         })
 
-        const queryResult = await this.client.query<[QueryResult<T>]>(
-          query,
-          params,
-        )
-
-        return queryResult[0]?.result ?? []
+        return queryFirstStatementRows<T>(this.client, query, params)
       },
       {
         operation: 'SurrealKvProvider.executeQuery',

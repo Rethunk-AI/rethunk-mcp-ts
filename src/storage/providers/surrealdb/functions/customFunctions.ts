@@ -4,8 +4,9 @@
  * @module src/storage/providers/surrealdb/functions/customFunctions
  */
 
-import type Surreal from 'surrealdb'
+import type { Surreal } from 'surrealdb'
 import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js'
+import { queryFirstStatementRows } from '../core/queryCollect.js'
 
 /**
  * Function parameter definition.
@@ -159,12 +160,11 @@ export class CustomFunctions {
       async () => {
         const query = 'INFO FOR DATABASE'
 
-        const result =
-          await this.client.query<
-            [{ result: { functions: Record<string, unknown> } }]
-          >(query)
+        const rows = await queryFirstStatementRows<{
+          functions: Record<string, unknown>
+        }>(this.client, query)
 
-        const functions = result[0]?.result?.functions || {}
+        const functions = rows[0]?.functions || {}
         return `fn::${name}` in functions
       },
       {

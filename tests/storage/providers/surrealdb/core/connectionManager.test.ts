@@ -99,7 +99,7 @@ describe('ConnectionManager', () => {
         {
           namespace: 'test',
           database: 'test',
-          auth: {
+          authentication: {
             username: 'admin',
             password: 'password',
           },
@@ -462,7 +462,7 @@ describe('ConnectionManager', () => {
         {
           namespace: 'production',
           database: 'main',
-          auth: {
+          authentication: {
             username: 'root',
             password: 'root',
           },

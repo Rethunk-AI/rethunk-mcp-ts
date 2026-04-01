@@ -201,9 +201,9 @@ describe('TransactionManager', () => {
     it('should execute multiple queries successfully', async () => {
       mockClient.query
         .mockResolvedValueOnce(undefined) // BEGIN
-        .mockResolvedValueOnce([{ result: { id: 1 } }]) // Query 1
-        .mockResolvedValueOnce([{ result: { id: 2 } }]) // Query 2
-        .mockResolvedValueOnce([{ result: { id: 3 } }]) // Query 3
+        .mockResolvedValueOnce([[{ id: 1 }]]) // Query 1
+        .mockResolvedValueOnce([[{ id: 2 }]]) // Query 2
+        .mockResolvedValueOnce([[{ id: 3 }]]) // Query 3
         .mockResolvedValueOnce(undefined) // COMMIT
 
       const queries = [
@@ -233,7 +233,7 @@ describe('TransactionManager', () => {
     it('should execute queries with parameters', async () => {
       mockClient.query
         .mockResolvedValueOnce(undefined) // BEGIN
-        .mockResolvedValueOnce([{ result: 'updated' }])
+        .mockResolvedValueOnce([['updated']])
         .mockResolvedValueOnce(undefined) // COMMIT
 
       const queries = [
@@ -255,7 +255,7 @@ describe('TransactionManager', () => {
     it('should handle queries without parameters', async () => {
       mockClient.query
         .mockResolvedValueOnce(undefined) // BEGIN
-        .mockResolvedValueOnce([{ result: 'done' }])
+        .mockResolvedValueOnce([['done']])
         .mockResolvedValueOnce(undefined) // COMMIT
 
       const queries = [{ query: 'SELECT * FROM users' }]
@@ -281,7 +281,7 @@ describe('TransactionManager', () => {
     it('should cancel transaction on query failure', async () => {
       mockClient.query
         .mockResolvedValueOnce(undefined) // BEGIN
-        .mockResolvedValueOnce([{ result: 'ok' }]) // Query 1
+        .mockResolvedValueOnce([['ok']]) // Query 1
         .mockRejectedValueOnce(new Error('Query failed')) // Query 2 fails
         .mockResolvedValueOnce(undefined) // CANCEL
 
@@ -303,9 +303,9 @@ describe('TransactionManager', () => {
     it('should return results in correct order', async () => {
       mockClient.query
         .mockResolvedValueOnce(undefined) // BEGIN
-        .mockResolvedValueOnce([{ result: 'first' }])
-        .mockResolvedValueOnce([{ result: 'second' }])
-        .mockResolvedValueOnce([{ result: 'third' }])
+        .mockResolvedValueOnce([['first']])
+        .mockResolvedValueOnce([['second']])
+        .mockResolvedValueOnce([['third']])
         .mockResolvedValueOnce(undefined) // COMMIT
 
       const queries = [
@@ -324,10 +324,10 @@ describe('TransactionManager', () => {
     it('should handle mixed query types', async () => {
       mockClient.query
         .mockResolvedValueOnce(undefined) // BEGIN
-        .mockResolvedValueOnce([{ result: { id: 1 } }]) // INSERT
-        .mockResolvedValueOnce([{ result: { updated: true } }]) // UPDATE
-        .mockResolvedValueOnce([{ result: [{ id: 1 }] }]) // SELECT
-        .mockResolvedValueOnce([{ result: { deleted: true } }]) // DELETE
+        .mockResolvedValueOnce([[{ id: 1 }]]) // INSERT
+        .mockResolvedValueOnce([[{ updated: true }]]) // UPDATE
+        .mockResolvedValueOnce([[{ id: 1 }]]) // SELECT
+        .mockResolvedValueOnce([[{ deleted: true }]]) // DELETE
         .mockResolvedValueOnce(undefined) // COMMIT
 
       const queries = [
@@ -348,7 +348,7 @@ describe('TransactionManager', () => {
       expect(results).toHaveLength(4)
       expect(results[0]).toEqual({ id: 1 })
       expect(results[1]).toEqual({ updated: true })
-      expect(results[2]).toEqual([{ id: 1 }])
+      expect(results[2]).toEqual({ id: 1 })
       expect(results[3]).toEqual({ deleted: true })
     })
   })

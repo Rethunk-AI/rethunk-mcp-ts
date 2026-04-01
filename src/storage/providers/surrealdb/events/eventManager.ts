@@ -6,8 +6,9 @@
  * @module src/storage/providers/surrealdb/events/eventManager
  */
 
-import type Surreal from 'surrealdb'
+import type { Surreal } from 'surrealdb'
 import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js'
+import { queryFirstStatementRows } from '../core/queryCollect.js'
 import type {
   DefineEventResult,
   EventConfig,
@@ -137,12 +138,11 @@ export class EventManager {
       async () => {
         const query = `INFO FOR TABLE ${table}`
 
-        const result =
-          await this.client.query<
-            [{ result: { events: Record<string, unknown> } }]
-          >(query)
+        const rows = await queryFirstStatementRows<{
+          events: Record<string, unknown>
+        }>(this.client, query)
 
-        const eventsObj = result[0]?.result?.events || {}
+        const eventsObj = rows[0]?.events || {}
 
         // Parse events from INFO result
         const events: EventInfo[] = Object.entries(eventsObj).map(

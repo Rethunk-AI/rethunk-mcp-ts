@@ -23,7 +23,7 @@ vi.mock('surrealdb', () => {
   }
 
   return {
-    default: MockSurreal,
+    Surreal: MockSurreal,
   }
 })
 

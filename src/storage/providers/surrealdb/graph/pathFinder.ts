@@ -4,8 +4,9 @@
  * @module src/storage/providers/surrealdb/graph/pathFinder
  */
 
-import type Surreal from 'surrealdb'
+import type { Surreal } from 'surrealdb'
 import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js'
+import { queryFirstStatementRows } from '../core/queryCollect.js'
 import type { Edge, Vertex } from './graphTypes.js'
 
 /**
@@ -89,12 +90,13 @@ export class PathFinder {
           FROM $from
         `
 
-        const result = await this.client.query<
-          [{ result: Array<{ id: string; reachable: unknown }> }]
-        >(query, { from })
+        const rows = await queryFirstStatementRows<{
+          id: string
+          reachable: unknown
+        }>(this.client, query, { from })
 
         // Check if target is reachable
-        const data = result[0]?.result?.[0]
+        const data = rows[0]
         if (!data) {
           return null
         }
@@ -146,7 +148,7 @@ export class PathFinder {
           LIMIT $maxPaths
         `
 
-        await this.client.query<[{ result: unknown[] }]>(query, {
+        await queryFirstStatementRows<unknown>(this.client, query, {
           from,
           maxPaths,
         })
@@ -187,11 +189,12 @@ export class PathFinder {
           FROM $startId
         `
 
-        const result = await this.client.query<
-          [{ result: Array<{ reachable: string[] }> }]
-        >(query, { startId })
+        const rows = await queryFirstStatementRows<{
+          reachable: string[] | string
+        }>(this.client, query, { startId })
 
-        const reachable = result[0]?.result?.[0]?.reachable ?? []
+        const raw = rows[0]?.reachable ?? []
+        const reachable = Array.isArray(raw) ? raw : [raw]
         return Array.isArray(reachable) && reachable.includes(startId)
       },
       {
@@ -222,11 +225,12 @@ export class PathFinder {
           FROM $vertexId
         `
 
-        const result = await this.client.query<
-          [{ result: Array<{ in_degree: number; out_degree: number }> }]
-        >(query, { vertexId })
+        const rows = await queryFirstStatementRows<{
+          in_degree: number
+          out_degree: number
+        }>(this.client, query, { vertexId })
 
-        const data = result[0]?.result?.[0]
+        const data = rows[0]
         const inDegree = data?.in_degree ?? 0
         const outDegree = data?.out_degree ?? 0
 

@@ -3,7 +3,7 @@
  * @module src/storage/providers/surrealdb/core/surrealDbClient
  */
 
-import Surreal from 'surrealdb'
+import { Surreal } from 'surrealdb'
 import type { RequestContext } from '@/utils/index.js'
 import { AuthManager } from '../auth/authManager.js'
 import { EventManager } from '../events/eventManager.js'

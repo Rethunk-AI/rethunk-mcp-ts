@@ -4,9 +4,10 @@
  * @module src/storage/providers/surrealdb/core/transactionManager
  */
 
-import type Surreal from 'surrealdb'
+import type { Surreal } from 'surrealdb'
 import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js'
 import type { TransactionOptions } from '../types.js'
+import { queryFirstStatementRows } from './queryCollect.js'
 
 /**
  * Callback function type for transaction operations.
@@ -104,8 +105,18 @@ export class TransactionManager {
       const results: T[] = []
 
       for (const { query, params } of queries) {
-        const result = await client.query<[{ result: T }]>(query, params ?? {})
-        results.push(result[0]?.result)
+        const rows = await queryFirstStatementRows<unknown>(
+          client,
+          query,
+          params ?? {},
+        )
+        if (rows.length === 0) {
+          results.push(undefined as T)
+        } else if (rows.length === 1) {
+          results.push(rows[0] as T)
+        } else {
+          results.push(rows as T)
+        }
       }
 
       return results

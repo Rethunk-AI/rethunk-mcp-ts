@@ -4,8 +4,9 @@
  * @module src/storage/providers/surrealdb/migrations/migrationRunner
  */
 
-import type Surreal from 'surrealdb'
+import type { Surreal } from 'surrealdb'
 import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js'
+import { queryFirstStatementRows } from '../core/queryCollect.js'
 import type {
   Migration,
   MigrationDirection,
@@ -156,10 +157,7 @@ export class MigrationRunner {
       async () => {
         const query = `SELECT * FROM ${this.historyTable} ORDER BY applied_at ASC`
 
-        const result =
-          await this.client.query<[{ result: MigrationHistory[] }]>(query)
-
-        return result[0]?.result ?? []
+        return queryFirstStatementRows<MigrationHistory>(this.client, query)
       },
       {
         operation: 'MigrationRunner.getHistory',

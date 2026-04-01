@@ -4,7 +4,7 @@
  * @module src/storage/providers/surrealdb/auth/authManager
  */
 
-import type Surreal from 'surrealdb'
+import type { Surreal } from 'surrealdb'
 import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js'
 
 /**

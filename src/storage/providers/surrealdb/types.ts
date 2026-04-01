@@ -4,7 +4,7 @@
  * @module src/storage/providers/surrealdb/types
  */
 
-import type Surreal from 'surrealdb'
+import type { Surreal } from 'surrealdb'
 
 /**
  * Type alias for the SurrealDB client instance.

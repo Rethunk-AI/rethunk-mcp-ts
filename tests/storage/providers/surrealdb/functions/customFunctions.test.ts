@@ -220,30 +220,30 @@ describe('CustomFunctions', () => {
   describe('exists', () => {
     it('should return true when function exists', async () => {
       mockClient.query.mockResolvedValue([
-        {
-          result: {
+        [
+          {
             functions: {
               'fn::calculate_total': { params: '...', body: '...' },
             },
           },
-        },
+        ],
       ])
 
       const exists = await customFunctions.exists('calculate_total', context)
 
       expect(exists).toBe(true)
-      expect(mockClient.query).toHaveBeenCalledWith('INFO FOR DATABASE')
+      expect(mockClient.query).toHaveBeenCalledWith('INFO FOR DATABASE', {})
     })
 
     it('should return false when function does not exist', async () => {
       mockClient.query.mockResolvedValue([
-        {
-          result: {
+        [
+          {
             functions: {
               'fn::other_function': { params: '...', body: '...' },
             },
           },
-        },
+        ],
       ])
 
       const exists = await customFunctions.exists('missing_func', context)

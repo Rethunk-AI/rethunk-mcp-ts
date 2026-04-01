@@ -12,7 +12,7 @@ import type {
   R2Bucket,
 } from '@cloudflare/workers-types'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type Surreal from 'surrealdb'
+import type { Surreal } from 'surrealdb'
 import { container } from 'tsyringe'
 
 import type { AppConfig } from '@/config/index.js'

@@ -4,10 +4,11 @@
  * @module src/services/graph/providers/surrealGraph.provider
  */
 
-import type Surreal from 'surrealdb'
+import type { Surreal } from 'surrealdb'
 import { inject, injectable } from 'tsyringe'
 
 import { SurrealdbClient } from '@/container/tokens.js'
+import { queryFirstStatementRows } from '@/storage/providers/surrealdb/core/queryCollect.js'
 import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
 import {
   ErrorHandler,
@@ -74,12 +75,13 @@ export class SurrealGraphProvider implements IGraphProvider {
           ...(options?.data || {}),
         }
 
-        const result = await this.client.query<[{ result: Edge[] }]>(
+        const rows = await queryFirstStatementRows<Edge>(
+          this.client,
           query,
           params,
         )
 
-        const edge = result[0]?.result?.[0]
+        const edge = rows[0]
 
         if (!edge) {
           throw new McpError(
@@ -106,11 +108,11 @@ export class SurrealGraphProvider implements IGraphProvider {
       async () => {
         const query = 'DELETE $edgeId RETURN BEFORE'
 
-        const result = await this.client.query<[{ result: Edge[] }]>(query, {
+        const rows = await queryFirstStatementRows<Edge>(this.client, query, {
           edgeId,
         })
 
-        const deleted = result[0]?.result?.[0]
+        const deleted = rows[0]
         return deleted !== undefined
       },
       {
@@ -160,18 +162,18 @@ export class SurrealGraphProvider implements IGraphProvider {
           context,
         )
 
-        const result = await this.client.query<
-          [
-            {
-              result: Array<{
-                startNode: Record<string, unknown>
-                paths: Array<Record<string, unknown>> | Record<string, unknown>
-              }>
-            },
-          ]
-        >(query, { startVertex: startVertexId })
+        type TraverseRow = {
+          startNode: Record<string, unknown>
+          paths: Array<Record<string, unknown>> | Record<string, unknown>
+        }
 
-        const data = result[0]?.result?.[0]
+        const rows = await queryFirstStatementRows<TraverseRow>(
+          this.client,
+          query,
+          { startVertex: startVertexId },
+        )
+
+        const data = rows[0]
 
         if (!data?.startNode) {
           throw new McpError(
@@ -295,11 +297,11 @@ export class SurrealGraphProvider implements IGraphProvider {
         // Use SurrealDB's built-in shortest path function
         const query = 'SELECT graph::shortest_path($from, $to) AS path;'
 
-        const result = await this.client.query<
-          [{ result: Array<{ path: Array<Record<string, unknown>> | null }> }]
-        >(query, { from, to })
+        const rows = await queryFirstStatementRows<{
+          path: Array<Record<string, unknown>> | null
+        }>(this.client, query, { from, to })
 
-        const pathData = result[0]?.result?.[0]?.path
+        const pathData = rows[0]?.path
 
         if (!pathData || pathData.length === 0) {
           logger.debug(
@@ -381,11 +383,13 @@ export class SurrealGraphProvider implements IGraphProvider {
         const edgeFilter = edgeTypes?.length ? edgeTypes.join('|') : ''
         const query = `SELECT ->${edgeFilter} as edges FROM ONLY $vertexId`
 
-        const result = await this.client.query<
-          [{ result: Array<{ edges: Edge[] }> }]
-        >(query, { vertexId })
+        const rows = await queryFirstStatementRows<{ edges: Edge[] }>(
+          this.client,
+          query,
+          { vertexId },
+        )
 
-        const edges = result[0]?.result?.[0]?.edges ?? []
+        const edges = rows[0]?.edges ?? []
         return Array.isArray(edges) ? edges : [] // Ensure result is always an array
       },
       {
@@ -406,11 +410,13 @@ export class SurrealGraphProvider implements IGraphProvider {
         const edgeFilter = edgeTypes?.length ? edgeTypes.join('|') : ''
         const query = `SELECT <-${edgeFilter} as edges FROM ONLY $vertexId`
 
-        const result = await this.client.query<
-          [{ result: Array<{ edges: Edge[] }> }]
-        >(query, { vertexId })
+        const rows = await queryFirstStatementRows<{ edges: Edge[] }>(
+          this.client,
+          query,
+          { vertexId },
+        )
 
-        const edges = result[0]?.result?.[0]?.edges ?? []
+        const edges = rows[0]?.edges ?? []
         return Array.isArray(edges) ? edges : [] // Ensure result is always an array
       },
       {
@@ -431,11 +437,13 @@ export class SurrealGraphProvider implements IGraphProvider {
       async () => {
         // Use the efficient path finding function and check for existence
         const query = 'SELECT graph::shortest_path($from, $to) AS path;'
-        const result = await this.client.query<
-          [{ result: Array<{ path: unknown[] | null }> }]
-        >(query, { from, to })
+        const rows = await queryFirstStatementRows<{ path: unknown[] | null }>(
+          this.client,
+          query,
+          { from, to },
+        )
 
-        const path = result[0]?.result?.[0]?.path
+        const path = rows[0]?.path
         // Check if path exists and respects maxDepth
         // Path length = vertices + edges, so for maxDepth hops, max length is (maxDepth * 2 + 1)
         return (
@@ -456,26 +464,24 @@ export class SurrealGraphProvider implements IGraphProvider {
         logger.debug('[SurrealGraphProvider] Getting graph statistics', context)
 
         // Get database info to list all tables
-        const infoResult =
-          await this.client.query<
-            [
-              {
-                result: Array<{
-                  tables: Record<
-                    string,
-                    {
-                      drop: boolean
-                      full: boolean
-                      kind: string
-                      permissions: Record<string, unknown>
-                    }
-                  >
-                }>
-              },
-            ]
-          >('INFO FOR DB;')
+        type DbInfoRow = {
+          tables: Record<
+            string,
+            {
+              drop: boolean
+              full: boolean
+              kind: string
+              permissions: Record<string, unknown>
+            }
+          >
+        }
 
-        const tables = infoResult[0]?.result?.[0]?.tables ?? {}
+        const infoRows = await queryFirstStatementRows<DbInfoRow>(
+          this.client,
+          'INFO FOR DB;',
+        )
+
+        const tables = infoRows[0]?.tables ?? {}
 
         const vertexTypes: Record<string, number> = {}
         const edgeTypes: Record<string, number> = {}
@@ -488,21 +494,20 @@ export class SurrealGraphProvider implements IGraphProvider {
             // Check if table has IN/OUT fields (edge table)
             // Query a sample record to check structure
             const sampleQuery = `SELECT * FROM ${tableName} LIMIT 1;`
-            const sampleResult =
-              await this.client.query<
-                [{ result: Array<Record<string, unknown>> }]
-              >(sampleQuery)
-            const sample = sampleResult[0]?.result?.[0]
+            const sampleRows = await queryFirstStatementRows<
+              Record<string, unknown>
+            >(this.client, sampleQuery)
+            const sample = sampleRows[0]
 
             const isEdge = sample && 'in' in sample && 'out' in sample
 
             // Count records in this table
             const countQuery = `SELECT count() FROM ${tableName} GROUP ALL;`
-            const countResult =
-              await this.client.query<[{ result: Array<{ count: number }> }]>(
-                countQuery,
-              )
-            const count = countResult[0]?.result?.[0]?.count ?? 0
+            const countRows = await queryFirstStatementRows<{ count: number }>(
+              this.client,
+              countQuery,
+            )
+            const count = countRows[0]?.count ?? 0
 
             if (isEdge) {
               edgeTypes[tableName] = count

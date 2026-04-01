@@ -55,7 +55,7 @@ describe('SurrealGraphProvider', () => {
         data: {},
       }
 
-      mockClient.query.mockResolvedValue([{ result: [mockEdge] }])
+      mockClient.query.mockResolvedValue([[mockEdge]])
 
       const result = await provider.relate(
         'user:alice',
@@ -77,7 +77,7 @@ describe('SurrealGraphProvider', () => {
         data: { since: '2025-01-01', weight: 1.5 },
       }
 
-      mockClient.query.mockResolvedValue([{ result: [mockEdge] }])
+      mockClient.query.mockResolvedValue([[mockEdge]])
 
       const options = {
         data: { since: '2025-01-01', weight: 1.5 },
@@ -116,7 +116,7 @@ describe('SurrealGraphProvider', () => {
         data: {},
       }
 
-      mockClient.query.mockResolvedValue([{ result: [mockEdge] }])
+      mockClient.query.mockResolvedValue([[mockEdge]])
 
       const result = await provider.relate(
         'user:alice',
@@ -129,7 +129,7 @@ describe('SurrealGraphProvider', () => {
     })
 
     it('should throw error when edge creation fails', async () => {
-      mockClient.query.mockResolvedValue([{ result: [] }])
+      mockClient.query.mockResolvedValue([[]])
 
       await expect(
         provider.relate('user:alice', 'follows', 'user:bob', context),
@@ -158,7 +158,7 @@ describe('SurrealGraphProvider', () => {
         data: {},
       }
 
-      mockClient.query.mockResolvedValue([{ result: [mockEdge] }])
+      mockClient.query.mockResolvedValue([[mockEdge]])
 
       const result = await provider.unrelate('follows:abc123', context)
 
@@ -167,7 +167,7 @@ describe('SurrealGraphProvider', () => {
     })
 
     it('should return false when edge not found', async () => {
-      mockClient.query.mockResolvedValue([{ result: [] }])
+      mockClient.query.mockResolvedValue([[]])
 
       const result = await provider.unrelate('follows:nonexistent', context)
 
@@ -175,7 +175,7 @@ describe('SurrealGraphProvider', () => {
     })
 
     it('should handle query with edgeId parameter', async () => {
-      mockClient.query.mockResolvedValue([{ result: [{}] }])
+      mockClient.query.mockResolvedValue([[{}]])
 
       await provider.unrelate('follows:abc123', context)
 
@@ -202,7 +202,7 @@ describe('SurrealGraphProvider', () => {
         paths: [{ id: 'user:bob' }],
       }
 
-      mockClient.query.mockResolvedValue([{ result: [mockData] }])
+      mockClient.query.mockResolvedValue([[mockData]])
 
       const result = await provider.traverse('user:alice', context)
 
@@ -213,7 +213,7 @@ describe('SurrealGraphProvider', () => {
 
     it('should use default options', async () => {
       mockClient.query.mockResolvedValue([
-        { result: [{ startNode: { id: 'user:alice' }, paths: [] }] },
+        [{ startNode: { id: 'user:alice' }, paths: [] }],
       ])
 
       await provider.traverse('user:alice', context)
@@ -226,7 +226,7 @@ describe('SurrealGraphProvider', () => {
 
     it('should respect maxDepth option', async () => {
       mockClient.query.mockResolvedValue([
-        { result: [{ startNode: { id: 'user:alice' }, paths: [] }] },
+        [{ startNode: { id: 'user:alice' }, paths: [] }],
       ])
 
       await provider.traverse('user:alice', context, { maxDepth: 3 })
@@ -239,7 +239,7 @@ describe('SurrealGraphProvider', () => {
 
     it('should respect direction option', async () => {
       mockClient.query.mockResolvedValue([
-        { result: [{ startNode: { id: 'user:alice' }, paths: [] }] },
+        [{ startNode: { id: 'user:alice' }, paths: [] }],
       ])
 
       await provider.traverse('user:alice', context, { direction: 'in' })
@@ -252,7 +252,7 @@ describe('SurrealGraphProvider', () => {
 
     it('should handle both direction', async () => {
       mockClient.query.mockResolvedValue([
-        { result: [{ startNode: { id: 'user:alice' }, paths: [] }] },
+        [{ startNode: { id: 'user:alice' }, paths: [] }],
       ])
 
       await provider.traverse('user:alice', context, { direction: 'both' })
@@ -265,7 +265,7 @@ describe('SurrealGraphProvider', () => {
 
     it('should include WHERE clause when provided', async () => {
       mockClient.query.mockResolvedValue([
-        { result: [{ startNode: { id: 'user:alice' }, paths: [] }] },
+        [{ startNode: { id: 'user:alice' }, paths: [] }],
       ])
 
       await provider.traverse('user:alice', context, {
@@ -279,7 +279,7 @@ describe('SurrealGraphProvider', () => {
     })
 
     it('should throw error when vertex not found', async () => {
-      mockClient.query.mockResolvedValue([{ result: [] }])
+      mockClient.query.mockResolvedValue([[]])
 
       await expect(
         provider.traverse('user:nonexistent', context),
@@ -302,7 +302,7 @@ describe('SurrealGraphProvider', () => {
         { id: 'follows:1', in: 'user:bob', out: 'user:alice' },
         { id: 'user:bob' },
       ]
-      mockClient.query.mockResolvedValue([{ result: [{ path: mockPath }] }])
+      mockClient.query.mockResolvedValue([[{ path: mockPath }]])
 
       const result = await provider.shortestPath(
         'user:alice',
@@ -317,7 +317,7 @@ describe('SurrealGraphProvider', () => {
     })
 
     it('should return null when no path exists', async () => {
-      mockClient.query.mockResolvedValue([{ result: [{ path: null }] }])
+      mockClient.query.mockResolvedValue([[{ path: null }]])
 
       const result = await provider.shortestPath(
         'user:alice',
@@ -329,7 +329,7 @@ describe('SurrealGraphProvider', () => {
     })
 
     it('should handle empty result set', async () => {
-      mockClient.query.mockResolvedValue([{ result: [] }])
+      mockClient.query.mockResolvedValue([[]])
 
       const result = await provider.shortestPath(
         'user:alice',
@@ -342,7 +342,7 @@ describe('SurrealGraphProvider', () => {
 
     it('should use native graph::shortest_path function', async () => {
       const mockPath = [{ id: 'user:alice' }, { id: 'user:bob' }]
-      mockClient.query.mockResolvedValue([{ result: [{ path: mockPath }] }])
+      mockClient.query.mockResolvedValue([[{ path: mockPath }]])
 
       await provider.shortestPath('user:alice', 'user:bob', context)
 
@@ -373,7 +373,7 @@ describe('SurrealGraphProvider', () => {
         },
       ]
 
-      mockClient.query.mockResolvedValue([{ result: [{ edges: mockEdges }] }])
+      mockClient.query.mockResolvedValue([[{ edges: mockEdges }]])
 
       const result = await provider.getOutgoingEdges('user:alice', context)
 
@@ -381,7 +381,7 @@ describe('SurrealGraphProvider', () => {
     })
 
     it('should return empty array when no edges', async () => {
-      mockClient.query.mockResolvedValue([{ result: [{ edges: [] }] }])
+      mockClient.query.mockResolvedValue([[{ edges: [] }]])
 
       const result = await provider.getOutgoingEdges('user:alice', context)
 
@@ -389,7 +389,7 @@ describe('SurrealGraphProvider', () => {
     })
 
     it('should handle missing edges property', async () => {
-      mockClient.query.mockResolvedValue([{ result: [{}] }])
+      mockClient.query.mockResolvedValue([[{}]])
 
       const result = await provider.getOutgoingEdges('user:alice', context)
 
@@ -397,7 +397,7 @@ describe('SurrealGraphProvider', () => {
     })
 
     it('should use outgoing operator in query', async () => {
-      mockClient.query.mockResolvedValue([{ result: [{ edges: [] }] }])
+      mockClient.query.mockResolvedValue([[{ edges: [] }]])
 
       await provider.getOutgoingEdges('user:alice', context)
 
@@ -428,7 +428,7 @@ describe('SurrealGraphProvider', () => {
         },
       ]
 
-      mockClient.query.mockResolvedValue([{ result: [{ edges: mockEdges }] }])
+      mockClient.query.mockResolvedValue([[{ edges: mockEdges }]])
 
       const result = await provider.getIncomingEdges('user:alice', context)
 
@@ -436,7 +436,7 @@ describe('SurrealGraphProvider', () => {
     })
 
     it('should return empty array when no edges', async () => {
-      mockClient.query.mockResolvedValue([{ result: [{ edges: [] }] }])
+      mockClient.query.mockResolvedValue([[{ edges: [] }]])
 
       const result = await provider.getIncomingEdges('user:alice', context)
 
@@ -444,7 +444,7 @@ describe('SurrealGraphProvider', () => {
     })
 
     it('should handle missing edges property', async () => {
-      mockClient.query.mockResolvedValue([{ result: [{}] }])
+      mockClient.query.mockResolvedValue([[{}]])
 
       const result = await provider.getIncomingEdges('user:alice', context)
 
@@ -452,7 +452,7 @@ describe('SurrealGraphProvider', () => {
     })
 
     it('should use incoming operator in query', async () => {
-      mockClient.query.mockResolvedValue([{ result: [{ edges: [] }] }])
+      mockClient.query.mockResolvedValue([[{ edges: [] }]])
 
       await provider.getIncomingEdges('user:alice', context)
 
@@ -475,7 +475,7 @@ describe('SurrealGraphProvider', () => {
     it('should return true when path exists', async () => {
       // Mock graph::shortest_path to return a path with length <= maxDepth * 2 + 1
       const mockPath = [{ id: 'user:alice' }, { id: 'user:bob' }] // 2 elements <= 5*2+1
-      mockClient.query.mockResolvedValue([{ result: [{ path: mockPath }] }])
+      mockClient.query.mockResolvedValue([[{ path: mockPath }]])
 
       const result = await provider.pathExists(
         'user:alice',
@@ -487,7 +487,7 @@ describe('SurrealGraphProvider', () => {
     })
 
     it('should return false when no path exists', async () => {
-      mockClient.query.mockResolvedValue([{ result: [{ path: null }] }])
+      mockClient.query.mockResolvedValue([[{ path: null }]])
 
       const result = await provider.pathExists(
         'user:alice',
@@ -500,7 +500,7 @@ describe('SurrealGraphProvider', () => {
 
     it('should use default maxDepth of 5', async () => {
       const mockPath = [{ id: 'user:alice' }]
-      mockClient.query.mockResolvedValue([{ result: [{ path: mockPath }] }])
+      mockClient.query.mockResolvedValue([[{ path: mockPath }]])
 
       await provider.pathExists('user:alice', 'user:bob', context)
 
@@ -514,7 +514,7 @@ describe('SurrealGraphProvider', () => {
 
     it('should use custom maxDepth', async () => {
       const mockPath = [{ id: 'user:alice' }]
-      mockClient.query.mockResolvedValue([{ result: [{ path: mockPath }] }])
+      mockClient.query.mockResolvedValue([[{ path: mockPath }]])
 
       await provider.pathExists('user:alice', 'user:bob', context, 10)
 
@@ -532,7 +532,7 @@ describe('SurrealGraphProvider', () => {
 
   describe('healthCheck', () => {
     it('should return true when healthy', async () => {
-      mockClient.query.mockResolvedValue([{ result: [{ healthy: 1 }] }])
+      mockClient.query.mockResolvedValue([[{ healthy: 1 }]])
 
       const result = await provider.healthCheck()
 
@@ -568,7 +568,7 @@ describe('SurrealGraphProvider', () => {
     describe('getTraversalOperator', () => {
       it('should return correct operator for out direction', async () => {
         mockClient.query.mockResolvedValue([
-          { result: [{ startNode: { id: 'user:alice' }, paths: [] }] },
+          [{ startNode: { id: 'user:alice' }, paths: [] }],
         ])
 
         await provider.traverse('user:alice', context, { direction: 'out' })
@@ -581,7 +581,7 @@ describe('SurrealGraphProvider', () => {
 
       it('should return correct operator for in direction', async () => {
         mockClient.query.mockResolvedValue([
-          { result: [{ startNode: { id: 'user:alice' }, paths: [] }] },
+          [{ startNode: { id: 'user:alice' }, paths: [] }],
         ])
 
         await provider.traverse('user:alice', context, { direction: 'in' })
@@ -594,7 +594,7 @@ describe('SurrealGraphProvider', () => {
 
       it('should return correct operator for both direction', async () => {
         mockClient.query.mockResolvedValue([
-          { result: [{ startNode: { id: 'user:alice' }, paths: [] }] },
+          [{ startNode: { id: 'user:alice' }, paths: [] }],
         ])
 
         await provider.traverse('user:alice', context, { direction: 'both' })
@@ -609,7 +609,7 @@ describe('SurrealGraphProvider', () => {
     describe('extractTableName', () => {
       it('should extract table name from record ID', async () => {
         mockClient.query.mockResolvedValue([
-          { result: [{ startNode: { id: 'user:alice' }, paths: [] }] },
+          [{ startNode: { id: 'user:alice' }, paths: [] }],
         ])
 
         const result = await provider.traverse('user:alice', context)
@@ -619,7 +619,7 @@ describe('SurrealGraphProvider', () => {
 
       it('should handle record ID with colon', async () => {
         mockClient.query.mockResolvedValue([
-          { result: [{ startNode: { id: 'follows:abc123' }, paths: [] }] },
+          [{ startNode: { id: 'follows:abc123' }, paths: [] }],
         ])
 
         const result = await provider.traverse('follows:abc123', context)
@@ -629,7 +629,7 @@ describe('SurrealGraphProvider', () => {
 
       it('should handle malformed record ID', async () => {
         mockClient.query.mockResolvedValue([
-          { result: [{ startNode: { id: 'invalid' }, paths: [] }] },
+          [{ startNode: { id: 'invalid' }, paths: [] }],
         ])
 
         const result = await provider.traverse('invalid', context)

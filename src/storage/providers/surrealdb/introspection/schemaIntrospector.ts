@@ -6,8 +6,9 @@
  * @module src/storage/providers/surrealdb/introspection/schemaIntrospector
  */
 
-import type Surreal from 'surrealdb'
+import type { Surreal } from 'surrealdb'
 import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js'
+import { queryFirstStatementRows } from '../core/queryCollect.js'
 
 /**
  * Table information from schema.
@@ -116,20 +117,13 @@ export class SchemaIntrospector {
 
         const query = 'INFO FOR DATABASE'
 
-        const result =
-          await this.client.query<
-            [
-              {
-                result: {
-                  tables: Record<string, unknown>
-                  functions: Record<string, unknown>
-                  accesses: Record<string, unknown>
-                }
-              },
-            ]
-          >(query)
+        const rows = await queryFirstStatementRows<{
+          tables: Record<string, unknown>
+          functions: Record<string, unknown>
+          accesses: Record<string, unknown>
+        }>(this.client, query)
 
-        const info = result[0]?.result
+        const info = rows[0]
 
         const tables = Object.keys(info?.tables ?? {})
         const functions = Object.keys(info?.functions ?? {})
@@ -172,20 +166,13 @@ export class SchemaIntrospector {
       async () => {
         const query = `INFO FOR TABLE ${tableName}`
 
-        const result =
-          await this.client.query<
-            [
-              {
-                result: {
-                  fields: Record<string, string>
-                  indexes: Record<string, string>
-                  events: Record<string, string>
-                }
-              },
-            ]
-          >(query)
+        const rows = await queryFirstStatementRows<{
+          fields: Record<string, string>
+          indexes: Record<string, string>
+          events: Record<string, string>
+        }>(this.client, query)
 
-        const info = result[0]?.result
+        const info = rows[0]
 
         const fields: FieldInfo[] = Object.entries(info?.fields ?? {}).map(
           ([name, type]) => ({
@@ -238,12 +225,11 @@ export class SchemaIntrospector {
       async () => {
         const query = 'INFO FOR DATABASE'
 
-        const result =
-          await this.client.query<
-            [{ result: { tables: Record<string, unknown> } }]
-          >(query)
+        const rows = await queryFirstStatementRows<{
+          tables: Record<string, unknown>
+        }>(this.client, query)
 
-        const tables = result[0]?.result?.tables ?? {}
+        const tables = rows[0]?.tables ?? {}
         return Object.keys(tables)
       },
       {
@@ -264,12 +250,11 @@ export class SchemaIntrospector {
       async () => {
         const query = 'INFO FOR DATABASE'
 
-        const result =
-          await this.client.query<
-            [{ result: { functions: Record<string, unknown> } }]
-          >(query)
+        const rows = await queryFirstStatementRows<{
+          functions: Record<string, unknown>
+        }>(this.client, query)
 
-        const functions = result[0]?.result?.functions ?? {}
+        const functions = rows[0]?.functions ?? {}
         return Object.keys(functions)
       },
       {

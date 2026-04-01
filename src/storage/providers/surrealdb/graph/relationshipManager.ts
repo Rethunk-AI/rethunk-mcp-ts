@@ -4,9 +4,10 @@
  * @module src/storage/providers/surrealdb/graph/relationshipManager
  */
 
-import type Surreal from 'surrealdb'
+import type { Surreal } from 'surrealdb'
 import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
 import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js'
+import { queryFirstStatementRows } from '../core/queryCollect.js'
 import type { Edge, EdgeOptions } from './graphTypes.js'
 
 /**
@@ -65,13 +66,13 @@ export class RelationshipManager {
           RETURN AFTER
         `
 
-        const result = await this.client.query<[{ result: Edge[] }]>(query, {
+        const rows = await queryFirstStatementRows<Edge>(this.client, query, {
           from,
           to,
           data: options?.data || {},
         })
 
-        const edge = result[0]?.result?.[0]
+        const edge = rows[0]
 
         if (!edge) {
           throw new McpError(
@@ -127,11 +128,13 @@ export class RelationshipManager {
           WHERE in = $from AND out = $to
         `
 
-        const result = await this.client.query<
-          [{ result: Array<{ count: number }> }]
-        >(query, { from, to })
+        const rows = await queryFirstStatementRows<{ count: number }>(
+          this.client,
+          query,
+          { from, to },
+        )
 
-        const count = result[0]?.result?.[0]?.count ?? 0
+        const count = rows[0]?.count ?? 0
         return count > 0
       },
       {
@@ -167,12 +170,12 @@ export class RelationshipManager {
           RETURN AFTER
         `
 
-        const result = await this.client.query<[{ result: Edge[] }]>(query, {
+        const rows = await queryFirstStatementRows<Edge>(this.client, query, {
           edgeId,
           data,
         })
 
-        const edge = result[0]?.result?.[0]
+        const edge = rows[0]
 
         if (!edge) {
           throw new McpError(
@@ -204,11 +207,11 @@ export class RelationshipManager {
       async () => {
         const query = 'DELETE $edgeId RETURN BEFORE'
 
-        const result = await this.client.query<[{ result: Edge[] }]>(query, {
+        const rows = await queryFirstStatementRows<Edge>(this.client, query, {
           edgeId,
         })
 
-        return (result[0]?.result?.length ?? 0) > 0
+        return rows.length > 0
       },
       {
         operation: 'RelationshipManager.delete',
@@ -235,11 +238,9 @@ export class RelationshipManager {
       async () => {
         const query = `SELECT * FROM ${edgeTable} LIMIT $limit`
 
-        const result = await this.client.query<[{ result: Edge[] }]>(query, {
+        return queryFirstStatementRows<Edge>(this.client, query, {
           limit,
         })
-
-        return result[0]?.result ?? []
       },
       {
         operation: 'RelationshipManager.getAllOfType',

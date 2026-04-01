@@ -3,7 +3,7 @@
  * @module tests/storage/providers/surrealdb/surrealKvProvider.test
  */
 
-import Surreal from 'surrealdb'
+import type { Surreal } from 'surrealdb'
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 
 import { SurrealKvProvider } from '@/storage/providers/surrealdb/kv/surrealKvProvider.js'
@@ -12,11 +12,9 @@ import { requestContextService } from '@/utils/index.js'
 import { storageProviderTests } from '../../storageProviderCompliance.test.js'
 
 // Mock the Surreal client
-vi.mock('surrealdb', () => {
-  return {
-    default: vi.fn(),
-  }
-})
+vi.mock('surrealdb', () => ({
+  Surreal: vi.fn(),
+}))
 
 const createTestContext = () =>
   requestContextService.createRequestContext({
@@ -43,7 +41,7 @@ function createMockSurrealClient() {
       query.includes('COMMIT TRANSACTION') ||
       query.includes('CANCEL TRANSACTION')
     ) {
-      return [{ result: [] }]
+      return [[]]
     }
 
     // Simulate SELECT queries
@@ -72,7 +70,7 @@ function createMockSurrealClient() {
             return null
           })
           .filter(Boolean)
-        return [{ result: records }]
+        return [records]
       } else if (query.includes('string::starts_with')) {
         // list operation
         const prefix = paramsObj?.prefix as string
@@ -96,7 +94,7 @@ function createMockSurrealClient() {
           filteredResults = results.filter((r) => r.key > cursor)
         }
 
-        return [{ result: filteredResults }]
+        return [filteredResults]
       } else {
         // get operation
         const storeKey = `${tenantId}:${key}`
@@ -109,11 +107,11 @@ function createMockSurrealClient() {
             record.expires_at &&
             new Date(record.expires_at).getTime() < Date.now()
           ) {
-            return [{ result: [] }] // Expired, return empty
+            return [[]] // Expired, return empty
           }
-          return [{ result: [record] }]
+          return [[record]]
         }
-        return [{ result: [] }]
+        return [[]]
       }
     }
 
@@ -150,7 +148,7 @@ function createMockSurrealClient() {
             })
           }
         }
-        return [{ result: [] }]
+        return [[]]
       } else {
         // Single UPDATE statement
         const value = paramsObj?.value
@@ -162,7 +160,7 @@ function createMockSurrealClient() {
         // Preserve created_at if it exists (simulates MERGE behavior)
         const created_at = existing?.created_at ?? new Date().toISOString()
         store.set(storeKey, { value, expires_at: expiresAt, created_at })
-        return [{ result: [{ key, value, expires_at: expiresAt, created_at }] }]
+        return [[{ key, value, expires_at: expiresAt, created_at }]]
       }
     }
 
@@ -181,16 +179,16 @@ function createMockSurrealClient() {
             return null
           })
           .filter(Boolean)
-        return [{ result: deleted }]
+        return [deleted]
       } else if (key) {
         // delete operation
         const storeKey = `${tenantId}:${key}`
         if (store.has(storeKey)) {
           const record = store.get(storeKey)
           store.delete(storeKey)
-          return [{ result: [record] }]
+          return [[record]]
         }
-        return [{ result: [] }]
+        return [[]]
       } else {
         // clear operation
         const deleted: unknown[] = []
@@ -201,11 +199,11 @@ function createMockSurrealClient() {
             store.delete(storeKey)
           }
         }
-        return [{ result: deleted }]
+        return [deleted]
       }
     }
 
-    return [{ result: [] }]
+    return [[]]
   })
 
   return {
@@ -246,17 +244,14 @@ describe('SurrealKvProvider (unit)', () => {
     expect(result).toBeNull()
   })
 
-  it('handles ttl=0 for immediate expiration', async () => {
+  it('treats negative TTL as already expired on read', async () => {
     const context = createTestContext()
     const key = 'immediate-expire'
 
-    // Set with ttl=0 (immediate expiration - expires_at = Date.now())
+    // Negative TTL sets expires_at in the past (stable vs same-ms ttl=0 + clock edge)
     await provider.set(tenantId, key, 'should-expire-immediately', context, {
-      ttl: 0,
+      ttl: -1,
     })
-
-    // Wait 1ms to ensure we're past the expiration time
-    await new Promise((resolve) => setTimeout(resolve, 1))
 
     // Should be expired now
     const result = await provider.get(tenantId, key, context)
@@ -271,9 +266,7 @@ describe('SurrealKvProvider (unit)', () => {
     await provider.set(tenantId, key, 'initial-value', context)
 
     // Get the record directly from mock to verify created_at
-    const firstQuery = await mockClient.query<
-      [{ result: Array<{ created_at: string }> }]
-    >(
+    const firstQuery = await mockClient.query<[Array<{ created_at: string }>]>(
       'SELECT created_at FROM type::table($table) WHERE tenant_id = $tenant_id AND key = $key',
       {
         table: 'kv_store',
@@ -281,7 +274,7 @@ describe('SurrealKvProvider (unit)', () => {
         key,
       },
     )
-    const firstCreatedAt = firstQuery[0]?.result[0]?.created_at
+    const firstCreatedAt = firstQuery[0]?.[0]?.created_at
     expect(firstCreatedAt).toBeDefined()
 
     // Wait a tiny bit to ensure timestamps would differ
@@ -291,9 +284,7 @@ describe('SurrealKvProvider (unit)', () => {
     await provider.set(tenantId, key, 'updated-value', context)
 
     // Get the record again
-    const secondQuery = await mockClient.query<
-      [{ result: Array<{ created_at: string }> }]
-    >(
+    const secondQuery = await mockClient.query<[Array<{ created_at: string }>]>(
       'SELECT created_at FROM type::table($table) WHERE tenant_id = $tenant_id AND key = $key',
       {
         table: 'kv_store',
@@ -301,7 +292,7 @@ describe('SurrealKvProvider (unit)', () => {
         key,
       },
     )
-    const secondCreatedAt = secondQuery[0]?.result[0]?.created_at
+    const secondCreatedAt = secondQuery[0]?.[0]?.created_at
 
     // created_at should be preserved (same as first)
     expect(secondCreatedAt).toBe(firstCreatedAt)

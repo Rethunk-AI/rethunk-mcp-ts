@@ -4,7 +4,7 @@
  * @module src/storage/providers/surrealdb/core/connectionManager
  */
 
-import type Surreal from 'surrealdb'
+import type { ConnectOptions, Surreal } from 'surrealdb'
 import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
 import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js'
 import type { HealthCheckResult, SurrealDbConfig } from '../types.js'
@@ -69,17 +69,16 @@ export class ConnectionManager {
           context,
         )
 
-        const connectOptions: {
-          namespace: string
-          database: string
-          auth?: { username: string; password: string }
-        } = {
+        const connectOptions: ConnectOptions = {
           namespace: this.config?.namespace ?? '',
           database: this.config?.database ?? '',
         }
 
         if (this.config?.auth) {
-          connectOptions.auth = this.config?.auth
+          connectOptions.authentication = {
+            username: this.config.auth.username,
+            password: this.config.auth.password,
+          }
         }
 
         await this.client.connect(this.config?.url ?? '', connectOptions)

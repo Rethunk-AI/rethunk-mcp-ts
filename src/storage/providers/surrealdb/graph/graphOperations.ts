@@ -4,9 +4,10 @@
  * @module src/storage/providers/surrealdb/graph/graphOperations
  */
 
-import type Surreal from 'surrealdb'
+import type { Surreal } from 'surrealdb'
 import { JsonRpcErrorCode, McpError } from '@/types-global/errors.js'
 import { ErrorHandler, logger, type RequestContext } from '@/utils/index.js'
+import { queryFirstStatementRows } from '../core/queryCollect.js'
 import type { Edge, Vertex } from './graphTypes.js'
 
 /**
@@ -70,13 +71,13 @@ export class GraphOperations {
           RETURN AFTER
         `
 
-        const result = await this.client.query<[{ result: Edge[] }]>(query, {
+        const rows = await queryFirstStatementRows<Edge>(this.client, query, {
           from,
           to,
           data,
         })
 
-        const edge = result[0]?.result?.[0]
+        const edge = rows[0]
 
         if (!edge) {
           throw new McpError(
@@ -133,11 +134,11 @@ export class GraphOperations {
           FROM $startId
         `
 
-        const result = await this.client.query<
-          [{ result: Array<{ connections: Vertex[] }> }]
-        >(query, { startId })
+        const rows = await queryFirstStatementRows<{
+          connections: Vertex[] | Vertex
+        }>(this.client, query, { startId })
 
-        const connections = result[0]?.result?.[0]?.connections ?? []
+        const connections = rows[0]?.connections ?? []
         return Array.isArray(connections) ? connections : [connections]
       },
       {
@@ -175,11 +176,11 @@ export class GraphOperations {
           FROM $startId
         `
 
-        const result = await this.client.query<
-          [{ result: Array<{ connections: Vertex[] }> }]
-        >(query, { startId })
+        const rows = await queryFirstStatementRows<{
+          connections: Vertex[] | Vertex
+        }>(this.client, query, { startId })
 
-        const connections = result[0]?.result?.[0]?.connections ?? []
+        const connections = rows[0]?.connections ?? []
         return Array.isArray(connections) ? connections : [connections]
       },
       {
@@ -217,11 +218,11 @@ export class GraphOperations {
           FROM $startId
         `
 
-        const result = await this.client.query<
-          [{ result: Array<{ connections: Vertex[] }> }]
-        >(query, { startId })
+        const rows = await queryFirstStatementRows<{
+          connections: Vertex[] | Vertex
+        }>(this.client, query, { startId })
 
-        const connections = result[0]?.result?.[0]?.connections ?? []
+        const connections = rows[0]?.connections ?? []
         return Array.isArray(connections) ? connections : [connections]
       },
       {
@@ -244,11 +245,11 @@ export class GraphOperations {
       async () => {
         const query = 'DELETE $edgeId RETURN BEFORE'
 
-        const result = await this.client.query<[{ result: Edge[] }]>(query, {
+        const rows = await queryFirstStatementRows<Edge>(this.client, query, {
           edgeId,
         })
 
-        return (result[0]?.result?.length ?? 0) > 0
+        return rows.length > 0
       },
       {
         operation: 'GraphOperations.deleteEdge',

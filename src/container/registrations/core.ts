@@ -6,7 +6,7 @@
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import Surreal from 'surrealdb'
+import { Surreal } from 'surrealdb'
 import { container, Lifecycle } from 'tsyringe'
 
 import { parseConfig } from '@/config/index.js'
@@ -90,7 +90,7 @@ export const registerCoreServices = () => {
         database: cfg.surrealdb.database,
         ...(cfg.surrealdb.username &&
           cfg.surrealdb.password && {
-            auth: {
+            authentication: {
               username: cfg.surrealdb.username,
               password: cfg.surrealdb.password,
             },
