@@ -1,6 +1,6 @@
 {
   "name": "rethunk-mcp-typescript",
-  "version": "2.8.1",
+  "version": "2.8.2",
   "mcpName": "com.rethunk/rethunk-mcp-typescript",
   "description": "Rethunk MCP for TypeScript: A production-grade MCP server implementation featuring powerful code inspection tools, atomic git commits with intelligent message validation, and a robust foundation for building scalable Model Context Protocol servers.",
   "main": "dist/index.js",
@@ -22,10 +22,10 @@
   "sideEffects": false,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Rethunk-Tech/rethunk-mcp-ts.git"
+    "url": "git+https://github.com/Rethunk-AI/rethunk-mcp-ts.git"
   },
   "bugs": {
-    "url": "https://github.com/Rethunk-Tech/rethunk-mcp-ts/issues"
+    "url": "https://github.com/Rethunk-AI/rethunk-mcp-ts/issues"
   },
   "homepage": "https://rethunk.ai/",
   "scripts": {
