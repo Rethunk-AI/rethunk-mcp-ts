@@ -470,6 +470,7 @@ Each major module includes comprehensive documentation with architecture diagram
 
 ### Additional Resources
 
+- **[SECURITY.md](SECURITY.md)** - Security policy and vulnerability reporting
 - **[AGENTS.md](AGENTS.md)** - Strict development rules for AI agents
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and breaking changes
 - **[docs/tree.md](docs/tree.md)** - Complete visual directory structure
