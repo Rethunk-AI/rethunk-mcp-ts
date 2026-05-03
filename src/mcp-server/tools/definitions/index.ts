@@ -5,13 +5,17 @@
  * @module src/mcp-server/tools/definitions
  */
 
+import type { ZodObject, ZodRawShape } from 'zod'
+import type { ToolDefinition } from '../utils/toolDefinition.js'
 import { checkTypeScriptProjectProblemsTool } from './check-typescript-project-problems.tool.js'
 import { stageSelectedFilesAndCreateAtomicCommitTool } from './stage-selected-files-and-create-atomic-commit.tool.js'
 
 /**
  * An array containing all tool definitions for easy iteration and registration.
  */
-export const allToolDefinitions = [
+export const allToolDefinitions: Array<
+  ToolDefinition<ZodObject<ZodRawShape>, ZodObject<ZodRawShape>>
+> = [
   checkTypeScriptProjectProblemsTool,
   stageSelectedFilesAndCreateAtomicCommitTool,
 ]
