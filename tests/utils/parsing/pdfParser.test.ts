@@ -993,6 +993,10 @@ describe('PdfParser', () => {
     let doc: PDFDocument
 
     beforeEach(async () => {
+      // unpdf uses setImmediate/setTimeout internally; ensure real timers so
+      // vitest's global fakeTimers config does not stall async PDF parsing.
+      vi.useRealTimers()
+
       doc = await PDFDocument.create()
       // Create pages with actual text content
       const page1 = doc.addPage([600, 400])
