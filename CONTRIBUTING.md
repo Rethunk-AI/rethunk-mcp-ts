@@ -21,18 +21,18 @@ bun install
 
 | Command | Purpose |
 |---|---|
-| `bun run devcheck` | **Primary quality gate** — lint, format, typecheck, security, tests |
+| `bun run ci` | **Primary quality gate** — lint, format, typecheck, security, tests |
 | `bun run rebuild` | Clean, rebuild, and clear logs (run after dependency changes) |
 | `bun run test` | Run the test suite |
 | `bun run test:coverage` | Run tests with coverage report |
 | `bun run dev:stdio` | Development mode via stdio transport |
 | `bun run dev:http` | Development mode via HTTP transport |
 | `bun run lint` | Run Biome linter |
-| `bun run lint:fix` | Auto-fix linting issues |
+| `bun run format` | Auto-fix formatting (Prettier) |
 | `bun run build` | Compile TypeScript to `dist/` |
 | `bun run build:worker` | Build Cloudflare Worker bundle |
 
-Always run `bun run devcheck` before submitting a PR. It runs lint, formatting, type-checking, security audit, and the full test suite in one step.
+Always run `bun run ci` before submitting a PR. It runs lint, formatting, typecheck, security audit, and the full test suite in one step.
 
 ## Project Structure
 
@@ -100,7 +100,7 @@ chore(deps): upgrade @modelcontextprotocol/sdk to 1.26.0
 - Add explicit return types to all functions
 - Use interfaces for object types; avoid `any`
 - Keep components small and focused (Single Responsibility)
-- Follow Biome formatting (enforced by `bun run devcheck`)
+- Follow Biome formatting (enforced by `bun run ci`)
 - All Zod schema fields must include `.describe()` for LLM-facing visibility
 - Tool and resource logic functions must not contain `try/catch` — throw `McpError` instead; the handler factory catches it
 - See [AGENTS.md](AGENTS.md) for full architectural constraints
@@ -111,7 +111,7 @@ chore(deps): upgrade @modelcontextprotocol/sdk to 1.26.0
 2. **Make your changes** following the coding guidelines above
 3. **Run the quality gate:**
    ```bash
-   bun run devcheck
+   bun run ci
    ```
    This runs lint, format, typecheck, security audit, and tests. All checks must pass.
 4. **Verify transports work locally:**

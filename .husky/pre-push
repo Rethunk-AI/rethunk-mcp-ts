@@ -1,1 +1,1 @@
-bun run scripts/devcheck.ts --no-secrets --no-todos
+bun run ci

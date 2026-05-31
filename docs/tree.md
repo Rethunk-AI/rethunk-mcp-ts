@@ -51,7 +51,6 @@ mcp-ts-template/
 │   └── cloudflare-d1-schema.sql
 ├── scripts/
 │   ├── clean.ts
-│   ├── devcheck.ts
 │   ├── devdocs.ts
 │   ├── fetch-openapi-spec.ts
 │   ├── make-executable.ts

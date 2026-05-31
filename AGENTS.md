@@ -190,7 +190,7 @@ Separation of concerns maps directly to the filesystem. Always place files in th
 - [ ] **7. Apply auth:** Wrap with `withToolAuth(['tool:name:read'], yourLogic)`
 - [ ] **8. Export ToolDefinition:** Combine metadata, schemas, logic, formatter
 - [ ] **9. Register:** Add to `allToolDefinitions` in [index.ts](src/mcp-server/tools/definitions/index.ts)
-- [ ] **10. Quality check:** `bun run devcheck`
+- [ ] **10. Quality check:** `bun run ci`
 - [ ] **11. Test:** `bun run dev:stdio` or `dev:http`, verify with MCP client
 
 ---
@@ -226,7 +226,7 @@ Prompts are reusable message templates that clients can discover and invoke.
 - [ ] **5. Implement `generate`:** `(args) => PromptMessage[]` — returns array of `{ role, content }` messages (can be `async`)
 - [ ] **6. Export `PromptDefinition`**
 - [ ] **7. Register:** Add to `allPromptDefinitions` in [index.ts](src/mcp-server/prompts/definitions/index.ts)
-- [ ] **8. Quality check:** `bun run devcheck`
+- [ ] **8. Quality check:** `bun run ci`
 
 **Key differences from tools:** No `logic`/`appContext`/`sdkContext` — prompts are simpler. `generate` receives validated args and returns `PromptMessage[]` directly.
 
@@ -338,7 +338,7 @@ git commit -m "feat(auth): add JWT validation middleware
 | Command                    | Purpose                                                                                        |
 | -------------------------- | ---------------------------------------------------------------------------------------------- |
 | `bun run rebuild`          | Clean, rebuild, clear logs (after dep changes)                                                 |
-| `bun run devcheck`         | **USE OFTEN** Lint, format, typecheck, security (flags: `--no-fix`, `--no-lint`, `--no-audit`) |
+| `bun run ci`         | **USE OFTEN** Lint, format, typecheck, security (flags: `--no-fix`, `--no-lint`, `--no-audit`) |
 | `bun run test`             | Unit/integration tests                                                                         |
 | `bun run dev:stdio/http`   | Development mode                                                                               |
 | `bun run start:stdio/http` | Production mode (after build)                                                                  |
@@ -384,7 +384,7 @@ All config validated via Zod in `src/config/index.ts`. Config module derives `mc
 - [ ] Use `sdkContext.elicitInput()`/`createMessage()` for client interaction
 - [ ] Register in `index.ts` barrel
 - [ ] Add/update tests (`bun test`)
-- [ ] **Run `bun devcheck`** (lint, format, typecheck, security)
+- [ ] **Run `bun run ci`** (lint, format, typecheck, security)
 - [ ] Smoke-test local transports (`dev:stdio`/`http`)
 - [ ] Validate Worker bundle (`build:worker`)
 

@@ -32,7 +32,7 @@ function runDevcheck(full: boolean = false) {
     currentProcess.kill()
   }
 
-  const args = ['run', 'scripts/devcheck.ts', '--no-todos', '--no-secrets']
+  const args = ['run', 'ci']
   if (!full) {
     args.push('--fast')
   }

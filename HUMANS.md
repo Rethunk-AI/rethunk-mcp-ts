@@ -218,7 +218,7 @@ All instances require these key variables:
 
 - **Run checks and tests**:
   ```bash
-  bun devcheck # Lints, formats, type-checks, and more
+  bun run ci # Lints, formats, typechecks, and more
   bun test    # Runs the test suite
   ```
 

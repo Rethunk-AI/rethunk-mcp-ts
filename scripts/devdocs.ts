@@ -156,7 +156,7 @@ Please remember:
 - Adhere to our programming principles found within the existing code reviewed above.
 - Ensure all new code has JSDoc comments and follows our structured logging standards.
 - Remember to use any included services for internal services like logging, error handling, request context, and external API calls.
-- Before completing the task, run 'bun devcheck' (lint, type check, etc.) to maintain code consistency.
+- Before completing the task, run 'bun run ci' (lint, typecheck, test, build) to maintain code consistency.
 `.trim()
 
 const USAGE_INFO = `
