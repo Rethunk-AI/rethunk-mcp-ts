@@ -2,7 +2,7 @@
 
 **Version:** 2.8.1
 **Target Project:** rethunk-mcp-ts
-**Last Updated:** 2026-04-27
+**Last Updated:** 2026-06-04
 
 This document defines the operational rules for contributing to this codebase. Follow it exactly.
 
@@ -308,17 +308,6 @@ Prompts are reusable message templates that clients can discover and invoke.
 ---
 
 ## IX.A. Git Commit Messages
-
-**CRITICAL:** When creating git commits, NEVER use heredoc syntax (`cat <<'EOF'`) or command substitution (`$(...)`) in commit messages. Use plain strings only.
-
-**Correct:**
-```bash
-git commit -m "feat(auth): add JWT validation middleware
-
-- Implemented token verification with exp claim validation
-- Added support for RS256 and HS256 algorithms
-- Includes comprehensive error handling"
-```
 
 **Conventional Commits Format:**
 - `feat(scope): description` - New feature
