@@ -50,11 +50,18 @@ const yamlOutputPath = `${outputBasePathAbsolute}.yaml`
 const jsonOutputPath = `${outputBasePathAbsolute}.json`
 const outputDirAbsolute = path.dirname(outputBasePathAbsolute)
 
-// Security Check: Ensure output paths are within project root
+// Security Check: Ensure output paths are within project root.
+// Use path.relative() to detect traversal attempts (e.g. "../escape") rather than
+// startsWith(root + sep) which fails when root itself is "/" or equals the path.
+function isInsideRoot(target: string, root: string): boolean {
+  const rel = path.relative(root, target)
+  return !!rel && !rel.startsWith('..') && !path.isAbsolute(rel)
+}
+
 if (
-  !outputDirAbsolute.startsWith(projectRoot + path.sep) ||
-  !yamlOutputPath.startsWith(projectRoot + path.sep) ||
-  !jsonOutputPath.startsWith(projectRoot + path.sep)
+  !isInsideRoot(outputDirAbsolute, projectRoot) ||
+  !isInsideRoot(yamlOutputPath, projectRoot) ||
+  !isInsideRoot(jsonOutputPath, projectRoot)
 ) {
   console.error(
     `Error: Output path "${outputBaseArg}" resolves outside the project directory. Aborting.`,

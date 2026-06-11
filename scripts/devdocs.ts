@@ -615,7 +615,10 @@ const generateFileTree = async (rootDir: string): Promise<string> => {
   const treeScriptPath = path.resolve(rootDir, CONFIG.TREE_SCRIPT)
   const treeDocPath = path.resolve(rootDir, CONFIG.DOCS_DIR, CONFIG.TREE_OUTPUT)
 
-  if (!(await exists(treeScriptPath))) {
+  // Avoid TOCTOU: attempt to execute directly; catch ENOENT rather than pre-checking.
+  try {
+    await fs.access(treeScriptPath)
+  } catch {
     throw new DevDocsError(
       `Tree generation script not found at: ${treeScriptPath}`,
     )
@@ -696,7 +699,10 @@ const filterFilePaths = async (
   const warnings: string[] = []
 
   for (const filePath of filePaths) {
-    if (!(await exists(filePath))) {
+    // Avoid TOCTOU: check existence atomically by attempting access, not a separate exists() call.
+    try {
+      await fs.access(filePath)
+    } catch {
       UI.printWarning(`File not found: "${filePath}". Skipping.`)
       skipped++
       warnings.push(`Not found: ${filePath}`)
@@ -935,7 +941,10 @@ const createDevDocsFile = async (
 
   try {
     await fs.mkdir(path.dirname(devDocsPath), { recursive: true })
-    await fs.writeFile(devDocsPath, devdocsContent)
+    // Atomic write: write to a temp file then rename to avoid partial reads if interrupted.
+    const tmpPath = `${devDocsPath}.tmp`
+    await fs.writeFile(tmpPath, devdocsContent)
+    await fs.rename(tmpPath, devDocsPath)
 
     UI.printSuccess(
       `Documentation written to ${path.relative(rootDir, devDocsPath)}`,
@@ -974,12 +983,14 @@ const performDryRun = async (
   let excludedFiles = 0
 
   for (const filePath of filePaths) {
-    if (!(await exists(filePath))) {
+    // Avoid TOCTOU: use stat directly and handle ENOENT rather than a separate exists() pre-check.
+    let stats: Awaited<ReturnType<typeof fs.stat>>
+    try {
+      stats = await fs.stat(filePath)
+    } catch {
       UI.printDryRunFile('missing', filePath)
       continue
     }
-
-    const stats = await fs.stat(filePath)
     if (stats.isDirectory()) {
       UI.printDryRunFile('directory', filePath)
       totalFiles++

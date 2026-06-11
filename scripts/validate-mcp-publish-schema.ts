@@ -53,7 +53,10 @@ async function verifyPublication(
 ) {
   const stepName = 'Verify Publication'
   console.log(`\n--- 🚀 Starting Step: ${stepName} ---`)
-  const searchUrl = `${MCP_REGISTRY_URL}?search=${serverName}`
+  // Sanitize serverName before interpolating into a URL to prevent file-access-to-http
+  // injection: mcpName comes from a local file (package.json) and must be URL-safe.
+  const safeServerName = encodeURIComponent(serverName)
+  const searchUrl = `${MCP_REGISTRY_URL}?search=${safeServerName}`
   console.log(`Querying: ${searchUrl}`)
 
   for (let i = 0; i < maxRetries; i++) {
