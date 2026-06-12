@@ -148,7 +148,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.68",
+    "@ai-sdk/openai": "^3.0.69",
     "@hono/node-server": "^2.0.4",
     "@modelcontextprotocol/ext-apps": "^1.7.4",
     "@modelcontextprotocol/sdk": "^1.29.0",
