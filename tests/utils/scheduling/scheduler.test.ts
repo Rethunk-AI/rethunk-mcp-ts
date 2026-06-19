@@ -4,7 +4,6 @@
  */
 
 import { trace } from '@opentelemetry/api'
-import * as cron from 'node-cron'
 import {
   afterEach,
   beforeEach,
@@ -17,24 +16,36 @@ import {
 
 import { logger } from '../../../src/utils/internal/logger.js'
 
-const validateMock = vi.fn(() => true)
-const createTaskMock = vi.fn(
-  (schedule: string, handler: () => Promise<void> | void) => {
-    return {
-      start: vi.fn(),
-      stop: vi.fn(),
-      trigger: () => handler(),
-      schedule,
-    } as unknown as {
-      start: () => void
-      stop: () => void
-      trigger: () => Promise<void> | void
-    }
-  },
-)
+// Use vi.hoisted so these mocks are available inside the vi.mock factory (which is hoisted).
+const { validateMock, createTaskMock } = vi.hoisted(() => {
+  const validateMock = vi.fn(() => true)
+  const createTaskMock = vi.fn(
+    (schedule: string, handler: () => Promise<void> | void) => {
+      return {
+        start: vi.fn(),
+        stop: vi.fn(),
+        trigger: () => handler(),
+        schedule,
+      } as unknown as {
+        start: () => void
+        stop: () => void
+        trigger: () => Promise<void> | void
+      }
+    },
+  )
+  return { validateMock, createTaskMock }
+})
 
-let validateSpy: MockInstance
-let createTaskSpy: MockInstance
+// Factory mock: node-cron 4.4 ships a frozen ESM namespace whose bindings are
+// non-configurable, so vi.spyOn cannot replace them. Use vi.mock with a factory
+// instead — Vitest hoists it and intercepts all imports (static + dynamic).
+vi.mock('node-cron', () => ({
+  validate: validateMock,
+  createTask: createTaskMock,
+  schedule: vi.fn(),
+  getTasks: vi.fn(() => new Map()),
+  getTask: vi.fn(),
+}))
 
 type SchedulerModule =
   typeof import('../../../src/utils/scheduling/scheduler.js')
@@ -49,19 +60,27 @@ describe('schedulerService', () => {
   beforeEach(async () => {
     createTaskMock.mockClear()
     validateMock.mockClear()
+    validateMock.mockImplementation(() => true)
+    createTaskMock.mockImplementation(
+      (schedule: string, handler: () => Promise<void> | void) => {
+        return {
+          start: vi.fn(),
+          stop: vi.fn(),
+          trigger: () => handler(),
+          schedule,
+        } as unknown as {
+          start: () => void
+          stop: () => void
+          trigger: () => Promise<void> | void
+        }
+      },
+    )
     infoSpy = vi.spyOn(logger, 'info').mockImplementation(() => {})
     warningSpy = vi.spyOn(logger, 'warning').mockImplementation(() => {})
     errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {})
     getActiveSpanSpy = vi.spyOn(trace, 'getActiveSpan').mockReturnValue({
       spanContext: () => ({ traceId: 'trace', spanId: 'span' }),
     } as never)
-
-    validateSpy = vi
-      .spyOn(cron, 'validate')
-      .mockImplementation(validateMock as never)
-    createTaskSpy = vi
-      .spyOn(cron, 'createTask')
-      .mockImplementation(createTaskMock as never)
 
     const module: SchedulerModule = await import(
       '../../../src/utils/scheduling/scheduler.js'
@@ -77,8 +96,6 @@ describe('schedulerService', () => {
     warningSpy.mockRestore()
     errorSpy.mockRestore()
     getActiveSpanSpy.mockRestore()
-    validateSpy?.mockRestore()
-    createTaskSpy?.mockRestore()
     if (schedulerService) {
       ;(
         schedulerService as unknown as { jobs: Map<string, unknown> }
