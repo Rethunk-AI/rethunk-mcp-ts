@@ -72,9 +72,9 @@ export class YamlParser {
     }
 
     try {
-      // DEFAULT_SCHEMA is safe in js-yaml v4+ (no !!js/function, !!js/object).
-      // Specifying it explicitly guards against default changes in future versions.
-      return yaml.load(stringToParse, { schema: yaml.DEFAULT_SCHEMA }) as T
+      // js-yaml's default load schema is safe in v4+ (no !!js/function, !!js/object).
+      // v5 removed the named DEFAULT_SCHEMA export; the default already is that schema.
+      return yaml.load(stringToParse) as T
     } catch (e: unknown) {
       const error = e as Error
       const errorLogContext =
