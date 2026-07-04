@@ -72,9 +72,15 @@ export class YamlParser {
     }
 
     try {
-      // js-yaml's default load schema is safe in v4+ (no !!js/function, !!js/object).
-      // v5 removed the named DEFAULT_SCHEMA export; the default already is that schema.
-      return yaml.load(stringToParse) as T
+      // js-yaml v5 changed its default `load()` schema from the YAML 1.1-based
+      // DEFAULT_SCHEMA (v4) to the stricter YAML 1.2 CORE_SCHEMA, which drops
+      // support for merge keys (`<<: *anchor`) and other 1.1 notations
+      // (octal/sexagesimal numbers, `!!binary`, `!!timestamp`, `!!omap`,
+      // `!!pairs`, `!!set`, yes/no/on/off booleans). Explicitly request
+      // YAML11_SCHEMA to reproduce v4's default parsing behavior (including
+      // merge key resolution) so downstream consumers see no behavior change
+      // from the dependency bump.
+      return yaml.load(stringToParse, { schema: yaml.YAML11_SCHEMA }) as T
     } catch (e: unknown) {
       const error = e as Error
       const errorLogContext =
